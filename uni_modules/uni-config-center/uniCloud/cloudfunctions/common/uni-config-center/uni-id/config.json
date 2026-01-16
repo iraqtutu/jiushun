@@ -1,0 +1,39 @@
+{
+	"passwordSecret": "jiushun-secret-key-2026",
+	"tokenSecret": "jiushun-token-secret-2026",
+	"tokenExpiresIn": 7200,
+	"tokenExpiresThreshold": 600,
+	"passwordErrorLimit": 6,
+	"bindTokenToDevice": false,
+	"passwordErrorRetryTime": 3600,
+	"autoSetInviteCode": false,
+	"forceInviteCode": false,
+	"app-plus": {
+		"tokenExpiresIn": 2592000,
+		"oauth": {
+			"weixin": {
+				"appid": "weixin_appid",
+				"appsecret": "weixin_appsecret"
+			}
+		}
+	},
+	"mp-weixin": {
+		"oauth": {
+			"weixin": {
+				"appid": "weixin_appid",
+				"appsecret": "weixin_appsecret"
+			}
+		}
+	},
+	"service": {
+		"sms": {
+			"name": "your_sms_service_name",
+			"codeExpiresIn": 180,
+			"smsKey": "your_sms_key",
+			"smsSecret": "your_sms_secret"
+		},
+		"univerify": {
+			"appid": "your_univerify_appid"
+		}
+	}
+}
