@@ -5,20 +5,18 @@
 			<text class="title">玖顺农机售后服务</text>
 		</view>
 		
-		<view class="form-box">
-			<view class="input-group">
-				<text class="label">手机号</text>
-				<input class="input" type="number" v-model="mobile" placeholder="请输入手机号" maxlength="11" />
-			</view>
-			<view class="input-group">
-				<text class="label">密码</text>
-				<input class="input" type="password" v-model="password" placeholder="请输入密码" />
+		<view class="status-box">
+			<view v-if="isLoading" class="loading-area">
+				<text class="loading-text">正在验证身份...</text>
 			</view>
 			
-			<button class="btn-primary" @click="handleLogin">登录</button>
-			
-			<view class="link-area">
-				<text class="link-text" @click="goToApply">没有账号？点击申请</text>
+			<view v-else class="action-area">
+				<!-- Show error or status message -->
+				<text v-if="statusMsg" class="status-msg">{{ statusMsg }}</text>
+				
+				<button class="btn-weixin" @click="handleWxLogin">
+					<text>微信一键登录</text>
+				</button>
 			</view>
 		</view>
 	</view>
@@ -28,33 +26,87 @@
 	export default {
 		data() {
 			return {
-				mobile: '',
-				password: ''
+				isLoading: true,
+				statusMsg: ''
 			}
 		},
+		onLoad() {
+			this.handleWxLogin();
+		},
 		methods: {
-			handleLogin() {
-				if (!this.mobile || !this.password) {
-					uni.showToast({
-						title: '请填写手机号和密码',
-						icon: 'none'
-					});
-					return;
-				}
+			handleWxLogin() {
+				this.isLoading = true;
+				this.statusMsg = '';
 				
-				// TODO: Integrate with uni-id-co login
-				// For now, simple mock or direct redirect for demo
-				console.log('Login attempt', this.mobile);
-				
-				// Mock success
-				uni.setStorageSync('userInfo', { mobile: this.mobile, name: '测试用户' });
-				uni.reLaunch({
-					url: '/pages/index/index'
+				uni.login({
+					provider: 'weixin',
+					success: (loginRes) => {
+						this.callCloudLogin(loginRes.code);
+					},
+					fail: (err) => {
+						this.isLoading = false;
+						this.statusMsg = '微信登录失败，请重试';
+						console.error('Login Fail:', err);
+					}
 				});
 			},
-			goToApply() {
-				uni.navigateTo({
-					url: '/pages/register/apply'
+			
+			callCloudLogin(code) {
+				uniCloud.callFunction({
+					name: 'user-center',
+					data: {
+						action: 'login',
+						params: { code: code }
+					},
+					success: (res) => {
+						this.isLoading = false;
+						const result = res.result;
+						
+						if (result.code !== 0) {
+							this.statusMsg = '登录服务异常: ' + result.msg;
+							return;
+						}
+						
+						// Save Token
+						uni.setStorageSync('uni_id_token', result.token);
+						uni.setStorageSync('uni_id_token_expired', result.tokenExpired);
+						uni.setStorageSync('userInfo', result.userInfo);
+						
+						if (result.authorized) {
+							// Authorized -> Go Home
+							uni.reLaunch({ url: '/pages/index/index' });
+						} else {
+							// Not Authorized
+							if (result.applicationStatus === 0) {
+								this.statusMsg = '您的申请正在审核中，请耐心等待。';
+							} else if (result.applicationStatus === 2) {
+								uni.showModal({
+									title: '申请被拒绝',
+									content: '您的申请已被拒绝，请联系管理员或重新申请。',
+									confirmText: '重新申请',
+									success: (m) => {
+										if (m.confirm) uni.navigateTo({ url: '/pages/register/apply' });
+									}
+								});
+							} else {
+								// No application or unknown
+								uni.showModal({
+									title: '未授权用户',
+									content: '您当前未在授权名单中，是否前往申请？',
+									confirmText: '去申请',
+									showCancel: false,
+									success: () => {
+										uni.navigateTo({ url: '/pages/register/apply' });
+									}
+								});
+							}
+						}
+					},
+					fail: (err) => {
+						this.isLoading = false;
+						this.statusMsg = '网络请求失败';
+						console.error('Cloud Call Fail:', err);
+					}
 				});
 			}
 		}
@@ -68,72 +120,60 @@
 		flex-direction: column;
 		align-items: center;
 		min-height: 100vh;
-		background-color: #f5f5f5;
+		background-color: #fff;
 	}
 	
 	.header {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		margin-bottom: 50px;
+		margin-top: 100px;
+		margin-bottom: 80px;
 		
 		.logo {
-			width: 80px;
-			height: 80px;
-			margin-bottom: 15px;
+			width: 100px;
+			height: 100px;
+			margin-bottom: 20px;
 		}
 		
 		.title {
-			font-size: 20px;
+			font-size: 22px;
 			font-weight: bold;
 			color: #333;
 		}
 	}
 	
-	.form-box {
+	.status-box {
 		width: 100%;
-		background: #fff;
-		border-radius: 10px;
-		padding: 20px;
-		box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+		display: flex;
+		flex-direction: column;
+		align-items: center;
 	}
 	
-	.input-group {
-		margin-bottom: 20px;
-		
-		.label {
-			display: block;
-			font-size: 14px;
-			color: #666;
-			margin-bottom: 8px;
-		}
-		
-		.input {
-			width: 100%;
-			height: 44px;
-			background: #f8f8f8;
-			border-radius: 4px;
-			padding: 0 10px;
-			font-size: 16px;
-			box-sizing: border-box;
-		}
-	}
-	
-	.btn-primary {
-		background-color: #007aff;
-		color: #fff;
-		margin-top: 30px;
-		border-radius: 4px;
+	.loading-text {
+		color: #666;
 		font-size: 16px;
 	}
 	
-	.link-area {
-		margin-top: 20px;
-		text-align: center;
+	.status-msg {
+		color: #ff5252;
+		margin-bottom: 20px;
+		font-size: 14px;
+	}
+	
+	.btn-weixin {
+		background-color: #07c160;
+		color: #fff;
+		width: 80%;
+		border-radius: 40px;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		padding: 12px 0;
+		font-size: 16px;
 		
-		.link-text {
-			font-size: 14px;
-			color: #007aff;
+		&::after {
+			border: none;
 		}
 	}
 </style>

@@ -26,7 +26,9 @@
 				<textarea class="textarea" v-model="formData.reason" placeholder="例如：我是XX地区经销商王某某" />
 			</view>
 			
-			<button class="btn-submit" @click="submitApply">提交申请</button>
+			<button class="btn-submit" @click="submitApply" :disabled="isSubmitting">
+				{{ isSubmitting ? '提交中...' : '提交申请' }}
+			</button>
 		</view>
 	</view>
 </template>
@@ -41,7 +43,8 @@
 					mobile: '',
 					role: '',
 					reason: ''
-				}
+				},
+				isSubmitting: false
 			}
 		},
 		methods: {
@@ -50,30 +53,39 @@
 			},
 			submitApply() {
 				if (!this.formData.name || !this.formData.mobile || !this.formData.role || !this.formData.reason) {
-					uni.showToast({
-						title: '请填写完整信息',
-						icon: 'none'
-					});
+					uni.showToast({ title: '请填写完整信息', icon: 'none' });
 					return;
 				}
 				
-				// TODO: Call cloud function to save application
-				console.log('Applying:', this.formData);
+				this.isSubmitting = true;
 				
-				uni.showLoading({ title: '提交中...' });
-				
-				// Mock submission
-				setTimeout(() => {
-					uni.hideLoading();
-					uni.showModal({
-						title: '提交成功',
-						content: '您的申请已提交，请等待管理员审核。审核通过后即可登录。',
-						showCancel: false,
-						success: () => {
-							uni.navigateBack();
+				uniCloud.callFunction({
+					name: 'user-center',
+					data: {
+						action: 'apply',
+						params: this.formData
+					},
+					success: (res) => {
+						this.isSubmitting = false;
+						if (res.result.code === 0) {
+							uni.showModal({
+								title: '提交成功',
+								content: '您的申请已提交，请等待管理员审核。',
+								showCancel: false,
+								success: () => {
+									uni.reLaunch({ url: '/pages/login/login' });
+								}
+							});
+						} else {
+							uni.showToast({ title: '提交失败: ' + res.result.msg, icon: 'none' });
 						}
-					});
-				}, 1000);
+					},
+					fail: (err) => {
+						this.isSubmitting = false;
+						uni.showToast({ title: '网络请求失败', icon: 'none' });
+						console.error(err);
+					}
+				});
 			}
 		}
 	}

@@ -27,31 +27,49 @@
 	export default {
 		data() {
 			return {
-				list: [
-					// Mock Data
-					{
-						id: '1',
-						orderNo: 'JS202601150001',
-						customerName: '张三',
-						serviceType: '维修',
-						machineNo: 'JN-888-999',
-						submitTime: '2026-01-15 10:30'
-					},
-					{
-						id: '2',
-						orderNo: 'JS202601150002',
-						customerName: '李四',
-						serviceType: '保养',
-						machineNo: 'JN-777-666',
-						submitTime: '2026-01-14 15:20'
-					}
-				]
+				list: [],
+				isLoading: false
 			}
 		},
-		onLoad() {
-			// TODO: Load from cloud DB
+		onShow() {
+			this.loadData();
 		},
 		methods: {
+			loadData() {
+				this.isLoading = true;
+				uniCloud.callFunction({
+					name: 'work-order-manager',
+					data: {
+						action: 'list',
+						uniIdToken: uni.getStorageSync('uni_id_token')
+					},
+					success: (res) => {
+						this.isLoading = false;
+						if (res.result.code === 0) {
+							// Transform data for display if needed
+							this.list = res.result.data.map(item => ({
+								id: item._id,
+								orderNo: item.orderNo,
+								customerName: item.customerInfo?.name || '未知',
+								serviceType: item.serviceInfo?.type || '未知',
+								machineNo: item.productInfo?.machineNo || '-',
+								submitTime: this.formatDate(item.create_date)
+							}));
+						} else {
+							uni.showToast({ title: '加载失败', icon: 'none' });
+						}
+					},
+					fail: (err) => {
+						this.isLoading = false;
+						console.error(err);
+					}
+				});
+			},
+			formatDate(ts) {
+				if (!ts) return '';
+				const d = new Date(ts);
+				return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()} ${d.getHours()}:${d.getMinutes()}`;
+			},
 			goToDetail(item) {
 				uni.navigateTo({
 					url: `/pages/work-order/detail?id=${item.id}`

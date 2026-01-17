@@ -57,23 +57,58 @@
 		data() {
 			return {
 				order: {
-					// Mock Data
-					orderNo: 'JS202601150001',
-					creator: '王师傅',
-					customerName: '张三',
-					phone: '13800138000',
-					address: 'XX省XX市XX村',
-					serviceType: '维修',
-					faultCategory: '发动机',
-					faultDesc: '发动机启动困难，有异响。',
-					handleDesc: '更换了火花塞，清洗了积碳，测试正常。'
+					orderNo: '',
+					creator: '',
+					customerName: '',
+					phone: '',
+					address: '',
+					serviceType: '',
+					faultCategory: '',
+					faultDesc: '',
+					handleDesc: ''
 				}
 			}
 		},
 		onLoad(options) {
 			if (options.id) {
-				// TODO: Fetch detail from ID
-				console.log('Loading order:', options.id);
+				this.loadDetail(options.id);
+			}
+		},
+		methods: {
+			loadDetail(id) {
+				uni.showLoading({ title: '加载中' });
+				uniCloud.callFunction({
+					name: 'work-order-manager',
+					data: {
+						action: 'get',
+						params: { id },
+						uniIdToken: uni.getStorageSync('uni_id_token')
+					},
+					success: (res) => {
+						uni.hideLoading();
+						if (res.result.code === 0) {
+							const data = res.result.data;
+							// Map DB structure to View structure
+							this.order = {
+								orderNo: data.orderNo,
+								creator: '自填', // Could fetch creator name if needed
+								customerName: data.customerInfo?.name,
+								phone: data.customerInfo?.phone,
+								address: data.customerInfo?.address,
+								serviceType: data.serviceInfo?.type,
+								faultCategory: data.serviceInfo?.faultCategory,
+								faultDesc: data.serviceInfo?.faultDesc,
+								handleDesc: data.serviceInfo?.handleDesc
+							};
+						} else {
+							uni.showToast({ title: '加载失败', icon: 'none' });
+						}
+					},
+					fail: () => {
+						uni.hideLoading();
+						uni.showToast({ title: '网络错误', icon: 'none' });
+					}
+				});
 			}
 		}
 	}

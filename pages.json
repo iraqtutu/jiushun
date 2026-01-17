@@ -37,6 +37,13 @@
 			"style": {
 				"navigationBarTitleText": "工单详情"
 			}
+		},
+		{
+			"path": "pages/admin/approval",
+			"style": {
+				"navigationBarTitleText": "成员审批",
+				"enablePullDownRefresh": true
+			}
 		}
 	],
 	"globalStyle": {

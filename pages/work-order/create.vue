@@ -39,6 +39,14 @@
 				<text class="label">经销商</text>
 				<input class="input" v-model="formData.customer.distributorName" placeholder="经销商名称" />
 			</view>
+			<view class="form-item">
+				<text class="label required">报修时间</text>
+				<picker mode="date" @change="onReportDateChange">
+					<view class="picker-view">
+						{{ formData.customer.reportTime }}
+					</view>
+				</picker>
+			</view>
 		</view>
 
 		<!-- Section C: Product Info -->
@@ -107,18 +115,40 @@
 				<textarea class="textarea" v-model="formData.service.handleDesc" placeholder="描述维修过程" />
 			</view>
 			
-			<!-- Parts List could be a sub-list UI, skipping complex dynamic list for MVP, just a simple add button placeholder -->
+			<view class="form-item">
+				<text class="label required">维修完成时间</text>
+				<picker mode="time" @change="onFinishTimeChange">
+					<view class="picker-view">
+						{{ formData.service.finishTime || '请选择时间' }}
+					</view>
+				</picker>
+			</view>
+			
 			<view class="form-item column">
-				<text class="label">更换零件</text>
-				<button size="mini" @click="addPart">添加零件</button>
-				<view v-for="(part, idx) in formData.service.parts" :key="idx" class="part-row">
-					<input v-model="part.name" placeholder="名称" class="mini-input" />
-					<input v-model="part.count" type="number" placeholder="数量" class="mini-input small" />
+				<view class="part-header">
+					<text class="label">更换零件</text>
+					<button size="mini" type="primary" @click="addPart">+ 添加</button>
+				</view>
+				
+				<view v-for="(part, idx) in formData.service.parts" :key="idx" class="part-card">
+					<view class="part-row">
+						<input v-model="part.name" placeholder="零件名称" class="mini-input" />
+						<input v-model="part.code" placeholder="图号" class="mini-input" />
+						<input v-model="part.count" type="number" placeholder="数量" class="mini-input small" />
+						<text class="del-btn" @click="removePart(idx)">×</text>
+					</view>
+					<view class="part-row">
+						<text class="sub-label">旧件处理：</text>
+						<radio-group @change="(e) => onPartActionChange(e, idx)" class="radio-group small">
+							<label class="radio"><radio value="带回" :checked="part.oldPartAction === '带回'" />带回</label>
+							<label class="radio"><radio value="丢弃" :checked="part.oldPartAction === '丢弃'" />丢弃</label>
+						</radio-group>
+					</view>
 				</view>
 			</view>
 			
 			<view class="form-item column">
-				<text class="label">现场照片 (1-5张)</text>
+				<text class="label required">现场照片 (最少{{ formData.service.parts.length > 0 ? formData.service.parts.length : 1 }}张)</text>
 				<view class="photo-grid">
 					<view class="upload-box small" @click="chooseImage('site')">
 						<text>+</text>
@@ -161,7 +191,8 @@
 						phone: '',
 						address: '',
 						usageType: '自用',
-						distributorName: ''
+						distributorName: '',
+						reportTime: ''
 					},
 					product: {
 						machineNo: '',
@@ -175,6 +206,7 @@
 						faultCategory: '',
 						faultDesc: '',
 						handleDesc: '',
+						finishTime: '',
 						parts: [],
 						sitePhotos: []
 					},
@@ -186,7 +218,14 @@
 		},
 		onLoad() {
 			const userInfo = uni.getStorageSync('userInfo');
-			this.currentUser = userInfo ? userInfo.name : '未知用户';
+			this.currentUser = userInfo ? (userInfo.nickname || userInfo.name) : '未知用户';
+			
+			// Default Report Time to Today
+			const now = new Date();
+			this.formData.customer.reportTime = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+			
+			// Default Finish Time to Now
+			this.formData.service.finishTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 			
 			// Generate Order No (Mock)
 			const dateStr = new Date().toISOString().slice(0,10).replace(/-/g, '');
@@ -224,11 +263,19 @@
 			},
 			onUsageChange(e) { this.formData.customer.usageType = e.detail.value; },
 			onDateChange(e) { this.formData.product.productionDate = e.detail.value; },
+			onReportDateChange(e) { this.formData.customer.reportTime = e.detail.value; },
 			onServiceTypeChange(e) { this.formData.service.type = this.serviceTypes[e.detail.value]; },
 			onFaultCatChange(e) { this.formData.service.faultCategory = this.faultCategories[e.detail.value]; },
+			onFinishTimeChange(e) { this.formData.service.finishTime = e.detail.value; },
 			
 			addPart() {
-				this.formData.service.parts.push({ name: '', count: 1 });
+				this.formData.service.parts.push({ name: '', code: '', count: 1, oldPartAction: '带回' });
+			},
+			removePart(index) {
+				this.formData.service.parts.splice(index, 1);
+			},
+			onPartActionChange(e, index) {
+				this.formData.service.parts[index].oldPartAction = e.detail.value;
 			},
 			
 			chooseImage(type) {
@@ -253,30 +300,137 @@
 				})
 			},
 			
-			submitOrder() {
+			async submitOrder() {
 				// Validate
 				if (!this.formData.customer.name || !this.formData.product.machineNo) {
 					uni.showToast({ title: '请完善必填信息', icon: 'none' });
 					return;
 				}
 				
-				uni.showModal({
-					title: '确认提交',
-					content: '提交后将无法修改，是否确认？',
-					success: (res) => {
-						if (res.confirm) {
-							// TODO: Cloud Submit
-							console.log('Submitting:', this.formData);
-							uni.showLoading({ title: '提交中' });
-							setTimeout(() => {
-								uni.hideLoading();
-								uni.removeStorageSync('order_draft'); // Clear draft
-								uni.showToast({ title: '提交成功' });
-								setTimeout(() => uni.navigateBack(), 1500);
-							}, 1500);
-						}
+				// Validate Site Photos
+				const partCount = this.formData.service.parts.length;
+				const photoCount = this.formData.service.sitePhotos.length;
+				const minPhotos = partCount > 0 ? partCount : 1;
+				
+				if (photoCount < minPhotos) {
+					uni.showToast({ 
+						title: `现场照片不足，需至少${minPhotos}张`, 
+						icon: 'none' 
+					});
+					return;
+				}
+				
+				if (!this.formData.service.finishTime) {
+					uni.showToast({ title: '请选择维修完成时间', icon: 'none' });
+					return;
+				}
+				
+				uni.showLoading({ title: '正在提交...' });
+				
+				try {
+					const orderNo = this.formData.orderNo;
+					
+					// 1. Upload Images to Order Directory
+					const platePhotoId = await this.uploadFile(this.formData.product.platePhoto, orderNo);
+					const confirmPhotoId = await this.uploadFile(this.formData.confirm.machineUserPhoto, orderNo);
+					
+					// Upload multiple site photos
+					const sitePhotoIds = [];
+					for (let i = 0; i < this.formData.service.sitePhotos.length; i++) {
+						const fid = await this.uploadFile(this.formData.service.sitePhotos[i], orderNo);
+						if (fid) sitePhotoIds.push(fid);
 					}
-				})
+					
+					// 2. Prepare Data (Convert Types)
+					const orderData = {
+						orderNo: this.formData.orderNo,
+						customerInfo: {
+							...this.formData.customer,
+							reportTime: new Date(this.formData.customer.reportTime).getTime()
+						},
+						productInfo: {
+							...this.formData.product,
+							platePhoto: platePhotoId, // Use Cloud ID
+							productionDate: this.formData.product.productionDate ? new Date(this.formData.product.productionDate).getTime() : Date.now()
+						},
+						serviceInfo: {
+							...this.formData.service,
+							sitePhotos: sitePhotoIds, // Use Cloud IDs
+							finishTime: Date.now() // Note: Should we combine reportTime date + finishTime? 
+							// Simplification: We only took "Time" from picker. Assuming Today's date + Time.
+							// Better approach: Just store the string or combine.
+							// Let's store the string for now or use the current Date object modified with the time.
+						},
+						customerConfirm: {
+							machineUserPhoto: confirmPhotoId // Use Cloud ID
+						}
+					};
+					
+					// Fix finishTime timestamp
+					const today = new Date();
+					const [hours, mins] = this.formData.service.finishTime.split(':');
+					today.setHours(hours, mins, 0, 0);
+					orderData.serviceInfo.finishTime = today.getTime();
+					
+					// 3. Call Cloud Function
+					uniCloud.callFunction({
+						name: 'work-order-manager',
+						data: {
+							action: 'create',
+							params: orderData,
+							uniIdToken: uni.getStorageSync('uni_id_token')
+						},
+						success: (cloudRes) => {
+							uni.hideLoading();
+							if (cloudRes.result.code === 0) {
+								uni.removeStorageSync('order_draft');
+								uni.showToast({ title: '提交成功' });
+								setTimeout(() => {
+									uni.reLaunch({ url: '/pages/index/index' });
+								}, 1500);
+							} else {
+								console.error('Submit Error:', cloudRes.result);
+								uni.showToast({ title: '提交失败: ' + (cloudRes.result.msg || '未知错误'), icon: 'none' });
+							}
+						},
+						fail: (err) => {
+							uni.hideLoading();
+							uni.showToast({ title: '网络错误', icon: 'none' });
+							console.error(err);
+						}
+					});
+					
+				} catch (e) {
+					uni.hideLoading();
+					uni.showToast({ title: '上传图片失败', icon: 'none' });
+					console.error(e);
+				}
+			},
+			
+			uploadFile(filePath, folderName) {
+				return new Promise((resolve, reject) => {
+					// Only skip if empty or already a cloud:// ID
+					if (!filePath || filePath.startsWith('cloud://')) {
+						resolve(filePath);
+						return;
+					}
+					
+					const ext = filePath.split('.').pop();
+					// Construct path: folderName/timestamp_random.ext
+					const cloudPath = `${folderName}/${Date.now()}_${Math.floor(Math.random()*1000)}.${ext}`;
+					
+					uniCloud.uploadFile({
+						filePath: filePath,
+						cloudPath: cloudPath,
+						success: (res) => {
+							resolve(res.fileID);
+						},
+						fail: (err) => {
+							console.error('Upload Fail:', err);
+							reject(err);
+						}
+					});
+				});
 			}
 		}
 	}
@@ -324,7 +478,7 @@
 		}
 		
 		.label {
-			width: 90px;
+			width: 110px;
 			font-size: 14px;
 			color: #333;
 			
@@ -404,21 +558,62 @@
 		}
 	}
 	
+	.part-header {
+		display: flex;
+		justify-content: space-between;
+		width: 100%;
+		margin-bottom: 10px;
+	}
+	
+	.part-card {
+		width: 100%;
+		background: #f8f8f8;
+		padding: 10px;
+		border-radius: 4px;
+		margin-bottom: 10px;
+		border: 1px solid #eee;
+	}
+	
 	.part-row {
 		display: flex;
-		gap: 10px;
-		margin-top: 10px;
-		width: 100%;
+		align-items: center;
+		gap: 5px;
+		margin-bottom: 5px;
+		
+		&:last-child { margin-bottom: 0; }
 		
 		.mini-input {
-			background: #f8f8f8;
+			flex: 1;
+			background: #fff;
 			padding: 5px;
-			border-radius: 4px;
-			font-size: 14px;
+			border-radius: 2px;
+			font-size: 13px;
+			border: 1px solid #ddd;
 			
 			&.small {
-				width: 60px;
+				flex: 0 0 50px;
 				text-align: center;
+			}
+		}
+		
+		.del-btn {
+			color: #ff5252;
+			font-size: 20px;
+			padding: 0 5px;
+		}
+		
+		.sub-label {
+			font-size: 12px;
+			color: #666;
+		}
+		
+		.radio-group.small {
+			display: flex;
+			
+			.radio {
+				font-size: 12px;
+				margin-right: 10px;
+				transform: scale(0.9);
 			}
 		}
 	}

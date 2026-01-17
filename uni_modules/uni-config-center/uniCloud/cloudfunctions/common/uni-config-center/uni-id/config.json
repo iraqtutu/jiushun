@@ -20,8 +20,8 @@
 	"mp-weixin": {
 		"oauth": {
 			"weixin": {
-				"appid": "weixin_appid",
-				"appsecret": "weixin_appsecret"
+				"appid": "wxa848103d74750b7e",
+				"appsecret": "255dbf9f4a85c173c398445cbe682151"
 			}
 		}
 	},

@@ -7,67 +7,59 @@
 
 ## Tech Stack
 - **Framework**: UniApp (Cross-platform framework)
-- **Language**: JavaScript / Vue.js (Supports Vue 2/3 conditional, verify specific usage in components)
+- **Language**: JavaScript / Vue.js
 - **Backend/Cloud**: uniCloud (Aliyun provider)
 - **Database**: uniCloud JSON Database (JQL)
-- **Auth**: uni-id (Role-based access control)
+- **Auth**: uni-id (Role-based access control, WeChat Login)
 - **Target Platform**: WeChat Mini Program (MP-WEIXIN)
 
 ## Key Documents
-- `requirements.md`: Detailed Product Requirements Document (PRD). **Always align implementation with this file.**
+- `requirements.md`: Detailed Product Requirements Document (PRD) v1.3.
 
 ## Project Structure
 - `pages/`:
-  - `login/`: Authentication (`login.vue`).
+  - `login/`: Authentication (`login.vue`). Handles WeChat Auto-Login & Permission Check.
   - `register/`: Account application (`apply.vue`).
-  - `index/`: Dashboard (`index.vue`).
+  - `admin/`: Admin-only features (`approval.vue`).
+  - `index/`: Dashboard (`index.vue`). Auto-refreshes user info on show.
   - `work-order/`: Work order management (`create.vue`, `list.vue`, `detail.vue`).
 - `uniCloud-aliyun/`:
   - `database/`:
-    - `jiushun-work-orders.schema.json`: Work order schema.
-    - `jiushun-account-applications.schema.json`: Account application schema.
+    - `jiushun-work-orders.schema.json`
+    - `jiushun-account-applications.schema.json`
   - `cloudfunctions/`:
-    - `admin-init/`: Script to initialize the admin account.
+    - `user-center`: Handles Login, Registration, Admin Approval.
+    - `work-order-manager`: Handles Work Order CRUD.
+    - `admin-init`: Script to initialize the first admin.
 - `uni_modules/`:
-  - `uni-config-center`: Configuration for `uni-id` (see `uni-id/config.json`).
-- `static/`: Static assets (images, icons).
-- `App.vue`: Root component.
-- `main.js`: Entry point.
-- `pages.json`: Routing and navigation bar configuration.
+  - `uni-config-center`: Configuration for `uni-id` (WeChat AppID/Secret).
 
 ## Development Guidelines
-1.  **UI/UX**:
-    - Follow standard WeChat Mini Program design patterns.
-    - Ensure inputs are user-friendly for field personnel (larger tap targets, clear labels).
-2.  **Data Management**:
-    - Use `uniCloud` for all data persistence.
-    - Schema definitions reside in `uniCloud-aliyun/database/`.
-3.  **Coding Style**:
-    - Use meaningful variable names (English preferred for code, Chinese allowed for comments/UI text).
-    - Keep logic modular.
-4.  **Specific Features**:
-    - **Offline/Drafts**: Work orders are cached locally (`uni.setStorageSync`) to allow resuming later.
-    - **Auth**: `uni-id` based auth. User registration requires admin approval.
-    - **Admin**: "Super Admin" initialized via `admin-init` cloud function.
+1.  **Auth Flow**:
+    - Users login via WeChat (`user-center/login`).
+    - New users are "Guests". Must apply via `pages/register/apply`.
+    - Admins (`admin` role) approve applications via `pages/admin/approval`.
+    - Approval updates the User's `role` and `mobile` in `uni-id-users`.
+2.  **Work Orders**:
+    - Images are uploaded to `cloud://<OrderNo>/<filename>` structure.
+    - Dates are stored as Timestamps.
+    - Drafts are saved to local storage.
+3.  **Permissions**:
+    - `admin`: Full access + Member Approval.
+    - `玖顺员工`: Create/View Orders (No Approval).
+    - `经销商/服务人员`: Create/View Own Orders.
 
-## Current Status (as of 2026-01-16)
-- **Requirements**: Finalized (`requirements.md` v1.2).
-- **Database**: Schemas for Work Orders and Account Applications created.
-- **Frontend**:
-  - Login Page (Mock logic).
-  - Account Application Page (Mock logic).
-  - Dashboard (Mock logic).
-  - Work Order Creation (Full UI + Draft Logic + Mock Submit).
-  - Work Order List/Detail (Mock logic).
-- **Backend**:
-  - `uni-id` configured (`config.json`).
-  - `admin-init` cloud function created.
+## Current Status (as of 2026-01-17)
+- **Core Features Complete**:
+  - WeChat Login & Role Check.
+  - Account Application & Admin Approval Workflow.
+  - Work Order Creation (with Image Uploads & Drafts).
+  - Work Order List & Details (Real Data).
+- **Backend Integrated**:
+  - Real Cloud Functions (`user-center`, `work-order-manager`) replaced mocks.
+  - `uni-id` configured with real credentials.
 
 ## Next Steps
-1.  **Backend Integration**:
-    - Replace Mock Login with `uni-id-co` or custom cloud function login.
-    - Connect "Account Application" to `jiushun-account-applications` collection.
-    - Connect "Work Order Submit" to `jiushun-work-orders` collection.
-2.  **Admin Features**: Implement "Account Approval" page for admin users.
-3.  **OCR**: Integrate external OCR API for nameplate recognition.
-4.  **Testing**: Verify flow from Login -> Create Order -> View Order on Simulator/Device.
+1.  **OCR Integration**: Implement the actual OCR API call in `create.vue`.
+2.  **UI Polish**: Improve status messages, loading states, and error handling.
+3.  **Testing**: Comprehensive testing on actual devices.

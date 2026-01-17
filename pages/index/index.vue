@@ -2,7 +2,7 @@
 	<view class="container">
 		<view class="user-info-card">
 			<view class="greeting">欢迎你，{{ userName }}</view>
-			<view class="role-tag">服务人员</view> <!-- Placeholder role -->
+			<view class="role-tag">{{ userRoles }}</view>
 		</view>
 		
 		<view class="menu-grid">
@@ -17,6 +17,12 @@
 				<text class="menu-title">我的工单</text>
 				<text class="menu-desc">查看历史提交记录</text>
 			</view>
+			
+			<view v-if="isAdmin" class="menu-item admin" @click="navTo('/pages/admin/approval')">
+				<view class="icon">👮</view>
+				<text class="menu-title">成员审批</text>
+				<text class="menu-desc">审核新用户申请</text>
+			</view>
 		</view>
 		
 		<button class="logout-btn" @click="handleLogout">退出登录</button>
@@ -27,16 +33,51 @@
 	export default {
 		data() {
 			return {
-				userName: '用户'
+				userName: '用户',
+				userRoles: '',
+				isAdmin: false
 			}
 		},
 		onShow() {
-			const userInfo = uni.getStorageSync('userInfo');
-			if (userInfo && userInfo.name) {
-				this.userName = userInfo.name;
-			}
+			this.updateLocalInfo();
+			this.refreshUserInfo();
 		},
 		methods: {
+			updateLocalInfo() {
+				const userInfo = uni.getStorageSync('userInfo');
+				if (userInfo) {
+					this.userName = userInfo.nickname || userInfo.name || '用户';
+					
+					const roles = userInfo.role || [];
+					this.userRoles = roles.length > 0 ? roles.join(' / ') : '未授权用户';
+					
+					// Only 'admin' can see the approval menu
+					this.isAdmin = roles.includes('admin');
+				}
+			},
+			refreshUserInfo() {
+				// Silent refresh to check latest roles
+				uni.login({
+					provider: 'weixin',
+					success: (loginRes) => {
+						uniCloud.callFunction({
+							name: 'user-center',
+							data: {
+								action: 'login', // Re-using login to get fresh info
+								params: { code: loginRes.code }
+							},
+							success: (res) => {
+								if (res.result.code === 0) {
+									const freshInfo = res.result.userInfo;
+									// Preserve token, just update info
+									uni.setStorageSync('userInfo', freshInfo);
+									this.updateLocalInfo();
+								}
+							}
+						});
+					}
+				});
+			},
 			navTo(url) {
 				uni.navigateTo({ url });
 			},
@@ -101,6 +142,10 @@
 		
 		&.secondary {
 			background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+		}
+		
+		&.admin {
+			background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
 		}
 		
 		.icon {
