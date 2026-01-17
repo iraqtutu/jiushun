@@ -70,7 +70,7 @@
 			</view>
 			
 			<view class="form-item column">
-				<text class="label required">铭牌照片 (支持OCR识别)</text>
+				<text class="label required">铭牌照片</text>
 				<view class="upload-box" @click="chooseImage('plate')">
 					<image v-if="formData.product.platePhoto" :src="formData.product.platePhoto" mode="aspectFill" class="preview-img"></image>
 					<view v-else class="placeholder">
@@ -81,9 +81,9 @@
 			</view>
 			
 			<view class="form-item">
-				<text class="label">产品型号</text>
+				<text class="label required">产品型号</text>
 				<!-- Combo of Select and Manual input could be complex, using input for now or picker -->
-				<input class="input" v-model="formData.product.model" placeholder="自动识别或手动输入" />
+				<input class="input" v-model="formData.product.model" placeholder="产品型号" />
 			</view>
 		</view>
 
@@ -127,23 +127,35 @@
 			<view class="form-item column">
 				<view class="part-header">
 					<text class="label">更换零件</text>
-					<button size="mini" type="primary" @click="addPart">+ 添加</button>
+					<button size="mini" type="primary" @click="addPart" style="margin:0;">+ 添加</button>
 				</view>
 				
-				<view v-for="(part, idx) in formData.service.parts" :key="idx" class="part-card">
-					<view class="part-row">
-						<input v-model="part.name" placeholder="零件名称" class="mini-input" />
+				<view v-for="(part, idx) in formData.service.parts" :key="idx" class="part-card compact">
+					<!-- Col 1: Name & Code -->
+					<view class="col-inputs">
+						<input v-model="part.name" placeholder="零件名称" class="mini-input mb-5" />
 						<input v-model="part.code" placeholder="图号" class="mini-input" />
-						<input v-model="part.count" type="number" placeholder="数量" class="mini-input small" />
-						<text class="del-btn" @click="removePart(idx)">×</text>
 					</view>
-					<view class="part-row">
-						<text class="sub-label">旧件处理：</text>
-						<radio-group @change="(e) => onPartActionChange(e, idx)" class="radio-group small">
-							<label class="radio"><radio value="带回" :checked="part.oldPartAction === '带回'" />带回</label>
-							<label class="radio"><radio value="丢弃" :checked="part.oldPartAction === '丢弃'" />丢弃</label>
+					
+					<!-- Col 2: Count -->
+					<view class="col-count">
+						<view class="stepper">
+							<view class="step-btn" @click.stop="updatePartCount(idx, -1)">-</view>
+							<text class="step-val">{{ part.count }}</text>
+							<view class="step-btn" @click.stop="updatePartCount(idx, 1)">+</view>
+						</view>
+					</view>
+					
+					<!-- Col 3: Action -->
+					<view class="col-action">
+						<radio-group @change="(e) => onPartActionChange(e, idx)" class="radio-group-stack">
+							<label class="radio-label"><radio value="带回" :checked="part.oldPartAction === '带回'" color="#007aff" style="transform:scale(0.6)" />带回</label>
+							<label class="radio-label"><radio value="丢弃" :checked="part.oldPartAction === '丢弃'" color="#ff5252" style="transform:scale(0.6)" />丢弃</label>
 						</radio-group>
 					</view>
+					
+					<!-- Col 4: Del -->
+					<view class="col-del" @click="removePart(idx)">×</view>
 				</view>
 			</view>
 			
@@ -271,6 +283,13 @@
 			addPart() {
 				this.formData.service.parts.push({ name: '', code: '', count: 1, oldPartAction: '带回' });
 			},
+			updatePartCount(index, delta) {
+				const part = this.formData.service.parts[index];
+				const newCount = (part.count || 0) + delta;
+				if (newCount >= 1) {
+					part.count = newCount;
+				}
+			},
 			removePart(index) {
 				this.formData.service.parts.splice(index, 1);
 			},
@@ -288,7 +307,7 @@
 							// Mock OCR call here
 							uni.showToast({ title: '正在识别...', icon: 'loading' });
 							setTimeout(() => {
-								this.formData.product.model = 'OCR-Model-X100'; // Mock result
+								this.formData.product.model = ''; // Mock result
 								uni.hideToast();
 							}, 1000);
 						} else if (type === 'confirm') {
@@ -478,7 +497,7 @@
 		}
 		
 		.label {
-			width: 110px;
+			width: 130px;
 			font-size: 14px;
 			color: #333;
 			
@@ -561,60 +580,106 @@
 	.part-header {
 		display: flex;
 		justify-content: space-between;
+		align-items: center;
 		width: 100%;
 		margin-bottom: 10px;
 	}
 	
-	.part-card {
+	.part-card.compact {
+		display: flex;
+		align-items: stretch;
 		width: 100%;
 		background: #f8f8f8;
-		padding: 10px;
+		padding: 5px;
 		border-radius: 4px;
-		margin-bottom: 10px;
+		margin-bottom: 8px;
 		border: 1px solid #eee;
-	}
-	
-	.part-row {
-		display: flex;
-		align-items: center;
 		gap: 5px;
-		margin-bottom: 5px;
 		
-		&:last-child { margin-bottom: 0; }
-		
-		.mini-input {
-			flex: 1;
-			background: #fff;
-			padding: 5px;
-			border-radius: 2px;
-			font-size: 13px;
-			border: 1px solid #ddd;
-			
-			&.small {
-				flex: 0 0 50px;
-				text-align: center;
-			}
-		}
-		
-		.del-btn {
-			color: #ff5252;
-			font-size: 20px;
-			padding: 0 5px;
-		}
-		
-		.sub-label {
-			font-size: 12px;
-			color: #666;
-		}
-		
-		.radio-group.small {
+		.col-inputs {
+			flex: 2;
 			display: flex;
+			flex-direction: column;
+			justify-content: center;
 			
-			.radio {
-				font-size: 12px;
-				margin-right: 10px;
-				transform: scale(0.9);
+			.mini-input {
+				background: #fff;
+				padding: 2px 5px;
+				font-size: 13px;
+				border: 1px solid #ddd;
+				border-radius: 2px;
+				height: 28px;
+				
+				&.mb-5 { margin-bottom: 4px; }
 			}
+		}
+		
+		.col-count {
+			width: 70px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			
+			.stepper {
+				display: flex;
+				align-items: center;
+				border: 1px solid #ddd;
+				border-radius: 4px;
+				background: #fff;
+				overflow: hidden;
+				
+				.step-btn {
+					width: 20px;
+					height: 24px;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					background: #f0f0f0;
+					font-size: 16px;
+					font-weight: bold;
+					color: #555;
+					
+					&:active { background: #e0e0e0; }
+				}
+				
+				.step-val {
+					width: 24px;
+					text-align: center;
+					font-size: 13px;
+					border-left: 1px solid #eee;
+					border-right: 1px solid #eee;
+				}
+			}
+		}
+		
+		.col-action {
+			width: 65px;
+			display: flex;
+			align-items: center;
+			
+			.radio-group-stack {
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+				
+				.radio-label {
+					font-size: 11px;
+					display: flex;
+					align-items: center;
+					margin-bottom: 2px;
+					white-space: nowrap;
+				}
+			}
+		}
+		
+		.col-del {
+			width: 25px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: #ff5252;
+			font-size: 24px;
+			font-weight: bold;
 		}
 	}
 	
