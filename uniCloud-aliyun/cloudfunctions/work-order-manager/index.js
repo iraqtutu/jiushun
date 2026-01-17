@@ -62,15 +62,32 @@ exports.main = async (event, context) => {
 		const { id } = params
 		if (!id) return { code: 400, msg: 'ID required' }
 		
-		const res = await db.collection('jiushun-work-orders').doc(id).get()
+		// Use aggregate to join with user info
+		const res = await db.collection('jiushun-work-orders').aggregate()
+			.match({
+				_id: id
+			})
+			.lookup({
+				from: 'uni-id-users',
+				localField: 'creator_uid',
+				foreignField: '_id',
+				as: 'userInfo'
+			})
+			.end()
 		
 		if (res.data.length === 0) return { code: 404, msg: '工单不存在' }
 		
-		// Optional: Permission check (is creator or admin?)
+		const order = res.data[0]
+		// Flatten userInfo for easier frontend access
+		if (order.userInfo && order.userInfo.length > 0) {
+			order.userInfo = {
+				nickname: order.userInfo[0].nickname || order.userInfo[0].name
+			}
+		}
 		
 		return {
 			code: 0,
-			data: res.data[0]
+			data: order
 		}
 	}
 

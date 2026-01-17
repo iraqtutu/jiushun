@@ -24,8 +24,6 @@
 				<text class="menu-desc">审核新用户申请</text>
 			</view>
 		</view>
-		
-		<button class="logout-btn" @click="handleLogout">退出登录</button>
 	</view>
 </template>
 
@@ -80,12 +78,6 @@
 			},
 			navTo(url) {
 				uni.navigateTo({ url });
-			},
-			handleLogout() {
-				uni.removeStorageSync('userInfo');
-				uni.reLaunch({
-					url: '/pages/login/login'
-				});
 			}
 		}
 	}
@@ -165,13 +157,5 @@
 			font-size: 14px;
 			opacity: 0.9;
 		}
-	}
-	
-	.logout-btn {
-		margin-top: 40px;
-		background: #fff;
-		color: #ff5252;
-		border: none;
-		font-size: 14px;
 	}
 </style>

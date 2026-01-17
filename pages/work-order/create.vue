@@ -1,17 +1,18 @@
 <template>
-	<view class="container">
-		<!-- Section A: Basic Info -->
-		<view class="section">
-			<view class="section-title">基础信息</view>
-			<view class="form-item">
-				<text class="label">派工单号</text>
-				<input class="input disabled" :value="formData.orderNo" disabled placeholder="自动生成" />
+	<view class="page-wrapper">
+		<view class="container">
+			<!-- Section A: Basic Info -->
+			<view class="section">
+				<view class="section-title">基础信息</view>
+				<view class="form-item">
+					<text class="label">派工单号</text>
+					<input class="input disabled" :value="formData.orderNo" disabled placeholder="自动生成" />
+				</view>
+				<view class="form-item">
+					<text class="label">填单人</text>
+					<input class="input disabled" :value="currentUser" disabled />
+				</view>
 			</view>
-			<view class="form-item">
-				<text class="label">填单人</text>
-				<input class="input disabled" :value="currentUser" disabled />
-			</view>
-		</view>
 
 		<!-- Section B: Customer Info -->
 		<view class="section">
@@ -114,16 +115,7 @@
 				<text class="label required">处理方法</text>
 				<textarea class="textarea" v-model="formData.service.handleDesc" placeholder="描述维修过程" />
 			</view>
-			
-			<view class="form-item">
-				<text class="label required">维修完成时间</text>
-				<picker mode="time" @change="onFinishTimeChange">
-					<view class="picker-view">
-						{{ formData.service.finishTime || '请选择时间' }}
-					</view>
-				</picker>
-			</view>
-			
+					
 			<view class="form-item column">
 				<view class="part-header">
 					<text class="label">更换零件</text>
@@ -168,6 +160,15 @@
 					<image v-for="(img, idx) in formData.service.sitePhotos" :key="idx" :src="img" class="grid-img" mode="aspectFill"></image>
 				</view>
 			</view>
+			
+			<view class="form-item">
+				<text class="label required">维修完成时间</text>
+				<picker mode="time" @change="onFinishTimeChange">
+					<view class="picker-view">
+						{{ formData.service.finishTime || '请选择时间' }}
+					</view>
+				</picker>
+			</view>
 		</view>
 
 		<!-- Section E: Confirmation -->
@@ -186,6 +187,7 @@
 		</view>
 
 		<button class="btn-submit" @click="submitOrder">提交工单</button>
+		</view>
 	</view>
 </template>
 
