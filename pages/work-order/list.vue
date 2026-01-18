@@ -54,6 +54,12 @@
 		<view v-if="list.length === 0" class="empty-state">
 			<text>暂无工单记录</text>
 		</view>
+		
+		<!-- Floating Export Button -->
+		<view class="fab-export" v-if="isAdmin && list.length > 0" @click.stop="exportData">
+			<text class="icon">📥</text>
+			<text class="text">导出汇总</text>
+		</view>
 	</view>
 </template>
 
@@ -149,16 +155,51 @@
 					success: (res) => {
 						this.isLoading = false;
 						if (res.result.code === 0) {
-							// Transform data for display if needed
-							this.list = res.result.data.map(item => ({
-								id: item._id,
-								orderNo: item.orderNo,
-								customerName: item.customerInfo?.name || '未知',
-								serviceType: item.serviceInfo?.type || '未知',
-								machineNo: item.productInfo?.machineNo || '-',
-								submitTime: this.formatDate(item.create_date),
-								reporterName: item.reporterName
-							}));
+							// Transform data for display and export
+							this.list = res.result.data.map(item => {
+								const c = item.customerInfo || {};
+								const p = item.productInfo || {};
+								const s = item.serviceInfo || {};
+								
+								// Process parts list into a readable string: 零件A(型号A)x4 旧件:丢弃; 零件B...
+								const partsStr = (s.parts || []).map(pt => 
+									`${pt.name}(${pt.code})x${pt.count} 旧件:${pt.oldPartAction || '未知'}`
+								).join('; ');
+								
+								return {
+									id: item._id,
+									orderNo: item.orderNo,
+									reporterName: item.reporterName || '未知',
+									submitTime: this.formatDate(item.create_date),
+									
+									// Customer
+									distributorName: c.distributorName || '-',
+									customerName: c.name || '未知',
+									customerPhone: c.phone || '-',
+									customerAddress: c.address || '-',
+									usageType: c.usageType || '-',
+									reportTime: this.formatDate(c.reportTime),
+									
+									// Product
+									productModel: p.model || '-',
+									machineNo: p.machineNo || '-',
+									engineNo: p.engineNo || '-',
+									productionDate: this.formatDateSimple(new Date(p.productionDate)),
+									
+									// Service
+									serviceType: s.type || '未知',
+									faultCategory: s.faultCategory || '-',
+									faultDesc: s.faultDesc || '-',
+									handleDesc: s.handleDesc || '-',
+									partsInfo: partsStr || '无',
+									finishTime: this.formatDate(s.finishTime),
+									
+									// Image IDs for export
+									platePhoto: p.platePhoto,
+									sitePhotos: s.sitePhotos || [],
+									machineUserPhoto: item.customerConfirm?.machineUserPhoto
+								};
+							});
 						} else {
 							uni.showToast({ title: '加载失败', icon: 'none' });
 						}
@@ -167,6 +208,162 @@
 						this.isLoading = false;
 						console.error(err);
 						uni.showToast({ title: '网络错误', icon: 'none' });
+					}
+				});
+			},
+			async exportData() {
+				if (this.list.length === 0) return;
+				
+				uni.showLoading({ title: '正在获取图片链接...' });
+				
+				// 1. Collect all image IDs
+				let allFileIds = [];
+				this.list.forEach(item => {
+					if (item.platePhoto) allFileIds.push(item.platePhoto);
+					if (item.machineUserPhoto) allFileIds.push(item.machineUserPhoto);
+					if (item.sitePhotos && item.sitePhotos.length > 0) {
+						allFileIds = allFileIds.concat(item.sitePhotos);
+					}
+				});
+				
+				// 2. Convert Cloud IDs to HTTP URLs
+				let urlMap = {};
+				if (allFileIds.length > 0) {
+					try {
+						const res = await uniCloud.getTempFileURL({
+							fileList: allFileIds
+						});
+						// Debug log
+						console.log('getTempFileURL result:', res);
+						
+						res.fileList.forEach(file => {
+							// Check if tempFileURL exists (Aliyun/Tencent compatibility)
+							if (file.tempFileURL) {
+								urlMap[file.fileID] = file.tempFileURL;
+							}
+						});
+					} catch (e) {
+						console.error('获取链接失败', e);
+						uni.showToast({ title: '图片链接获取失败', icon: 'none' });
+					}
+				}
+				
+				uni.showLoading({ title: '正在生成表格...' });
+				
+				// Helper to escape XML special characters
+				const escapeXml = (str) => {
+					if (!str) return '';
+					return String(str)
+						.replace(/&/g, '&amp;')
+						.replace(/</g, '&lt;')
+						.replace(/>/g, '&gt;')
+						.replace(/"/g, '&quot;')
+						.replace(/'/g, '&apos;');
+				};
+				
+				// Excel 2003 XML Template Header
+				let xmlContent = `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <Worksheet ss:Name="工单汇总">
+  <Table>
+   <Row>
+    <Cell><Data ss:Type="String">派工单号</Data></Cell>
+    <Cell><Data ss:Type="String">报单人</Data></Cell>
+    <Cell><Data ss:Type="String">提交时间</Data></Cell>
+    <Cell><Data ss:Type="String">经销商名称</Data></Cell>
+    <Cell><Data ss:Type="String">客户姓名</Data></Cell>
+    <Cell><Data ss:Type="String">客户电话</Data></Cell>
+    <Cell><Data ss:Type="String">客户地址</Data></Cell>
+    <Cell><Data ss:Type="String">农机用途</Data></Cell>
+    <Cell><Data ss:Type="String">报修时间</Data></Cell>
+    <Cell><Data ss:Type="String">产品型号</Data></Cell>
+    <Cell><Data ss:Type="String">机器编号</Data></Cell>
+    <Cell><Data ss:Type="String">发动机号</Data></Cell>
+    <Cell><Data ss:Type="String">生产日期</Data></Cell>
+    <Cell><Data ss:Type="String">服务类型</Data></Cell>
+    <Cell><Data ss:Type="String">故障分类</Data></Cell>
+    <Cell><Data ss:Type="String">故障现象</Data></Cell>
+    <Cell><Data ss:Type="String">处理方法</Data></Cell>
+    <Cell><Data ss:Type="String">更换零件</Data></Cell>
+    <Cell><Data ss:Type="String">维修完成时间</Data></Cell>
+    <Cell><Data ss:Type="String">铭牌照片链接</Data></Cell>
+    <Cell><Data ss:Type="String">现场照片链接</Data></Cell>
+    <Cell><Data ss:Type="String">人机合影链接</Data></Cell>
+   </Row>`;
+				
+				// Rows
+				this.list.forEach(item => {
+					const plateUrl = urlMap[item.platePhoto] || '-';
+					const confirmUrl = urlMap[item.machineUserPhoto] || '-';
+					const siteUrls = (item.sitePhotos || []).map(fid => urlMap[fid]).filter(u => u).join(' ; ');
+
+					xmlContent += `
+   <Row>
+    <Cell><Data ss:Type="String">${escapeXml(item.orderNo)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.reporterName)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.submitTime)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.distributorName)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.customerName)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.customerPhone)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.customerAddress)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.usageType)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.reportTime)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.productModel)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.machineNo)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.engineNo)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.productionDate)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.serviceType)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.faultCategory)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.faultDesc)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.handleDesc)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.partsInfo)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.finishTime)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(plateUrl)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(siteUrls)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(confirmUrl)}</Data></Cell>
+   </Row>`;
+				});
+				
+				// Footer
+				xmlContent += `
+  </Table>
+ </Worksheet>
+</Workbook>`;
+				
+				// Use FileSystemManager to save file
+				const fs = uni.getFileSystemManager();
+				// Use .xls extension for compatibility with wx.openDocument
+				const fileName = `工单汇总_${this.formatDateSimple(new Date())}.xls`;
+				const filePath = `${wx.env.USER_DATA_PATH}/${fileName}`;
+				
+				fs.writeFile({
+					filePath: filePath,
+					data: xmlContent,
+					encoding: 'utf8',
+					success: () => {
+						uni.hideLoading();
+						uni.openDocument({
+							filePath: filePath,
+							fileType: 'xls', // Explicitly set fileType
+							showMenu: true,
+							success: function () {
+								console.log('打开文档成功');
+							},
+							fail: function(e) {
+								console.error(e);
+								uni.showToast({ title: '打开文档失败', icon: 'none' });
+							}
+						});
+					},
+					fail: (err) => {
+						uni.hideLoading();
+						console.error(err);
+						uni.showToast({ title: '导出失败', icon: 'none' });
 					}
 				});
 			},
@@ -200,6 +397,36 @@
 		padding: 15px;
 		background-color: #f5f5f5;
 		min-height: 100vh;
+		padding-bottom: 80px; /* Space for FAB */
+	}
+	
+	.fab-export {
+		position: fixed;
+		bottom: 30px;
+		right: 20px;
+		background-color: #007aff;
+		color: #fff;
+		border-radius: 50px;
+		padding: 10px 20px;
+		display: flex;
+		align-items: center;
+		box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+		z-index: 100;
+		
+		.icon {
+			margin-right: 5px;
+			font-size: 18px;
+		}
+		
+		.text {
+			font-size: 14px;
+			font-weight: bold;
+		}
+		
+		&:active {
+			opacity: 0.9;
+			transform: scale(0.98);
+		}
 	}
 	
 	.filter-header {

@@ -72,17 +72,18 @@
 					"description": "更换零件列表",
 					"items": {
 						"bsonType": "object",
+						"required": ["name", "code", "count", "oldPartAction"],
 						"properties": {
 							"name": { "bsonType": "string", "description": "零件名称" },
 							"code": { "bsonType": "string", "description": "图号" },
-							"count": { "bsonType": "int", "description": "数量" }
+							"count": { "bsonType": "int", "description": "数量" },
+							"oldPartAction": { 
+								"bsonType": "string", 
+								"enum": ["带回", "丢弃"],
+								"description": "旧件处理方式"
+							}
 						}
 					}
-				},
-				"oldPartAction": { 
-					"bsonType": "string", 
-					"enum": ["带回", "丢弃"],
-					"description": "旧件处理方式"
 				},
 				"finishTime": { "bsonType": "timestamp", "description": "维修完成时间" },
 				"sitePhotos": { 
