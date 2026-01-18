@@ -82,23 +82,15 @@
 							} else if (result.applicationStatus === 2) {
 								uni.showModal({
 									title: '申请被拒绝',
-									content: '您的申请已被拒绝，请联系管理员或重新申请。',
+									content: '您的申请已被拒绝，原因：' + (result.rejectReason || '未注明') + '。是否重新申请？',
 									confirmText: '重新申请',
 									success: (m) => {
 										if (m.confirm) uni.navigateTo({ url: '/pages/register/apply' });
 									}
 								});
 							} else {
-								// No application or unknown
-								uni.showModal({
-									title: '未授权用户',
-									content: '您当前未在授权名单中，是否前往申请？',
-									confirmText: '去申请',
-									showCancel: false,
-									success: () => {
-										uni.navigateTo({ url: '/pages/register/apply' });
-									}
-								});
+								// No application or unknown -> Automatic Jump
+								uni.reLaunch({ url: '/pages/register/apply' });
 							}
 						}
 					},

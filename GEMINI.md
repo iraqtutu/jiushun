@@ -45,16 +45,17 @@
     - Dates are stored as Timestamps.
     - Drafts are saved to local storage.
 3.  **Permissions**:
-    - `admin`: Full access + Member Approval.
-    - `玖顺员工`: Create/View Orders (No Approval).
-    - `经销商/服务人员`: Create/View Own Orders.
+    - `admin`: Full access (Member Approval + Advanced Work Order Query).
+    - `玖顺员工` / `经销商/服务人员`: Create Orders, View Own Orders Only.
 
-## Current Status (as of 2026-01-17)
+## Current Status (as of 2026-01-18)
 - **Core Features Complete**:
   - WeChat Login & Role Check.
   - Account Application & Admin Approval Workflow.
   - Work Order Creation (with Image Uploads & Drafts).
   - Work Order List & Details (Real Data).
+  - **Advanced Work Order Query** (Admin: Date/Customer/Phone/Reporter/Model, Max 100).
+  - **Role-based List Filtering** (Non-Admin: Own Orders Only, Date Filter, Max 50).
 - **Backend Integrated**:
   - Real Cloud Functions (`user-center`, `work-order-manager`) replaced mocks.
   - `uni-id` configured with real credentials.

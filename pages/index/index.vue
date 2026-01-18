@@ -14,8 +14,8 @@
 			
 			<view class="menu-item secondary" @click="navTo('/pages/work-order/list')">
 				<view class="icon">📄</view>
-				<text class="menu-title">我的工单</text>
-				<text class="menu-desc">查看历史提交记录</text>
+				<text class="menu-title">{{ isAdmin ? '工单查询' : '我的工单' }}</text>
+				<text class="menu-desc">{{ isAdmin ? '查询所有工单记录' : '查看历史提交记录' }}</text>
 			</view>
 			
 			<view v-if="isAdmin" class="menu-item admin" @click="navTo('/pages/admin/approval')">
@@ -44,13 +44,25 @@
 			updateLocalInfo() {
 				const userInfo = uni.getStorageSync('userInfo');
 				if (userInfo) {
-					this.userName = userInfo.nickname || userInfo.name || '用户';
-					
 					const roles = userInfo.role || [];
-					this.userRoles = roles.length > 0 ? roles.join(' / ') : '未授权用户';
+					
+					// Security: If no authorized roles, kick back to login to check application status
+					const authorizedRoles = ['玖顺员工', '经销商人员', '服务人员', 'admin'];
+					const isAuthorized = roles.some(r => authorizedRoles.includes(r));
+					
+					if (!isAuthorized) {
+						uni.reLaunch({ url: '/pages/login/login' });
+						return;
+					}
+
+					this.userName = userInfo.nickname || userInfo.name || '用户';
+					this.userRoles = roles.join(' / ');
 					
 					// Only 'admin' can see the approval menu
 					this.isAdmin = roles.includes('admin');
+				} else {
+					// No user info at all
+					uni.reLaunch({ url: '/pages/login/login' });
 				}
 			},
 			refreshUserInfo() {

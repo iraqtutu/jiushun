@@ -73,6 +73,7 @@ exports.main = async (event, context) => {
 		
 		// Check application status if not authorized
 		let applicationStatus = null
+		let rejectReason = ''
 		if (!isAuthorized) {
 			const appRes = await db.collection('jiushun-account-applications')
 				.where({ create_uid: uid })
@@ -82,6 +83,7 @@ exports.main = async (event, context) => {
 			
 			if (appRes.data.length > 0) {
 				applicationStatus = appRes.data[0].status // 0: Pending, 1: Approved, 2: Rejected
+				rejectReason = appRes.data[0].rejectReason || ''
 			}
 		}
 
@@ -92,6 +94,7 @@ exports.main = async (event, context) => {
 			userInfo: { ...userInfo, isAdmin }, // Return admin flag
 			authorized: isAuthorized,
 			applicationStatus: applicationStatus,
+			rejectReason: rejectReason,
 			uid: uid
 		}
 	}
