@@ -44,6 +44,25 @@
 				"navigationBarTitleText": "成员审批",
 				"enablePullDownRefresh": true
 			}
+		},
+		{
+			"path": "pages/feedback/list",
+			"style": {
+				"navigationBarTitleText": "意见反馈",
+				"enablePullDownRefresh": false
+			}
+		},
+		{
+			"path": "pages/feedback/create",
+			"style": {
+				"navigationBarTitleText": "提交反馈"
+			}
+		},
+		{
+			"path": "pages/feedback/detail",
+			"style": {
+				"navigationBarTitleText": "反馈详情"
+			}
 		}
 	],
 	"globalStyle": {

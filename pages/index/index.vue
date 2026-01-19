@@ -1,7 +1,10 @@
 <template>
 	<view class="container">
 		<view class="user-info-card">
-			<view class="greeting">欢迎你，{{ userName }}</view>
+			<view class="user-identity">
+				<image src="/static/logo.png" class="logo" mode="aspectFit" />
+				<view class="greeting">欢迎你，{{ userName }}</view>
+			</view>
 			<view class="role-tag">{{ userRoles }}</view>
 		</view>
 		
@@ -22,6 +25,12 @@
 				<view class="icon">👮</view>
 				<text class="menu-title">成员审批</text>
 				<text class="menu-desc">审核新用户申请</text>
+			</view>
+			
+			<view class="menu-item feedback" @click="navTo('/pages/feedback/list')">
+				<view class="icon">💬</view>
+				<text class="menu-title">意见反馈</text>
+				<text class="menu-desc">提交问题或建议</text>
 			</view>
 		</view>
 	</view>
@@ -111,10 +120,22 @@
 		justify-content: space-between;
 		align-items: center;
 		
-		.greeting {
-			font-size: 18px;
-			font-weight: bold;
-			color: #333;
+		.user-identity {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			
+			.logo {
+				width: 40px;
+				height: 40px;
+				border-radius: 50%;
+			}
+			
+			.greeting {
+				font-size: 18px;
+				font-weight: bold;
+				color: #333;
+			}
 		}
 		
 		.role-tag {
@@ -150,6 +171,10 @@
 		
 		&.admin {
 			background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+		}
+		
+		&.feedback {
+			background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
 		}
 		
 		.icon {

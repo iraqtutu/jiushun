@@ -1,0 +1,53 @@
+{
+	"bsonType": "object",
+	"required": ["user_id", "content", "create_date"],
+	"permission": {
+		"read": "auth.uid == doc.user_id || 'admin' in auth.role",
+		"create": "auth.uid != null",
+		"update": "'admin' in auth.role",
+		"delete": "'admin' in auth.role"
+	},
+	"properties": {
+		"_id": {
+			"description": "ID，系统自动生成"
+		},
+		"user_id": {
+			"bsonType": "string",
+			"description": "提交用户ID"
+		},
+		"type": {
+			"bsonType": "string",
+			"description": "类型：problem-问题, suggestion-建议",
+			"enum": ["problem", "suggestion"]
+		},
+		"content": {
+			"bsonType": "string",
+			"description": "反馈内容"
+		},
+		"images": {
+			"bsonType": "array",
+			"description": "图片列表",
+			"items": {
+				"bsonType": "string"
+			}
+		},
+		"status": {
+			"bsonType": "int",
+			"description": "状态：0-待回复 1-已回复",
+			"defaultValue": 0
+		},
+		"reply": {
+			"bsonType": "object",
+			"description": "回复信息",
+			"properties": {
+				"content": { "bsonType": "string" },
+				"create_date": { "bsonType": "timestamp" },
+				"admin_uid": { "bsonType": "string" }
+			}
+		},
+		"create_date": {
+			"bsonType": "timestamp",
+			"description": "创建时间"
+		}
+	}
+}
