@@ -1,23 +1,52 @@
 <template>
 	<view class="container">
-		<view class="header">
-			<text class="title">待审批申请 ({{ list.length }})</text>
+		<view class="tabs">
+			<view 
+				class="tab-item" 
+				:class="{ active: currentTab === 'pending' }" 
+				@click="switchTab('pending')"
+			>
+				待审批
+			</view>
+			<view 
+				class="tab-item" 
+				:class="{ active: currentTab === 'processed' }" 
+				@click="switchTab('processed')"
+			>
+				已审批
+			</view>
 		</view>
 		
 		<view class="list">
 			<view class="item" v-for="(item, index) in list" :key="item._id">
 				<view class="info-row">
 					<text class="name">{{ item.name }}</text>
-					<text class="role-badge">{{ item.role }}</text>
+					<view class="right-badges">
+						<text class="role-badge">{{ item.role }}</text>
+						<text v-if="currentTab === 'processed'" class="status-badge" :class="getStatusClass(item.status)">
+							{{ getStatusText(item.status) }}
+						</text>
+					</view>
 				</view>
 				<view class="detail-row">手机号：{{ item.mobile }}</view>
 				<view class="detail-row">申请时间：{{ formatDate(item.create_date) }}</view>
+				
+				<template v-if="currentTab === 'processed'">
+					<view class="detail-row">审批人：{{ item.auditor_name || '未知' }}</view>
+					<view class="detail-row">审批时间：{{ formatDate(item.audit_date) }}</view>
+				</template>
+				
 				<view class="reason-box">
-					<text class="label">理由：</text>
+					<text class="label">申请理由：</text>
 					<text class="content">{{ item.reason }}</text>
 				</view>
 				
-				<view class="action-row">
+				<view v-if="item.status === 2 && item.rejectReason" class="reason-box reject">
+					<text class="label">拒绝理由：</text>
+					<text class="content">{{ item.rejectReason }}</text>
+				</view>
+				
+				<view class="action-row" v-if="currentTab === 'pending'">
 					<button class="btn reject" size="mini" @click="handleReject(item)">拒绝</button>
 					<button class="btn approve" size="mini" @click="handleApprove(item)">通过</button>
 				</view>
@@ -25,7 +54,7 @@
 		</view>
 		
 		<view v-if="list.length === 0 && !isLoading" class="empty">
-			<text>暂无待审批申请</text>
+			<text>暂无{{ currentTab === 'pending' ? '待审批' : '已审批' }}申请</text>
 		</view>
 	</view>
 </template>
@@ -34,6 +63,7 @@
 	export default {
 		data() {
 			return {
+				currentTab: 'pending',
 				list: [],
 				isLoading: false
 			}
@@ -42,12 +72,19 @@
 			this.loadData();
 		},
 		methods: {
+			switchTab(tab) {
+				if (this.currentTab === tab) return;
+				this.currentTab = tab;
+				this.list = [];
+				this.loadData();
+			},
 			loadData() {
 				this.isLoading = true;
 				uniCloud.callFunction({
 					name: 'user-center',
 					data: {
 						action: 'getApplications',
+						params: { type: this.currentTab },
 						uniIdToken: uni.getStorageSync('uni_id_token')
 					},
 					success: (res) => {
@@ -67,6 +104,16 @@
 				if (!ts) return '';
 				const d = new Date(ts);
 				return `${d.getMonth()+1}-${d.getDate()} ${d.getHours()}:${d.getMinutes()}`;
+			},
+			getStatusText(status) {
+				if (status === 1) return '已通过';
+				if (status === 2) return '已拒绝';
+				return '未知';
+			},
+			getStatusClass(status) {
+				if (status === 1) return 'approved';
+				if (status === 2) return 'rejected';
+				return '';
 			},
 			handleApprove(item) {
 				uni.showModal({
@@ -122,12 +169,26 @@
 		min-height: 100vh;
 	}
 	
-	.header {
-		margin-bottom: 15px;
-		.title {
-			font-size: 16px;
-			font-weight: bold;
-			color: #333;
+	.tabs {
+		display: flex;
+		background: #fff;
+		padding: 10px 10px 0;
+		border-radius: 8px 8px 0 0;
+		margin-bottom: 10px;
+		
+		.tab-item {
+			flex: 1;
+			text-align: center;
+			padding: 10px 0;
+			font-size: 15px;
+			color: #666;
+			border-bottom: 2px solid transparent;
+			
+			&.active {
+				color: #1976d2;
+				border-bottom-color: #1976d2;
+				font-weight: bold;
+			}
 		}
 	}
 	
@@ -149,12 +210,34 @@
 				font-weight: bold;
 			}
 			
+			.right-badges {
+				display: flex;
+				gap: 8px;
+				align-items: center;
+			}
+			
 			.role-badge {
 				font-size: 12px;
 				background: #e3f2fd;
 				color: #1976d2;
 				padding: 2px 8px;
 				border-radius: 4px;
+			}
+			
+			.status-badge {
+				font-size: 12px;
+				padding: 2px 8px;
+				border-radius: 4px;
+				
+				&.approved {
+					background: #e8f5e9;
+					color: #4caf50;
+				}
+				
+				&.rejected {
+					background: #ffebee;
+					color: #ef5350;
+				}
 			}
 		}
 		
@@ -170,6 +253,11 @@
 			border-radius: 4px;
 			margin: 10px 0;
 			font-size: 14px;
+			
+			&.reject {
+				background: #ffebee;
+				color: #c62828;
+			}
 			
 			.label { color: #999; }
 			.content { color: #333; }

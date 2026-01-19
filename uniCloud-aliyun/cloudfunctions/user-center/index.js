@@ -155,12 +155,42 @@ exports.main = async (event, context) => {
 			return { code: 403, msg: '无权访问' }
 		}
 		
-		const res = await db.collection('jiushun-account-applications')
-			.where({ status: 0 }) // Only pending
-			.orderBy('create_date', 'asc')
-			.get()
+		const { type = 'pending' } = params || {}
+		
+		if (type === 'pending') {
+			const res = await db.collection('jiushun-account-applications')
+				.where({ status: 0 }) 
+				.orderBy('create_date', 'asc')
+				.get()
+			return { code: 0, data: res.data }
+		} else {
+			// Processed (Approved or Rejected)
+			const res = await db.collection('jiushun-account-applications')
+				.aggregate()
+				.match({
+					status: dbCmd.in([1, 2])
+				})
+				.lookup({
+					from: 'uni-id-users',
+					localField: 'audit_uid',
+					foreignField: '_id',
+					as: 'auditor'
+				})
+				.sort({
+					audit_date: -1
+				})
+				.end()
+				
+			// Flatten auditor name
+			const data = res.data.map(item => {
+				const auditorName = (item.auditor && item.auditor.length > 0) ? item.auditor[0].nickname : '未知'
+				// Remove full auditor object to reduce size/privacy
+				delete item.auditor
+				return { ...item, auditor_name: auditorName }
+			})
 			
-		return { code: 0, data: res.data }
+			return { code: 0, data }
+		}
 	}
 	
 	// 4. Approve/Reject Application (Admin Only)
