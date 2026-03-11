@@ -2,8 +2,8 @@
 	<view class="page-wrapper">
 		<view class="container">
 			<!-- Section B: Customer Info -->
-			<view class="section">
-				<view class="section-title collapsible" @click="toggleSection('customer')">
+			<view class="section" :class="{ 'is-collapsed': sectionsCollapsed.customer }">
+				<view class="section-title collapsible" :class="{ 'no-border': sectionsCollapsed.customer }" @click="toggleSection('customer')">
 					<view class="title-left">
 						<text>客户资料</text>
 						<text v-if="isCustomerComplete" class="complete-check">✔</text>
@@ -46,8 +46,8 @@
 			</view>
 
 			<!-- Section C: Product Info -->
-			<view class="section">
-				<view class="section-title collapsible" @click="toggleSection('product')">
+			<view class="section" :class="{ 'is-collapsed': sectionsCollapsed.product }">
+				<view class="section-title collapsible" :class="{ 'no-border': sectionsCollapsed.product }" @click="toggleSection('product')">
 					<view class="title-left">
 						<text>产品信息</text>
 						<text v-if="isProductComplete" class="complete-check">✔</text>
@@ -91,8 +91,8 @@
 			</view>
 
 			<!-- Section D: Service Info -->
-			<view class="section">
-				<view class="section-title collapsible" @click="toggleSection('service')">
+			<view class="section" :class="{ 'is-collapsed': sectionsCollapsed.service }">
+				<view class="section-title collapsible" :class="{ 'no-border': sectionsCollapsed.service }" @click="toggleSection('service')">
 					<view class="title-left">
 						<text>服务内容</text>
 						<text v-if="isServiceComplete" class="complete-check">✔</text>
@@ -217,8 +217,8 @@
 			</view>
 
 			<!-- Section E: Additional Fees (Only when chargeable) -->
-			<view class="section" v-if="formData.service.isChargeable === '收费'">
-				<view class="section-title collapsible" @click="toggleSection('fees')">
+			<view class="section" v-if="formData.service.isChargeable === '收费'" :class="{ 'is-collapsed': sectionsCollapsed.fees }">
+				<view class="section-title collapsible" :class="{ 'no-border': sectionsCollapsed.fees }" @click="toggleSection('fees')">
 					<view class="title-left">
 						<text>附加费用</text>
 						<text v-if="isFeesComplete" class="complete-check">✔</text>
@@ -300,8 +300,8 @@
 
 
 			<!-- Section F: Confirmation -->
-			<view class="section">
-				<view class="section-title collapsible" @click="toggleSection('confirm')">
+			<view class="section" :class="{ 'is-collapsed': sectionsCollapsed.confirm }">
+				<view class="section-title collapsible" :class="{ 'no-border': sectionsCollapsed.confirm }" @click="toggleSection('confirm')">
 					<view class="title-left">
 						<text>客户确认</text>
 						<text v-if="isConfirmComplete" class="complete-check">✔</text>
@@ -321,6 +321,7 @@
 					</view>
 				</view>
 			</view>
+
 
 			<!-- Final Settlement Summary (Only when chargeable) -->
 			<view class="settlement-summary" v-if="formData.service.isChargeable === '收费'">
@@ -798,11 +799,13 @@
 
 <style lang="scss">
 	.container { padding: 15px; padding-bottom: 50px; background-color: #f5f5f5; }
-	.section { background: #fff; border-radius: 8px; padding: 15px; margin-bottom: 15px;
-		.section-title { font-size: 16px; font-weight: bold; border-left: 4px solid #007aff; padding-left: 10px; margin-bottom: 15px; 
+	.section { background: #fff; border-radius: 8px; padding: 15px; margin-bottom: 10px; transition: all 0.3s;
+		&.is-collapsed { padding: 5px 15px; }
+		.section-title { font-size: 16px; font-weight: bold; border-left: 4px solid #007aff; padding-left: 10px; margin-bottom: 15px; transition: all 0.3s;
 			&.collapsible { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0; padding-bottom: 10px; border-bottom: 1px solid #f0f0f0; 
 				& + view { margin-top: 15px; }
 			}
+			&.no-border { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
 			.title-left { display: flex; align-items: center; }
 			.complete-check { color: #4cd964; margin-left: 8px; font-size: 14px; }
 			.arrow-icon { font-size: 12px; color: #ccc; transition: transform 0.3s; &.collapsed { transform: rotate(-90deg); } }
