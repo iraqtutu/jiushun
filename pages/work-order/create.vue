@@ -281,6 +281,36 @@
 				</view>
 			</view>
 
+			<!-- Payment Method Selection (Only when chargeable) -->
+			<view class="ui-card mt-20" v-if="formData.service.isChargeable === '收费'">
+				<view class="card-header no-border">
+					<view class="header-left">
+						<text class="header-title">支付方式</text>
+						<text class="header-status-warn">必填</text>
+					</view>
+				</view>
+				<view class="card-body">
+					<radio-group @change="onPaymentMethodChange" class="payment-grid">
+						<label class="payment-item" :class="{ 'active': formData.service.paymentMethod === '微信支付' }">
+							<radio value="微信支付" :checked="formData.service.paymentMethod === '微信支付'" color="#1677ff" />
+							<text class="p-text">微信支付</text>
+						</label>
+						<label class="payment-item" :class="{ 'active': formData.service.paymentMethod === '支付宝' }">
+							<radio value="支付宝" :checked="formData.service.paymentMethod === '支付宝'" color="#1677ff" />
+							<text class="p-text">支付宝</text>
+						</label>
+						<label class="payment-item" :class="{ 'active': formData.service.paymentMethod === '电汇' }">
+							<radio value="电汇" :checked="formData.service.paymentMethod === '电汇'" color="#1677ff" />
+							<text class="p-text">电汇</text>
+						</label>
+						<label class="payment-item" :class="{ 'active': formData.service.paymentMethod === '现金' }">
+							<radio value="现金" :checked="formData.service.paymentMethod === '现金'" color="#1677ff" />
+							<text class="p-text">现金</text>
+						</label>
+					</radio-group>
+				</view>
+			</view>
+
 			<!-- Page Footer -->
 			<view class="action-footer">
 				<view class="meta-info">
@@ -352,7 +382,7 @@
 					orderNo: '',
 					customer: { name: '', phone: '', address: '', usageType: '自用', distributorName: '', reportTime: '' },
 					product: { machineNo: '', engineNo: '', productionDate: '', platePhoto: '', model: '' },
-					service: { type: '', isChargeable: '免费', faultCategory: '', faultDesc: '', handleDesc: '', finishDate: '', finishTime: '', parts: [], sitePhotos: [] },
+					service: { type: '', isChargeable: '免费', faultCategory: '', faultDesc: '', handleDesc: '', finishDate: '', finishTime: '', parts: [], sitePhotos: [], paymentMethod: '微信支付' },
 					additionalFees: {
 						travelFee: { distance: 0, unitPrice: 1.2, total: 0 },
 						laborFee: { departureDate: '', departureTime: '', returnDuration: 0, unitPrice: 85, totalHours: 0, total: 0 }
@@ -430,6 +460,7 @@
 			onReportDateChange(e) { this.formData.customer.reportTime = e.detail.value; },
 			onServiceTypeChange(e) { this.formData.service.type = this.serviceTypes[e.detail.value]; },
 			onIsChargeableChange(e) { this.formData.service.isChargeable = e.detail.value; },
+			onPaymentMethodChange(e) { this.formData.service.paymentMethod = e.detail.value; },
 			onPartSourceChange(e, index) { this.$set(this.formData.service.parts[index], 'source', this.partSources[e.detail.value]); },
 			toggleFaultPicker() { this.showFaultPicker = !this.showFaultPicker; this.selectedCategory = null; },
 			selectFaultCategory(cat) { this.selectedCategory = cat; },
@@ -539,9 +570,12 @@
 		justify-content: space-between;
 		align-items: center;
 		.header-title { font-size: 15px; font-weight: 700; color: $text-primary; }
-		.header-status { font-size: 10px; background: rgba($success, 0.1); color: $success; padding: 2px 6px; border-radius: 4px; margin-left: 8px; }
+		.header-status { font-size: 10px; background: rgba($success, 0.1); color: $success; padding: 2px 8px; border-radius: 4px; margin-left: 8px; }
+		.header-status-warn { font-size: 10px; background: rgba($danger, 0.1); color: $danger; padding: 2px 8px; border-radius: 4px; margin-left: 8px; }
 		.header-arrow { width: 7px; height: 7px; border-right: 2px solid $text-tip; border-bottom: 2px solid $text-tip; transform: rotate(45deg); transition: transform 0.3s; &.arrow-up { transform: rotate(-135deg); } }
+		&.no-border { border-bottom: none; }
 	}
+
 
 	.card-body { padding: 0 16px 12px; }
 
@@ -556,11 +590,41 @@
 		&.no-border { border-bottom: none; }
 		.field-label { width: 85px; font-size: 13px; font-weight: 500; color: $text-secondary; &.required::after { content: '*'; color: $danger; margin-left: 3px; } }
 		.hmandmachine { width: 185px;}
-		.field-input, .picker-text, .field-picker-box { flex: 1; height: 34px; line-height: 34px; background: #f7f8fa; border-radius: 6px; padding: 0 10px; font-size: 13px; color: $text-primary; }
-		.field-textarea { width: 100%; height: 80px; background: #f7f8fa; border-radius: 8px; padding: 10px; font-size: 13px; box-sizing: border-box; margin-top: 6px; }
+		.field-input, .picker-text, .field-picker-box { 
+			flex: 1; 
+			height: 34px; 
+			line-height: 34px; 
+			background: #ffffff; // 改为白色
+			border: 1px solid #e5e6eb; // 增加边框
+			border-radius: 6px; 
+			padding: 0 10px; 
+			font-size: 13px; 
+			color: $text-primary; 
+		}
+		.field-textarea { 
+			width: 100%; 
+			height: 80px; 
+			background: #ffffff; // 改为白色
+			border: 1px solid #e5e6eb; // 增加边框
+			border-radius: 8px; 
+			padding: 10px; 
+			font-size: 13px; 
+			box-sizing: border-box; 
+			margin-top: 6px; 
+		}
 		.ui-radio-box { flex: 1; display: flex; .radio-item { margin-right: 15px; font-size: 13px; display: flex; align-items: center; } }
 		.time-picker-group { display: flex; align-items: center; 
-			.tp { background: #f7f8fa; height: 34px; line-height: 34px; border-radius: 6px; padding: 0 12px; font-size: 13px; text-align: center; min-width: 30px; }
+			.tp { 
+				background: #ffffff; // 改为白色
+				border: 1px solid #e5e6eb; // 增加边框
+				height: 34px; 
+				line-height: 34px; 
+				border-radius: 6px; 
+				padding: 0 12px; 
+				font-size: 13px; 
+				text-align: center; 
+				min-width: 90px; 
+			}
 			.ml-5 { margin-left: 8px; }
 		}
 		.ph { color: #c9cdd4; }
@@ -661,20 +725,53 @@
 		.f-title { font-size: 11px; font-weight: 700; color: $accent; margin-bottom: 8px; display: block; }
 		.f-inputs { display: flex; gap: 8px; .f-item { flex: 1; background: #fff; border: 1px solid #eee; padding: 4px 8px; border-radius: 4px; font-size: 11px; color: $text-tip; display: flex; justify-content: space-between; input { width: 35px; text-align: right; color: $text-primary; font-weight: 700; } .v { color: $accent; font-weight: 700; } } }
 		.f-subtotal { text-align: right; margin-top: 8px; font-size: 12px; font-weight: 700; color: $danger; }
-		.f-time-line { background: #fff; padding: 6px; border-radius: 4px; border: 1px solid #eee;
-			.time-tag { display: flex; align-items: center; font-size: 11px; .l { color: $text-tip; width: 30px; } .item-input { flex: 1; display: flex; align-items: center; input { width: 35px; border-bottom: 1px solid #eee; margin-right: 4px; text-align: center; } } }
+		.f-time-line { background: #fff; padding: 10px; border-radius: 6px; border: 1px solid #eee;
+			.time-tag { display: flex; align-items: center; font-size: 12px; margin-bottom: 8px; &:last-child { margin-bottom: 0; }
+				.l { color: $text-tip; width: 40px; font-weight: 500; } 
+				picker { 
+					background: #f7f8fa; 
+					border: 1px solid #e5e6eb; 
+					padding: 4px 10px; 
+					border-radius: 4px; 
+					min-width: 85px; 
+					text-align: center;
+					&.ml-5 { margin-left: 10px; } // 显式增加间距
+				}
+				.item-input { flex: 1; display: flex; align-items: center; 
+					input { width: 45px; background: #f7f8fa; border: 1px solid #e5e6eb; border-radius: 4px; padding: 2px 6px; margin-right: 6px; text-align: center; } 
+				}
+			}
 		}
 	}
 
 	// Settlement Panel
 	.settlement-panel {
-		margin-top: 20px; background: #1d2129; border-radius: 10px; padding: 16px; color: #fff;
-		.panel-header { font-size: 12px; opacity: 0.6; margin-bottom: 12px; }
+		margin-top: 24px; 
+		margin-bottom: 24px; // 显式增加底部间距
+		background: #1d2129; 
+		border-radius: 12px; 
+		padding: 20px; 
+		color: #fff;
+		.panel-header { font-size: 14px; opacity: 0.6; margin-bottom: 16px; }
 		.panel-grid { display: flex; justify-content: space-between; border-bottom: 1px solid rgba(#fff, 0.1); padding-bottom: 12px;
 			.p-item { display: flex; flex-direction: column; .l { font-size: 10px; opacity: 0.5; margin-bottom: 2px; } .v { font-size: 13px; font-weight: 700; } }
 		}
 		.panel-total { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; font-size: 14px; font-weight: 700; .total-v { font-size: 22px; color: #fffae6; } }
 	}
+
+	.payment-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 5px;
+		.payment-item { display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid #e5e6eb; padding: 12px; border-radius: 8px; transition: all 0.2s;
+			radio { transform: scale(0.8); margin-right: 4px; }
+			.p-text { font-size: 13px; font-weight: 500; color: $text-secondary; }
+			&.active { border-color: $accent; background: rgba($accent, 0.02); .p-text { color: $accent; font-weight: 700; } }
+		}
+	}
+	
+	.mt-20 { margin-top: 20px !important; }
+	.mt-15 { margin-top: 15px; }
+	.mt-10 { margin-top: 10px; }
+	.mt-8 { margin-top: 8px; }
+	.mt-5 { margin-top: 5px; }
 
 	// Action Footer
 	.action-footer {
