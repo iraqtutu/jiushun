@@ -77,6 +77,8 @@
 							"name": { "bsonType": "string", "description": "零件名称" },
 							"code": { "bsonType": "string", "description": "图号" },
 							"count": { "bsonType": "int", "description": "数量" },
+							"price": { "bsonType": "double", "description": "单价" },
+							"total": { "bsonType": "double", "description": "单项总价" },
 							"oldPartAction": { 
 								"bsonType": "string", 
 								"enum": ["带回", "丢弃"],
@@ -99,6 +101,32 @@
 			"required": ["machineUserPhoto"],
 			"properties": {
 				"machineUserPhoto": { "bsonType": "file", "description": "人机合影" }
+			}
+		},
+		"additionalFees": {
+			"bsonType": "object",
+			"description": "附加费用（仅收费模式）",
+			"properties": {
+				"travelFee": {
+					"bsonType": "object",
+					"properties": {
+						"distance": { "bsonType": "double", "description": "公里数" },
+						"unitPrice": { "bsonType": "double", "description": "公里单价" },
+						"total": { "bsonType": "double", "description": "路程费总计" }
+					}
+				},
+				"laborFee": {
+					"bsonType": "object",
+					"properties": {
+						"departureTime": { "bsonType": "timestamp", "description": "出发时间" },
+						"finishTime": { "bsonType": "timestamp", "description": "维修完成时间" },
+						"returnDuration": { "bsonType": "int", "description": "预计返程用时（分钟）" },
+						"totalHours": { "bsonType": "double", "description": "总计工时" },
+						"unitPrice": { "bsonType": "double", "description": "工时单价" },
+						"total": { "bsonType": "double", "description": "工时费总计" }
+					}
+				},
+				"totalAmount": { "bsonType": "double", "description": "附加费用总计金额" }
 			}
 		},
 		"create_date": { "bsonType": "timestamp" }
