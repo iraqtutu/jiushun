@@ -2,369 +2,323 @@
 	<view class="page-wrapper">
 		<view class="container">
 			<!-- Section B: Customer Info -->
-			<view class="ui-card" :class="{ 'card-collapsed': sectionsCollapsed.customer }">
-				<view class="card-header collapsible" @click="toggleSection('customer')">
+			<view class="ui-card" :class="{ 'card-active': !sectionsCollapsed.customer }">
+				<view class="card-header" @click="toggleSection('customer')">
 					<view class="header-left">
-						<text class="header-icon">👤</text>
 						<text class="header-title">客户资料</text>
-						<text v-if="isCustomerComplete" class="header-complete">✔</text>
+						<text v-if="isCustomerComplete" class="header-status">已完善</text>
 					</view>
-					<text class="arrow-icon" :class="{ 'arrow-active': !sectionsCollapsed.customer }">▼</text>
+					<text class="header-arrow" :class="{ 'arrow-up': !sectionsCollapsed.customer }"></text>
 				</view>
 				<view class="card-body" v-show="!sectionsCollapsed.customer">
-					<view class="ui-form-item">
-						<text class="ui-label required">姓名</text>
-						<input class="ui-input" v-model="formData.customer.name" placeholder="客户姓名" />
+					<view class="ui-field">
+						<text class="field-label required">姓名</text>
+						<input class="field-input" v-model="formData.customer.name" placeholder="输入客户姓名" placeholder-class="ph" />
 					</view>
-					<view class="ui-form-item">
-						<text class="ui-label required">电话</text>
-						<input class="ui-input" type="number" v-model="formData.customer.phone" placeholder="联系电话" maxlength="11" />
+					<view class="ui-field">
+						<text class="field-label required">电话</text>
+						<input class="field-input" type="number" v-model="formData.customer.phone" placeholder="输入联系电话" maxlength="11" placeholder-class="ph" />
 					</view>
-					<view class="ui-form-item">
-						<text class="ui-label required">地址</text>
-						<input class="ui-input" v-model="formData.customer.address" placeholder="详细地址" />
+					<view class="ui-field">
+						<text class="field-label required">地址</text>
+						<input class="field-input" v-model="formData.customer.address" placeholder="输入详细地址" placeholder-class="ph" />
 					</view>
-					<view class="ui-form-item">
-						<text class="ui-label required">农机用途</text>
-						<radio-group @change="onUsageChange" class="ui-radio-group">
-							<label class="ui-radio"><radio value="自用" :checked="formData.customer.usageType === '自用'" color="#007aff" style="transform:scale(0.8)" />自用</label>
-							<label class="ui-radio"><radio value="作业" :checked="formData.customer.usageType === '作业'" color="#007aff" style="transform:scale(0.8)" />作业</label>
+					<view class="ui-field">
+						<text class="field-label required">农机用途</text>
+						<radio-group @change="onUsageChange" class="ui-radio-box">
+							<label class="radio-item"><radio value="自用" :checked="formData.customer.usageType === '自用'" color="#1677ff" />自用</label>
+							<label class="radio-item"><radio value="作业" :checked="formData.customer.usageType === '作业'" color="#1677ff" />作业</label>
 						</radio-group>
 					</view>
-					<view class="ui-form-item">
-						<text class="ui-label">经销商</text>
-						<input class="ui-input" v-model="formData.customer.distributorName" placeholder="经销商名称" />
+					<view class="ui-field">
+						<text class="field-label">经销商</text>
+						<input class="field-input" v-model="formData.customer.distributorName" placeholder="经销商名称（选填）" placeholder-class="ph" />
 					</view>
-					<view class="ui-form-item">
-						<text class="ui-label required">报修时间</text>
-						<picker mode="date" @change="onReportDateChange" style="flex: 1;">
-							<view class="ui-picker-view">{{ formData.customer.reportTime }}</view>
+					<view class="ui-field">
+						<text class="field-label required">报修时间</text>
+						<picker mode="date" @change="onReportDateChange" class="field-picker">
+							<view class="picker-text">{{ formData.customer.reportTime }}</view>
 						</picker>
 					</view>
 				</view>
 			</view>
 
 			<!-- Section C: Product Info -->
-			<view class="ui-card" :class="{ 'card-collapsed': sectionsCollapsed.product }">
-				<view class="card-header collapsible" @click="toggleSection('product')">
+			<view class="ui-card" :class="{ 'card-active': !sectionsCollapsed.product }">
+				<view class="card-header" @click="toggleSection('product')">
 					<view class="header-left">
-						<text class="header-icon">🚜</text>
 						<text class="header-title">产品信息</text>
-						<text v-if="isProductComplete" class="header-complete">✔</text>
+						<text v-if="isProductComplete" class="header-status">已录入</text>
 					</view>
-					<text class="arrow-icon" :class="{ 'arrow-active': !sectionsCollapsed.product }">▼</text>
+					<text class="header-arrow" :class="{ 'arrow-up': !sectionsCollapsed.product }"></text>
 				</view>
 				<view class="card-body" v-show="!sectionsCollapsed.product">
-					<view class="ui-form-item">
-						<text class="ui-label required">机器编号</text>
-						<input class="ui-input" v-model="formData.product.machineNo" placeholder="请输入机器编号" />
+					<view class="ui-field">
+						<text class="field-label required">机器编号</text>
+						<input class="field-input" v-model="formData.product.machineNo" placeholder="请输入机器编号" placeholder-class="ph" />
 					</view>
-					<view class="ui-form-item">
-						<text class="ui-label required">发动机号</text>
-						<input class="ui-input" v-model="formData.product.engineNo" placeholder="请输入发动机号" />
+					<view class="ui-field">
+						<text class="field-label required">发动机号</text>
+						<input class="field-input" v-model="formData.product.engineNo" placeholder="请输入发动机号" placeholder-class="ph" />
 					</view>
-					<view class="ui-form-item">
-						<text class="ui-label required">生产日期</text>
-						<picker mode="date" @change="onDateChange" style="flex: 1;">
-							<view class="ui-picker-view">{{ formData.product.productionDate || '请选择日期' }}</view>
+					<view class="ui-field">
+						<text class="field-label required">生产日期</text>
+						<picker mode="date" @change="onDateChange" class="field-picker">
+							<view class="picker-text">{{ formData.product.productionDate || '选择日期' }}</view>
 						</picker>
 					</view>
 					
-					<view class="ui-form-item column">
-						<text class="ui-label required">铭牌照片</text>
-						<view class="ui-upload-single" @click="chooseImage('plate')">
-							<image v-if="formData.product.platePhoto" :src="formData.product.platePhoto" mode="aspectFill" class="full-img"></image>
-							<view v-else class="upload-placeholder">
-								<text class="u-icon">📷</text>
-								<text class="u-text">点击上传</text>
+					<view class="ui-field column">
+						<text class="field-label required">铭牌照片</text>
+						<view class="photo-uploader" @click="chooseImage('plate')">
+							<image v-if="formData.product.platePhoto" :src="formData.product.platePhoto" mode="aspectFill" class="photo-preview"></image>
+							<view v-else class="photo-placeholder">
+								<text class="icon-camera"></text>
+								<text class="text">上传铭牌照片</text>
 							</view>
 						</view>
 					</view>
 					
-					<view class="ui-form-item">
-						<text class="ui-label required">产品型号</text>
-						<input class="ui-input" v-model="formData.product.model" placeholder="产品型号" />
+					<view class="ui-field">
+						<text class="field-label required">产品型号</text>
+						<input class="field-input" v-model="formData.product.model" placeholder="输入产品型号" placeholder-class="ph" />
 					</view>
 				</view>
 			</view>
 
 			<!-- Section D: Service Info -->
-			<view class="ui-card" :class="{ 'card-collapsed': sectionsCollapsed.service }">
-				<view class="card-header collapsible" @click="toggleSection('service')">
+			<view class="ui-card" :class="{ 'card-active': !sectionsCollapsed.service }">
+				<view class="card-header" @click="toggleSection('service')">
 					<view class="header-left">
-						<text class="header-icon">🔧</text>
 						<text class="header-title">服务内容</text>
-						<text v-if="isServiceComplete" class="header-complete">✔</text>
+						<text v-if="isServiceComplete" class="header-status">已填写</text>
 					</view>
-					<text class="arrow-icon" :class="{ 'arrow-active': !sectionsCollapsed.service }">▼</text>
+					<text class="header-arrow" :class="{ 'arrow-up': !sectionsCollapsed.service }"></text>
 				</view>
 				<view class="card-body" v-show="!sectionsCollapsed.service">
-					<view class="ui-form-item">
-						<text class="ui-label required">服务类型</text>
-						<picker :range="serviceTypes" @change="onServiceTypeChange" style="flex: 1;">
-							<view class="ui-picker-view">{{ formData.service.type || '请选择类型' }}</view>
+					<view class="ui-field">
+						<text class="field-label required">服务类型</text>
+						<picker :range="serviceTypes" @change="onServiceTypeChange" class="field-picker">
+							<view class="picker-text">{{ formData.service.type || '请选择' }}</view>
 						</picker>
 					</view>
-					<view class="ui-form-item">
-						<text class="ui-label required">是否收费</text>
-						<radio-group @change="onIsChargeableChange" class="ui-radio-group">
-							<label class="ui-radio"><radio value="免费" :checked="formData.service.isChargeable === '免费'" color="#4cd964" style="transform:scale(0.8)" />免费</label>
-							<label class="ui-radio"><radio value="收费" :checked="formData.service.isChargeable === '收费'" color="#ff5252" style="transform:scale(0.8)" />收费</label>
+					<view class="ui-field">
+						<text class="field-label required">是否收费</text>
+						<radio-group @change="onIsChargeableChange" class="ui-radio-box">
+							<label class="radio-item"><radio value="免费" :checked="formData.service.isChargeable === '免费'" color="#52c41a" />免费</label>
+							<label class="radio-item"><radio value="收费" :checked="formData.service.isChargeable === '收费'" color="#ff4d4f" />收费</label>
 						</radio-group>
 					</view>
-					<view class="ui-form-item">
-						<text class="ui-label required">故障分类</text>
-						<view class="ui-picker-view" @click="toggleFaultPicker">{{ formData.service.faultCategory || '请选择分类' }}</view>
+					<view class="ui-field">
+						<text class="field-label required">故障分类</text>
+						<view class="field-picker-box" @click="toggleFaultPicker">{{ formData.service.faultCategory || '点击选择分类' }}</view>
 					</view>
-					<view class="ui-form-item column">
-						<text class="ui-label required">故障现象</text>
-						<textarea class="ui-textarea" v-model="formData.service.faultDesc" placeholder="描述故障表现..." />
+					<view class="ui-field column">
+						<text class="field-label required">故障现象</text>
+						<textarea class="field-textarea" v-model="formData.service.faultDesc" placeholder="简述故障表现..." placeholder-class="ph" />
 					</view>
-					<view class="ui-form-item column">
-						<text class="ui-label required">处理方法</text>
-						<textarea class="ui-textarea" v-model="formData.service.handleDesc" placeholder="描述维修过程..." />
+					<view class="ui-field column">
+						<text class="field-label required">处理方法</text>
+						<textarea class="field-textarea" v-model="formData.service.handleDesc" placeholder="简述维修过程..." placeholder-class="ph" />
 					</view>
 							
-					<view class="ui-form-item column no-border">
-						<view class="parts-header">
-							<text class="ui-label">更换零件明细</text>
-							<button size="mini" type="primary" class="ui-btn-add" @click="addPart">+ 新增</button>
+					<!-- Parts Detail -->
+					<view class="ui-field column no-border">
+						<view class="list-header">
+							<text class="list-title">更换零件明细</text>
+							<view class="btn-text-add" @click="addPart">+ 新增</view>
 						</view>
 						
-						<view v-for="(part, idx) in formData.service.parts" :key="idx" class="part-item-card">
-							<view class="part-top">
-								<input v-model="part.name" placeholder="零件名称" class="p-input-name" />
-								<text class="part-del" @click="removePart(idx)">×</text>
+						<view v-for="(part, idx) in formData.service.parts" :key="idx" class="part-entry">
+							<text class="btn-remove-absolute" @click="removePart(idx)">×</text>
+							<view class="entry-row">
+								<input v-model="part.name" placeholder="零件名称" class="input-name" placeholder-class="ph" />
 							</view>
-							<view class="part-middle">
-								<input v-model="part.code" placeholder="图号/编码" class="p-input-code" />
-								<picker :range="partSources" @change="onPartSourceChange($event, idx)" class="p-source-picker">
-									<view class="p-source-select">
-										<text class="s-label">来源:</text>
-										<text class="s-val">{{ part.source || '请选择' }}</text>
-										<text class="s-arrow">▾</text>
+							
+							<view class="entry-row mt-8">
+								<input v-model="part.code" placeholder="图号/编码" class="input-code" placeholder-class="ph" />
+								<view class="source-picker-inline">
+									<text class="s-label">来源</text>
+									<picker :range="partSources" @change="onPartSourceChange($event, idx)" class="s-picker">
+										<view class="s-value">{{ part.source || '选择来源' }}</view>
+									</picker>
+								</view>
+							</view>
+
+							<view class="part-ext-row" v-if="part.source === '其他'">
+								<text class="ext-label required">来源备注</text>
+								<input v-model="part.sourceRemark" placeholder="请输入具体来源说明" class="input-remark" placeholder-class="ph-warning" />
+							</view>
+
+							<view class="entry-row mt-10 flex-align-center">
+								<!-- 数量 -->
+								<view class="entry-stepper-wrapper">
+									<text class="st-label">数量</text>
+									<view class="entry-stepper">
+										<text class="s-btn" @click.stop="updatePartCount(idx, -1)">-</text>
+										<text class="s-num">{{ part.count }}</text>
+										<text class="s-btn" @click.stop="updatePartCount(idx, 1)">+</text>
 									</view>
-								</picker>
-							</view>
-							<!-- Remark input for "Other" source -->
-							<view class="part-remark-row" v-if="part.source === '其他'">
-								<input v-model="part.sourceRemark" placeholder="请输入其他来源说明..." class="p-input-remark" />
-							</view>
-							<view class="part-bottom">
-								<view class="p-stepper">
-									<text class="p-step-btn" @click.stop="updatePartCount(idx, -1)">-</text>
-									<text class="p-step-val">{{ part.count }}</text>
-									<text class="p-step-btn" @click.stop="updatePartCount(idx, 1)">+</text>
 								</view>
-								<radio-group @change="onPartActionChange($event, idx)" class="p-action-group">
-									<label class="p-radio-label"><radio value="带回" :checked="part.oldPartAction === '带回'" style="transform:scale(0.6)" color="#007aff" />带回</label>
-									<label class="p-radio-label"><radio value="丢弃" :checked="part.oldPartAction === '丢弃'" style="transform:scale(0.6)" color="#999" />丢弃</label>
-								</radio-group>
-							</view>
-							<view class="part-price-row" v-if="formData.service.isChargeable === '收费'">
-								<view class="price-input">
-									<text>单价:</text>
-									<input type="digit" v-model="part.price" class="p-price-val" placeholder="0.0" />
-									<text>元</text>
+								
+								<!-- 价格组并排 -->
+								<view class="entry-bottom-inline" v-if="formData.service.isChargeable === '收费'">
+									<view class="price-box-small">
+										<text class="p-label">单价</text>
+										<input type="digit" v-model="part.price" class="p-val" />
+									</view>
+									<view class="price-box-small ml-10">
+										<text class="p-label">小计</text>
+										<text class="p-total-val">￥{{ ((Number(part.price) || 0) * (part.count || 0)).toFixed(1) }}</text>
+									</view>
 								</view>
-								<text class="price-sum">小计: ￥{{ ((Number(part.price) || 0) * (part.count || 0)).toFixed(1) }}</text>
 							</view>
 						</view>
 	
-						<view class="parts-total-banner" v-if="formData.service.isChargeable === '收费' && formData.service.parts.length > 0">
+						<view class="list-summary" v-if="formData.service.isChargeable === '收费' && formData.service.parts.length > 0">
 							<text>零件费用小计</text>
-							<text class="banner-val">￥{{ partsTotal }}</text>
+							<text class="v">￥{{ partsTotal }}</text>
 						</view>
 					</view>
 					
-					<view class="ui-form-item column">
-						<text class="ui-label required">现场照片 (最少{{ formData.service.parts.length > 0 ? formData.service.parts.length : 1 }}张)</text>
-						<view class="ui-photo-grid">
-							<view class="photo-add" @click="chooseImage('site')">
-								<text class="u-icon">+</text>
+					<view class="ui-field column">
+						<text class="field-label required">现场照片</text>
+						<view class="grid-uploader">
+							<view class="grid-add" @click="chooseImage('site')">
+								<text class="icon">+</text>
 							</view>
-							<view v-for="(img, idx) in formData.service.sitePhotos" :key="idx" class="photo-item">
-								<image :src="img" class="p-img" mode="aspectFill" @click="previewImg(img)"></image>
-								<text class="p-del" @click.stop="removeSitePhoto(idx)">×</text>
+							<view v-for="(img, idx) in formData.service.sitePhotos" :key="idx" class="grid-item">
+								<image :src="img" class="img" mode="aspectFill" @click="previewImg(img)"></image>
+								<text class="btn-del" @click.stop="removeSitePhoto(idx)">×</text>
 							</view>
 						</view>
 					</view>
 					
-					<view class="ui-form-item">
-						<text class="ui-label required">完成日期</text>
-						<picker mode="date" @change="onFinishDateChange" style="flex: 1;">
-							<view class="ui-picker-view">{{ formData.service.finishDate }}</view>
-						</picker>
-					</view>
-					<view class="ui-form-item">
-						<text class="ui-label required">完成时间</text>
-						<picker mode="time" @change="onFinishTimeChange" style="flex: 1;">
-							<view class="ui-picker-view">{{ formData.service.finishTime || '请选择时间' }}</view>
-						</picker>
+					<view class="ui-field">
+						<text class="field-label required">完成时间</text>
+						<view class="time-picker-group">
+							<picker mode="date" @change="onFinishDateChange" class="tp"><view>{{ formData.service.finishDate }}</view></picker>
+							<picker mode="time" @change="onFinishTimeChange" class="tp ml-5"><view>{{ formData.service.finishTime || '00:00' }}</view></picker>
+						</view>
 					</view>
 				</view>
 			</view>
 
-			<!-- Section E: Additional Fees (Only when chargeable) -->
-			<view class="ui-card" v-if="formData.service.isChargeable === '收费'" :class="{ 'card-collapsed': sectionsCollapsed.fees }">
-				<view class="card-header collapsible" @click="toggleSection('fees')">
+			<!-- Section E: Additional Fees -->
+			<view class="ui-card" v-if="formData.service.isChargeable === '收费'" :class="{ 'card-active': !sectionsCollapsed.fees }">
+				<view class="card-header" @click="toggleSection('fees')">
 					<view class="header-left">
-						<text class="header-icon">💰</text>
 						<text class="header-title">附加费用</text>
-						<text v-if="isFeesComplete" class="header-complete">✔</text>
 					</view>
-					<text class="arrow-icon" :class="{ 'arrow-active': !sectionsCollapsed.fees }">▼</text>
+					<text class="header-arrow" :class="{ 'arrow-up': !sectionsCollapsed.fees }"></text>
 				</view>
 				<view class="card-body" v-show="!sectionsCollapsed.fees">
-					<view class="fee-sub-card">
-						<view class="f-sub-header">路程费</view>
-						<view class="f-row">
-							<view class="f-input-group">
-								<text class="f-label">总里程</text>
-								<input type="digit" v-model="formData.additionalFees.travelFee.distance" class="f-input" />
-								<text class="f-unit">km</text>
-							</view>
-							<view class="f-input-group">
-								<text class="f-label">单价</text>
-								<input type="digit" v-model="formData.additionalFees.travelFee.unitPrice" class="f-input" />
-								<text class="f-unit">元/km</text>
-							</view>
+					<view class="fee-card">
+						<text class="f-title">路程费核算</text>
+						<view class="f-inputs">
+							<view class="f-item">里程<input type="digit" v-model="formData.additionalFees.travelFee.distance" />km</view>
+							<view class="f-item">单价<input type="digit" v-model="formData.additionalFees.travelFee.unitPrice" />元</view>
 						</view>
-						<view class="f-result">路程费合计: <text class="f-val">￥{{ travelTotal }}</text></view>
+						<text class="f-subtotal">合计: ￥{{ travelTotal }}</text>
 					</view>
 	
-					<view class="fee-sub-card mt-15">
-						<view class="f-sub-header">工时费</view>
-						<view class="f-time-box">
-							<view class="t-item">
-								<text class="t-label">出发</text>
-								<view class="t-picker-group">
-									<picker mode="date" @change="onDepartureDateChange"><text>{{ formData.additionalFees.laborFee.departureDate }}</text></picker>
-									<picker mode="time" @change="onDepartureTimeChange" class="ml-10"><text>{{ formData.additionalFees.laborFee.departureTime }}</text></picker>
-								</view>
+					<view class="fee-card mt-15">
+						<text class="f-title">工时费核算</text>
+						<view class="f-time-line">
+							<view class="time-tag">
+								<text class="l">出发</text>
+								<picker mode="date" @change="onDepartureDateChange"><text>{{ formData.additionalFees.laborFee.departureDate }}</text></picker>
+								<picker mode="time" @change="onDepartureTimeChange" class="ml-5"><text>{{ formData.additionalFees.laborFee.departureTime }}</text></picker>
 							</view>
-							<view class="t-item">
-								<text class="t-label">完成</text>
-								<view class="t-picker-group">
-									<picker mode="date" @change="onFinishDateChange"><text>{{ formData.service.finishDate }}</text></picker>
-									<picker mode="time" @change="onFinishTimeChange" class="ml-10"><text>{{ formData.service.finishTime }}</text></picker>
-								</view>
+							<view class="time-tag mt-5">
+								<text class="l">返程</text>
+								<view class="item-input"><input type="number" v-model="formData.additionalFees.laborFee.returnDuration" /> min</view>
 							</view>
 						</view>
-						<view class="f-row mt-10">
-							<view class="f-input-group">
-								<text class="f-label">返程预估</text>
-								<input type="number" v-model="formData.additionalFees.laborFee.returnDuration" class="f-input" />
-								<text class="f-unit">min</text>
-							</view>
-							<view class="f-input-group">
-								<text class="f-label">工时单价</text>
-								<input type="digit" v-model="formData.additionalFees.laborFee.unitPrice" class="f-input" />
-								<text class="f-unit">元/h</text>
-							</view>
+						<view class="f-inputs mt-10">
+							<view class="f-item">总时长<text class="v">{{ laborHours }} h</text></view>
+							<view class="f-item">单价<input type="digit" v-model="formData.additionalFees.laborFee.unitPrice" />元</view>
 						</view>
-						<view class="f-info-bar" v-if="Number(laborHours) > 0">
-							<text>核算时长: {{ laborHours }} 小时</text>
-							<text class="f-val-main">工时费合计: ￥{{ laborTotal }}</text>
-						</view>
-						<view class="f-warn-bar" v-else-if="formData.additionalFees.laborFee.departureTime && formData.service.finishTime">
-							⚠️ 完成时间不能早于出发时间
-						</view>
-					</view>
-	
-					<view class="fee-summary-bar">
-						<text>附加费总计</text>
-						<text class="fee-total-val">￥{{ additionalTotal }}</text>
+						<text class="f-subtotal">合计: ￥{{ laborTotal }}</text>
 					</view>
 				</view>
 			</view>
 
 			<!-- Section F: Confirmation -->
-			<view class="ui-card" :class="{ 'card-collapsed': sectionsCollapsed.confirm }">
-				<view class="card-header collapsible" @click="toggleSection('confirm')">
+			<view class="ui-card" :class="{ 'card-active': !sectionsCollapsed.confirm }">
+				<view class="card-header" @click="toggleSection('confirm')">
 					<view class="header-left">
-						<text class="header-icon">📸</text>
-						<text class="header-title">客户确认</text>
-						<text v-if="isConfirmComplete" class="header-complete">✔</text>
+						<text class="header-title">最终确认</text>
+						<text v-if="isConfirmComplete" class="header-status">已上传</text>
 					</view>
-					<text class="arrow-icon" :class="{ 'arrow-active': !sectionsCollapsed.confirm }">▼</text>
+					<text class="header-arrow" :class="{ 'arrow-up': !sectionsCollapsed.confirm }"></text>
 				</view>
 				<view class="card-body" v-show="!sectionsCollapsed.confirm">
-					<view class="ui-form-item column no-border">
-						<text class="ui-label required">人机合影 (现场合照)</text>
-						<view class="ui-upload-single large" @click="chooseImage('confirm')">
-							<image v-if="formData.confirm.machineUserPhoto" :src="formData.confirm.machineUserPhoto" mode="aspectFill" class="full-img"></image>
-							<view v-else class="upload-placeholder">
-								<text class="u-icon">📸</text>
-								<text class="u-text">点击拍摄合照</text>
+					<view class="ui-field column no-border">
+						<text class="field-label required">人机合影（施工现场及合照）</text>
+						<view class="photo-uploader large" @click="chooseImage('confirm')">
+							<image v-if="formData.confirm.machineUserPhoto" :src="formData.confirm.machineUserPhoto" mode="aspectFill" class="photo-preview"></image>
+							<view v-else class="photo-placeholder">
+								<text class="icon-camera"></text>
+								<text class="text">拍摄人机合照</text>
 							</view>
 						</view>
 					</view>
 				</view>
 			</view>
 
-			<!-- Receipt Style Settlement (Only when chargeable) -->
-			<view class="settlement-receipt" v-if="formData.service.isChargeable === '收费'">
-				<view class="receipt-inner">
-					<view class="receipt-header">费用结算明细清单</view>
-					<view class="receipt-line dashed"></view>
-					<view class="receipt-row">
-						<text class="r-label">1. 更换零件费用</text>
-						<text class="r-val">￥{{ partsTotal }}</text>
-					</view>
-					<view class="receipt-row">
-						<text class="r-label">2. 路程运输费用</text>
-						<text class="r-val">￥{{ travelTotal }}</text>
-					</view>
-					<view class="receipt-row">
-						<text class="r-label">3. 现场服务工时费</text>
-						<text class="r-val">￥{{ laborTotal }}</text>
-					</view>
-					<view class="receipt-line solid"></view>
-					<view class="receipt-total">
-						<text>应收总额合计</text>
-						<text class="grand-val">￥{{ grandTotal }}</text>
-					</view>
+			<!-- Settlement Dashboard -->
+			<view class="settlement-panel" v-if="formData.service.isChargeable === '收费'">
+				<view class="panel-header">费用结算概览</view>
+				<view class="panel-grid">
+					<view class="p-item"><text class="l">零件总额</text><text class="v">￥{{ partsTotal }}</text></view>
+					<view class="p-item"><text class="l">路程费</text><text class="v">￥{{ travelTotal }}</text></view>
+					<view class="p-item"><text class="l">工时费</text><text class="v">￥{{ laborTotal }}</text></view>
+				</view>
+				<view class="panel-total">
+					<text>应收合计</text>
+					<text class="total-v">￥{{ grandTotal }}</text>
 				</view>
 			</view>
 
-			<view class="page-footer">
-				<view class="footer-meta">
-					<view class="meta-item"><text class="m-label">单号:</text><text class="m-val">{{ formData.orderNo }}</text></view>
-					<view class="meta-item"><text class="m-label">填单人:</text><text class="m-val">{{ currentUser }}</text></view>
+			<!-- Page Footer -->
+			<view class="action-footer">
+				<view class="meta-info">
+					<view class="item"><text class="lb">单号</text><text class="vl">{{ formData.orderNo }}</text></view>
+					<view class="item"><text class="lb">填单</text><text class="vl">{{ currentUser }}</text></view>
 				</view>
-				<button class="ui-btn-submit" @click="submitOrder">正式提交工单</button>
+				<button class="btn-primary-main" @click="submitOrder">正式提交服务单</button>
 			</view>
 		</view>
 
-		<!-- Modern Fault Category Picker -->
-		<view class="fault-modal-wrapper" v-if="showFaultPicker" @click.stop="toggleFaultPicker">
-			<view class="fault-modal-content" @click.stop="">
-				<view class="modal-top">
-					<text class="modal-title">选择故障分类</text>
-					<text class="modal-close" @click="toggleFaultPicker">×</text>
+		<!-- Fault Picker Modal -->
+		<view class="modal-mask" v-if="showFaultPicker" @click.stop="toggleFaultPicker">
+			<view class="modal-body" @click.stop="">
+				<view class="modal-header">
+					<text class="t">选择故障分类</text>
+					<text class="c" @click="toggleFaultPicker">✕</text>
 				</view>
 				<view class="modal-search">
-					<input v-model="faultSearchKey" placeholder="搜索故障关键字..." class="search-input" />
+					<input v-model="faultSearchKey" placeholder="搜索关键字..." class="s-input" />
 				</view>
-				<scroll-view scroll-y class="modal-list">
+				<scroll-view scroll-y class="modal-scroll">
 					<block v-if="faultSearchKey">
-						<view v-for="(item, idx) in searchResults" :key="idx" class="list-item leaf" @click="selectFaultLeaf(item.name)">
-							<text class="l-name">{{ item.name }}</text>
-							<text class="l-path">{{ item.parent }}</text>
+						<view v-for="(item, idx) in searchResults" :key="idx" class="leaf-item search" @click="selectFaultLeaf(item.name)">
+							<text class="n">{{ item.name }}</text>
+							<text class="p">{{ item.parent }}</text>
 						</view>
 					</block>
 					<block v-else-if="!selectedCategory">
-						<view v-for="(cat, idx) in faultTree" :key="idx" class="list-item cat" @click="selectFaultCategory(cat)">
+						<view v-for="(cat, idx) in faultTree" :key="idx" class="cat-item" @click="selectFaultCategory(cat)">
 							<text>{{ cat.title }}</text>
-							<text class="l-arrow">></text>
+							<text class="a">›</text>
 						</view>
 					</block>
 					<block v-else>
-						<view class="back-nav" @click="selectedCategory = null">
-							<text class="nav-icon"><</text><text>返回主分类 ({{ selectedCategory.title }})</text>
+						<view class="nav-back" @click="selectedCategory = null">
+							<text class="i">‹</text><text>{{ selectedCategory.title }}</text>
 						</view>
-						<view v-for="(leaf, idx) in selectedCategory.children" :key="idx" class="list-item leaf-simple" @click="selectFaultLeaf(leaf)">
+						<view v-for="(leaf, idx) in selectedCategory.children" :key="idx" class="leaf-item" @click="selectFaultLeaf(leaf)">
 							{{ leaf }}
 						</view>
 					</block>
@@ -386,12 +340,12 @@
 				selectedCategory: null,
 				faultTree: [
 					{ title: "动力系统", children: ["发动机", "启动马达", "发电机", "高原模块", "熄火电磁阀", "高温", "防冻液、水管等冷却系", "动力传递相关（包含行走皮带、主从皮带轮、涨紧装置等）"] },
-					{ title: "行走、传动系统", children: ["前桥（包含内部加工件、油封、漏油、转向拉杆等）", "后桥（包含内部加工件、油封、漏油、转向拉杆等）", "变速箱（内部加工件、油封、漏油等）", "行走传动轴", "车轮", "底盘", "主变速等行走操控", "刹车及各连杆", "悬架（包含后桥弹簧及相关组件）"] },
-					{ title: "液压系统", children: ["各类液压油管及油管接头", "HST", "齿轮泵", "转向器", "液压阀", "升降油缸", "液压油滤清器"] },
-					{ title: "电气系统", children: ["主线束", "启动开关", "水平旋钮", "仪表盘", "组合开关", "蜂鸣器", "安全开关", "水平传感器", "水平电机", "缺苗报警器", "手、脚油门（仅全柴款）", "大灯", "常开常闭开关", "保险丝", "GPS", "电子燃油泵", "电瓶"] },
-					{ title: "供油系统", children: ["燃油管", "燃油箱", "燃油滤清器（包含粗滤、精滤）", "燃油油水分离器"] },
-					{ title: "插植系统", children: ["插植臂（包含调试）", "旋转箱（包含调试）", "插秧箱", "喂入箱（包含调试）", "苗箱（驱动轮、单向离合器、苗箱板等）", "导轨（导轨上所有组件）", "浮体支架", "取苗连杆", "纵送凸轮轴相关（包含弹性销）", "丝杆夹头（包含弹性销、防尘橡胶套）", "感应拉线", "拖沟", "插秧质量（包含缺秧、断秧、漂秧、堵秧、下苗不畅、调整压苗器及阻拦棒等）", "插秧连杆及球头", "液压阀连杆及球头", "插秧传动轴（包含销轴、防尘套）", "插植部减震垫", "浮板", "车头和插植部各相关连接件"] },
-					{ title: "拉线类", children: ["手油门拉线（仅洋马款）", "脚油门拉线（仅洋马款）", "倒车插植部上升拉线", "划线杆打开拉线", "划线杆收起拉线", "分组拉线"] },
+					{ title: "行走、传动系统", children: ["前桥", "后桥", "变速箱", "行走传动轴", "车轮", "底盘", "主变速", "刹车", "悬架"] },
+					{ title: "液压系统", children: ["各类液压油管", "HST", "齿轮泵", "转向器", "液压阀", "升降油缸", "液压油滤清器"] },
+					{ title: "电气系统", children: ["主线束", "启动开关", "水平旋钮", "仪表盘", "组合开关", "蜂鸣器", "安全开关", "水平传感器", "水平电机", "缺苗报警器", "大灯", "保险丝", "GPS", "电子燃油泵", "电瓶"] },
+					{ title: "供油系统", children: ["燃油管", "燃油箱", "燃油滤清器", "燃油油水分离器"] },
+					{ title: "插植系统", children: ["插植臂", "旋转箱", "插秧箱", "喂入箱", "苗箱", "导轨", "浮体支架", "取苗连杆", "感应拉线", "拖沟", "插秧质量", "插秧传动轴", "浮板"] },
+					{ title: "拉线类", children: ["手油门拉线", "脚油门拉线", "倒车上升拉线", "划线杆拉线", "分组拉线"] },
 					{ title: "其他类", children: ["以上内容以外的所有项目"] }
 				],
 				formData: {
@@ -405,7 +359,7 @@
 					},
 					confirm: { machineUserPhoto: '' }
 				},
-				sectionsCollapsed: { basic: false, customer: false, product: true, service: false, fees: false, confirm: true }
+				sectionsCollapsed: { customer: false, product: true, service: false, fees: false, confirm: true }
 			}
 		},
 		computed: {
@@ -428,8 +382,16 @@
 			grandTotal() { return (Number(this.partsTotal) + Number(this.additionalTotal)).toFixed(1); },
 			isCustomerComplete() { const c = this.formData.customer; return !!(c.name && c.phone && c.address); },
 			isProductComplete() { const p = this.formData.product; return !!(p.machineNo && p.platePhoto); },
-			isServiceComplete() { const s = this.formData.service; return !!(s.type && s.faultCategory && s.sitePhotos.length > 0); },
-			isFeesComplete() { return true; },
+			isServiceComplete() {
+				const s = this.formData.service;
+				// 基础必填校验
+				if (!(s.type && s.faultCategory && s.sitePhotos.length > 0)) return false;
+				// 零件校验：如果有零件来源为“其他”，必须填写备注
+				for (const part of s.parts) {
+					if (part.source === '其他' && !part.sourceRemark) return false;
+				}
+				return true;
+			},
 			isConfirmComplete() { return !!this.formData.confirm.machineUserPhoto; },
 			searchResults() {
 				if (!this.faultSearchKey) return [];
@@ -441,7 +403,7 @@
 		},
 		onLoad() {
 			const userInfo = uni.getStorageSync('userInfo');
-			this.currentUser = userInfo ? (userInfo.nickname || userInfo.name) : '未知填单人';
+			this.currentUser = userInfo ? (userInfo.nickname || userInfo.name) : '填单人';
 			const now = new Date();
 			const today = now.toISOString().slice(0, 10);
 			this.formData.customer.reportTime = today;
@@ -461,7 +423,7 @@
 			onFinishTimeChange(e) { this.formData.service.finishTime = e.detail.value; },
 			checkDraft() {
 				const draft = uni.getStorageSync('order_draft');
-				if (draft) uni.showModal({ title: '草稿提示', content: '是否恢复上次编辑的工单？', success: (res) => { if (res.confirm) this.formData = draft; else uni.removeStorageSync('order_draft'); } });
+				if (draft) uni.showModal({ title: '草稿提示', content: '是否恢复上次编辑的工单？', success: (res) => { if (res.confirm) this.formData = draft; } });
 			},
 			onUsageChange(e) { this.formData.customer.usageType = e.detail.value; },
 			onDateChange(e) { this.formData.product.productionDate = e.detail.value; },
@@ -474,8 +436,17 @@
 			selectFaultLeaf(leaf) { this.formData.service.faultCategory = leaf; this.showFaultPicker = false; },
 			addPart() { this.formData.service.parts.push({ name: '', code: '', count: 1, oldPartAction: '带回', source: '自带', price: 0 }); },
 			updatePartCount(idx, d) { const p = this.formData.service.parts[idx]; if (p.count + d >= 1) p.count += d; },
-			removePart(idx) { this.formData.service.parts.splice(idx, 1); },
-			onPartActionChange(e, idx) { this.$set(this.formData.service.parts[idx], 'oldPartAction', e.detail.value); },
+			removePart(idx) {
+				uni.showModal({
+					title: '确认删除',
+					content: `是否确定删除第 ${idx + 1} 项零件？`,
+					success: (res) => {
+						if (res.confirm) {
+							this.formData.service.parts.splice(idx, 1);
+						}
+					}
+				});
+			},
 			chooseImage(type) {
 				uni.chooseImage({
 					count: type === 'site' ? 9 : 1,
@@ -489,8 +460,8 @@
 			removeSitePhoto(idx) { this.formData.service.sitePhotos.splice(idx, 1); },
 			previewImg(url) { uni.previewImage({ urls: [url] }); },
 			async submitOrder() {
-				if (!this.formData.customer.name || !this.formData.product.machineNo) { uni.showToast({ title: '请填写姓名和机器编号', icon: 'none' }); return; }
-				uni.showLoading({ title: '提交中...' });
+				if (!this.formData.customer.name || !this.formData.product.machineNo) { uni.showToast({ title: '核心信息缺失', icon: 'none' }); return; }
+				uni.showLoading({ title: '数据同步中' });
 				try {
 					const orderNo = this.formData.orderNo;
 					const plateId = await this.uploadFile(this.formData.product.platePhoto, orderNo);
@@ -516,19 +487,18 @@
 						success: (res) => {
 							uni.hideLoading();
 							if (res.result.code === 0) {
-								uni.removeStorageSync('order_draft');
-								uni.showToast({ title: '工单提交成功' });
-								setTimeout(() => uni.reLaunch({ url: '/pages/index/index' }), 1500);
+								uni.showToast({ title: '提交成功' });
+								setTimeout(() => uni.reLaunch({ url: '/pages/index/index' }), 1000);
 							} else uni.showToast({ title: res.result.msg, icon: 'none' });
 						}
 					});
-				} catch (e) { uni.hideLoading(); uni.showToast({ title: '网络请求失败', icon: 'none' }); }
+				} catch (e) { uni.hideLoading(); }
 			},
 			uploadFile(path, folder) {
-				return new Promise((resolve, reject) => {
+				return new Promise((resolve) => {
 					if (!path || path.startsWith('cloud://')) return resolve(path);
 					const ext = path.split('.').pop();
-					uniCloud.uploadFile({ filePath: path, cloudPath: `${folder}/${Date.now()}_${Math.random().toString(36).slice(-4)}.${ext}`, success: (res) => resolve(res.fileID), fail: reject });
+					uniCloud.uploadFile({ filePath: path, cloudPath: `${folder}/${Date.now()}_${Math.random().toString(36).slice(-4)}.${ext}`, success: (res) => resolve(res.fileID), fail: () => resolve(null) });
 				});
 			}
 		}
@@ -536,189 +506,191 @@
 </script>
 
 <style lang="scss">
-	$primary: #007aff;
-	$success: #4cd964;
-	$warning: #ffcc00;
-	$danger: #ff5252;
-	$gray: #c0c4cc; // 调淡灰色，使占位文字更轻盈
-	$bg: #fbfbfc; // 稍微调亮背景
+	// Professional Palette
+	$accent: #1677ff;
+	$bg-page: #f4f7f9;
+	$text-primary: #1d2129;
+	$text-secondary: #4e5969;
+	$text-tip: #86909c;
+	$border-light: #f0f2f5;
+	$success: #52c41a;
+	$danger: #ff4d4f;
 
-	.page-wrapper { min-height: 100vh; background-color: $bg; }
-	.container { padding: 12px; padding-bottom: 120px; }
+	.page-wrapper { min-height: 100vh; background-color: $bg-page; color: $text-primary; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+	.container { padding: 16px; padding-bottom: 120px; }
 
-	// UI Card Base
+	// UI Cards
 	.ui-card {
 		background: #fff;
-		border-radius: 12px;
+		border-radius: 10px;
 		margin-bottom: 12px;
-		box-shadow: 0 2px 12px rgba(0,0,0,0.03); // 更淡的阴影
+		border: 1px solid $border-light;
 		overflow: hidden;
-		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-		&.card-collapsed { box-shadow: none; margin-bottom: 8px; border: 1px solid #f5f5f5; }
+		transition: transform 0.2s, box-shadow 0.2s;
+		&.card-active { border-left: 4px solid $accent; }
 	}
 
 	.card-header {
+		padding: 12px 16px;
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 14px 16px;
-		border-bottom: 1px solid #f8f9fb;
-		.header-left { display: flex; align-items: center; }
-		.header-icon { font-size: 18px; margin-right: 8px; opacity: 0.6; } // 图标增加透明度，呈现水印感
-		.header-title { font-size: 16px; font-weight: 600; color: #333; }
-		.header-complete { color: $success; margin-left: 8px; font-size: 14px; }
-		.arrow-icon { font-size: 12px; color: #ddd; transition: transform 0.3s; &.arrow-active { transform: rotate(180deg); color: $primary; } }
-		&.no-border { border-bottom: none; }
+		.header-title { font-size: 15px; font-weight: 700; color: $text-primary; }
+		.header-status { font-size: 10px; background: rgba($success, 0.1); color: $success; padding: 2px 6px; border-radius: 4px; margin-left: 8px; }
+		.header-arrow { width: 7px; height: 7px; border-right: 2px solid $text-tip; border-bottom: 2px solid $text-tip; transform: rotate(45deg); transition: transform 0.3s; &.arrow-up { transform: rotate(-135deg); } }
 	}
 
-	.card-body { padding: 8px 16px 16px; }
+	.card-body { padding: 0 16px 12px; }
 
-	// Form Item
-	.ui-form-item {
+	// Fields
+	.ui-field {
+		padding: 8px 0; // 压缩间距
+		border-bottom: 1px solid #f9fafb;
 		display: flex;
 		align-items: center;
-		padding: 12px 0;
-		border-bottom: 1px solid #f8f9fb;
 		&:last-child { border-bottom: none; }
-		&.column { flex-direction: column; align-items: flex-start; .ui-label { margin-bottom: 10px; width: 100%; } }
+		&.column { flex-direction: column; align-items: flex-start; }
 		&.no-border { border-bottom: none; }
-		.ui-label { width: 90px; font-size: 14px; color: #606266; &.required::after { content: '*'; color: $danger; margin-left: 4px; } }
-		.ui-input, .ui-picker-view { flex: 1; font-size: 14px; color: #333; height: 32px; line-height: 32px; }
-		.ui-textarea { width: 100%; height: 80px; background: #f9fafb; padding: 10px; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
-		.ui-radio-group { flex: 1; display: flex; .ui-radio { margin-right: 20px; font-size: 14px; display: flex; align-items: center; } }
-		
-		// 统一调淡占位符颜色
-		/deep/ .uni-input-placeholder, /deep/ .uni-textarea-placeholder { color: #dcdfe6; font-size: 13px; }
+		.field-label { width: 85px; font-size: 13px; font-weight: 500; color: $text-secondary; &.required::after { content: '*'; color: $danger; margin-left: 3px; } }
+		.field-input, .picker-text, .field-picker-box { flex: 1; height: 34px; line-height: 34px; background: #f7f8fa; border-radius: 6px; padding: 0 10px; font-size: 13px; color: $text-primary; }
+		.field-textarea { width: 100%; height: 80px; background: #f7f8fa; border-radius: 8px; padding: 10px; font-size: 13px; box-sizing: border-box; margin-top: 6px; }
+		.ui-radio-box { flex: 1; display: flex; .radio-item { margin-right: 15px; font-size: 13px; display: flex; align-items: center; } }
+		.time-picker-group { flex: 1; display: flex; align-items: center; 
+			.tp { flex: 1; background: #f7f8fa; height: 34px; line-height: 34px; border-radius: 6px; padding: 0 10px; font-size: 13px; text-align: center; }
+			.ml-5 { margin-left: 10px; }
+		}
+		.ph { color: #c9cdd4; }
 	}
 
-	// Upload Box
-	.ui-upload-single {
+	// Multi Photo Uploader
+	.photo-uploader {
 		width: 100%;
-		height: 180px;
-		background: #fbfbfc;
-		border: 1px dashed #ebeef5;
+		height: 150px;
+		background: #f7f8fa;
 		border-radius: 8px;
+		border: 1px dashed #e5e6eb;
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		overflow: hidden;
-		&.large { height: 220px; border-color: lighten($primary, 20%); background: lighten($primary, 49%); }
-		.upload-placeholder { display: flex; flex-direction: column; align-items: center; color: $gray; 
-			.u-icon { font-size: 32px; margin-bottom: 8px; opacity: 0.4; } // 上标增加透明度
-			.u-text { font-size: 12px; color: #dcdfe6; }
-		}
-		.full-img { width: 100%; height: 100%; }
-	}
-
-	// Parts Detail Card
-	.parts-header { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 12px;
-		.ui-label { flex: 1; }
-		.ui-btn-add { margin: 0; white-space: nowrap; min-width: 65px; background-color: lighten($primary, 45%); color: $primary; border: 1px solid lighten($primary, 30%); font-weight: bold; border-radius: 20px; }
-	}
-	.part-item-card {
-		width: 100%;
-		box-sizing: border-box;
-		background: #fff;
-		border: 1px solid #ebeef5;
-		border-radius: 8px;
-		padding: 12px;
-		margin-bottom: 10px;
-		.part-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
-			.p-input-name { flex: 1; font-weight: normal; font-size: 15px; border-bottom: 1px solid #f0f0f0; padding-bottom: 4px; }
-			.part-del { color: $danger; font-size: 24px; padding: 0 5px; line-height: 1; }
-		}
-		.part-middle { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
-			.p-input-code { flex: 1; font-size: 13px; color: #666; }
-			.p-source-select { display: flex; align-items: center; background: #f0f7ff; padding: 4px 10px; border-radius: 4px; border: 1px solid lighten($primary, 30%);
-				.s-label { font-size: 11px; color: $primary; margin-right: 4px; }
-				.s-val { font-size: 12px; color: $primary; font-weight: bold; }
-				.s-arrow { font-size: 10px; color: $primary; margin-left: 4px; }
+		margin-top: 8px;
+		&.large { height: 200px; background: #f0f5ff; border-color: $accent; }
+		.photo-placeholder { display: flex; flex-direction: column; align-items: center; color: $text-tip;
+			.icon-camera { width: 30px; height: 30px; border: 2px solid $text-tip; border-radius: 6px; position: relative; margin-bottom: 6px;
+				&::before { content: ''; position: absolute; width: 6px; height: 6px; border: 2px solid $text-tip; border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%,-50%); }
 			}
+			.text { font-size: 11px; }
 		}
-		.part-remark-row { margin-bottom: 10px; .p-input-remark { width: 100%; background: #fffbe6; font-size: 12px; padding: 6px 10px; border-radius: 4px; border: 1px solid #ffe58f; box-sizing: border-box; } }
-		.part-bottom { display: flex; justify-content: space-between; align-items: center;
-			.p-stepper { display: flex; border: 1px solid #dcdfe6; border-radius: 4px; overflow: hidden;
-				.p-step-btn { width: 30px; height: 30px; line-height: 30px; text-align: center; background: #f5f7fa; font-weight: bold; }
-				.p-step-val { width: 40px; text-align: center; line-height: 30px; font-size: 14px; border-left: 1px solid #eee; border-right: 1px solid #eee; }
+		.photo-preview { width: 100%; height: 100%; border-radius: 8px; }
+	}
+
+	// Grid Photos
+	.grid-uploader { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;
+		.grid-add { width: 65px; height: 70px; background: #f7f8fa; border: 1px dashed #e5e6eb; border-radius: 6px; display: flex; justify-content: center; align-items: center; font-size: 24px; color: #c9cdd4; }
+		.grid-item { width: 65px; height: 70px; position: relative;
+			.img { width: 100%; height: 100%; border-radius: 6px; }
+			.btn-del { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; background: $danger; color: #fff; border-radius: 50%; text-align: center; line-height: 16px; font-size: 12px; border: 2px solid #fff; }
+		}
+	}
+
+	// Parts Item - New Inline Layout
+	.list-header { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+		.list-title { font-size: 13px; font-weight: 700; color: $text-primary; }
+		.btn-text-add { font-size: 12px; color: $accent; font-weight: 600; }
+	}
+	.part-entry {
+		position: relative; // 增加相对定位
+		width: 100%; background: #fbfbfc; border: 1px solid $border-light; border-radius: 8px; padding: 10px; margin-bottom: 8px; box-sizing: border-box;
+		
+		.btn-remove-absolute {
+			position: absolute;
+			top: -2px;
+			right: 4px;
+			font-size: 24px;
+			color: $danger;
+			padding: 10px;
+			z-index: 10;
+			line-height: 1;
+		}
+
+		.entry-row { display: flex; justify-content: space-between; align-items: center;
+			.input-name { flex: 1; font-size: 14px; font-weight: 400; border-bottom: 1px solid #eee; height: 30px; padding-right: 30px; } // 留出删除按钮空间
+			.input-code { flex: 1; font-size: 12px; color: $text-secondary; height: 30px; }
+		}
+		
+		.source-picker-inline { display: flex; align-items: center; background: #f7f8fa; padding: 0 10px; border-radius: 6px; margin-left: 8px; height: 34px; border: 1px solid #f0f2f5; box-sizing: border-box;
+			.s-label { font-size: 12px; color: $text-tip; margin-right: 6px; white-space: nowrap; }
+			.s-value { font-size: 13px; color: $accent; font-weight: 600; white-space: nowrap; }
+		}
+
+		.part-ext-row { margin-top: 10px; background: #fffbe6; padding: 8px 12px; border-radius: 6px; border: 1px solid #ffe58f; box-sizing: border-box;
+			.ext-label { font-size: 11px; font-weight: 700; color: #856404; margin-bottom: 4px; display: block;
+				&.required::after { content: '*'; color: $danger; margin-left: 2px; }
 			}
-			.p-action-group { display: flex; .p-radio-label { font-size: 12px; margin-left: 10px; display: flex; align-items: center; } }
+			.input-remark { width: 100%; font-size: 12px; color: #856404; height: 28px; }
+			.ph-warning { color: rgba(#856404, 0.4); }
 		}
-		.part-price-row { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #f0f0f0; display: flex; justify-content: space-between; align-items: center;
-			.price-input { display: flex; align-items: center; font-size: 13px; color: #666; .p-price-val { width: 60px; color: $danger; font-weight: bold; text-align: center; border-bottom: 1px solid $danger; margin: 0 4px; } }
-			.price-sum { font-size: 14px; font-weight: bold; color: $danger; }
+		
+		.flex-align-center { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+		
+		.entry-stepper-wrapper { display: flex; align-items: center; background: #f7f8fa; padding: 2px 6px; border-radius: 4px;
+			.st-label { font-size: 10px; color: $text-tip; margin-right: 6px; }
 		}
-	}
-	.parts-total-banner { width: 100%; box-sizing: border-box; background: #fff9f0; padding: 10px 16px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: #e6a23c; border: 1px solid #ffebcc; .banner-val { font-size: 18px; font-weight: bold; } }
+		
+		.entry-stepper { display: flex; align-items: center; background: #fff; border: 1px solid #eee; border-radius: 4px;
+			.s-btn { width: 26px; height: 24px; text-align: center; line-height: 24px; color: $text-secondary; font-weight: bold; }
+			.s-num { width: 30px; text-align: center; font-size: 12px; font-weight: 700; border-left: 1px solid #eee; border-right: 1px solid #eee; }
+		}
 
-	// Photo Grid
-	.ui-photo-grid { display: flex; flex-wrap: wrap; gap: 10px;
-		.photo-add { width: 80px; height: 80px; background: #f5f7fa; border-radius: 6px; display: flex; justify-content: center; align-items: center; border: 1px dashed #dcdfe6; .u-icon { font-size: 30px; color: $gray; } }
-		.photo-item { width: 80px; height: 80px; position: relative;
-			.p-img { width: 100%; height: 100%; border-radius: 6px; }
-			.p-del { position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; background: $danger; color: #fff; border-radius: 50%; text-align: center; line-height: 18px; font-size: 14px; border: 2px solid #fff; }
-		}
-	}
-
-	// Fee Sub Cards
-	.fee-sub-card { background: #f9fafb; padding: 12px; border-radius: 8px; border: 1px solid #f0f2f5;
-		.f-sub-header { font-size: 13px; font-weight: bold; color: $primary; margin-bottom: 10px; }
-		.f-row { display: flex; justify-content: space-between; gap: 10px; }
-		.f-input-group { flex: 1; display: flex; align-items: center; background: #fff; padding: 5px 8px; border-radius: 4px; border: 1px solid #eee;
-			.f-label { font-size: 11px; color: #999; margin-right: 4px; white-space: nowrap; }
-			.f-input { flex: 1; font-size: 13px; text-align: right; }
-			.f-unit { font-size: 11px; color: #999; margin-left: 4px; }
-		}
-		.f-result { text-align: right; margin-top: 8px; font-size: 12px; color: #666; .f-val { color: $danger; font-weight: bold; font-size: 14px; margin-left: 4px; } }
-		.f-time-box { background: #fff; border-radius: 4px; border: 1px solid #eee; overflow: hidden;
-			.t-item { display: flex; align-items: center; padding: 8px; border-bottom: 1px solid #f5f5f5; &:last-child { border-bottom: none; }
-				.t-label { width: 40px; font-size: 11px; color: $gray; }
-				.t-picker-group { flex: 1; display: flex; font-size: 13px; .ml-10 { margin-left: 10px; } }
+		.entry-bottom-inline { flex: 1; display: flex; justify-content: flex-end; align-items: center;
+			.price-box-small { display: flex; align-items: center; background: #f7f8fa; padding: 2px 6px; border-radius: 4px;
+				.p-label { font-size: 10px; color: $text-tip; margin-right: 4px; }
+				.p-val { width: 40px; font-size: 12px; font-weight: 700; color: $danger; text-align: center; }
+				.p-total-val { font-size: 12px; font-weight: 700; color: $danger; }
 			}
+			.ml-10 { margin-left: 8px; }
 		}
-		.f-info-bar { margin-top: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: $primary; .f-val-main { font-weight: bold; font-size: 14px; } }
-		.f-warn-bar { margin-top: 8px; font-size: 11px; color: $danger; text-align: center; background: lighten($danger, 45%); padding: 4px; border-radius: 4px; }
 	}
-	.fee-summary-bar { margin-top: 16px; background: lighten($danger, 48%); border: 1px solid lighten($danger, 40%); padding: 12px 16px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; color: #333; .fee-total-val { font-size: 20px; color: $danger; } }
+	.list-summary { width: 100%; padding: 10px; background: #fff7e6; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #ff7d00; .v { font-size: 16px; font-weight: 800; } }
 
-	// Receipt Settlement
-	.settlement-receipt {
-		margin: 20px 4px;
-		background: #fff;
-		position: relative;
-		border-radius: 4px;
-		filter: drop-shadow(0 4px 12px rgba(0,0,0,0.08));
-		&::before, &::after { content: ''; position: absolute; left: 0; right: 0; height: 8px; background-size: 16px 8px; }
-		&::before { top: -8px; background-image: radial-gradient(circle at 8px -4px, transparent 8px, #fff 8px); }
-		&::after { bottom: -8px; background-image: radial-gradient(circle at 8px 12px, transparent 8px, #fff 8px); }
-		.receipt-inner { padding: 20px; }
-		.receipt-header { text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 15px; color: #333; letter-spacing: 2px; }
-		.receipt-line { height: 1px; margin: 10px 0; &.dashed { border-top: 1px dashed #ddd; } &.solid { border-top: 2px solid #333; } }
-		.receipt-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; color: #666; }
-		.receipt-total { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-weight: bold; font-size: 16px; color: #000; .grand-val { font-size: 24px; color: $primary; } }
+	// Fee Cards
+	.fee-card {
+		padding: 10px; background: #fbfbfc; border-radius: 8px; border: 1px solid $border-light;
+		.f-title { font-size: 11px; font-weight: 700; color: $accent; margin-bottom: 8px; display: block; }
+		.f-inputs { display: flex; gap: 8px; .f-item { flex: 1; background: #fff; border: 1px solid #eee; padding: 4px 8px; border-radius: 4px; font-size: 11px; color: $text-tip; display: flex; justify-content: space-between; input { width: 35px; text-align: right; color: $text-primary; font-weight: 700; } .v { color: $accent; font-weight: 700; } } }
+		.f-subtotal { text-align: right; margin-top: 8px; font-size: 12px; font-weight: 700; color: $danger; }
+		.f-time-line { background: #fff; padding: 6px; border-radius: 4px; border: 1px solid #eee;
+			.time-tag { display: flex; align-items: center; font-size: 11px; .l { color: $text-tip; width: 30px; } .item-input { flex: 1; display: flex; align-items: center; input { width: 35px; border-bottom: 1px solid #eee; margin-right: 4px; text-align: center; } } }
+		}
 	}
 
-	// Footer
-	.page-footer { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; padding: 12px 16px 30px; border-top: 1px solid #eee; z-index: 100;
-		.footer-meta { display: flex; justify-content: space-between; margin-bottom: 12px; 
-			.meta-item { display: flex; align-items: center; font-size: 11px; color: $gray; 
-				.m-label { margin-right: 4px; }
-				.m-val { color: #666; font-family: monospace; }
-			}
+	// Settlement Panel
+	.settlement-panel {
+		margin-top: 20px; background: #1d2129; border-radius: 10px; padding: 16px; color: #fff;
+		.panel-header { font-size: 12px; opacity: 0.6; margin-bottom: 12px; }
+		.panel-grid { display: flex; justify-content: space-between; border-bottom: 1px solid rgba(#fff, 0.1); padding-bottom: 12px;
+			.p-item { display: flex; flex-direction: column; .l { font-size: 10px; opacity: 0.5; margin-bottom: 2px; } .v { font-size: 13px; font-weight: 700; } }
 		}
-		.ui-btn-submit { background: $primary; color: #fff; height: 46px; border-radius: 23px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 12px rgba($primary, 0.3); }
+		.panel-total { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; font-size: 14px; font-weight: 700; .total-v { font-size: 22px; color: #fffae6; } }
 	}
 
-	// Fault Modal
-	.fault-modal-wrapper { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 999; display: flex; flex-direction: column; justify-content: flex-end;
-		.fault-modal-content { background: #fff; height: 75vh; border-radius: 20px 20px 0 0; display: flex; flex-direction: column; padding: 20px; }
-		.modal-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; .modal-title { font-size: 18px; font-weight: bold; } .modal-close { font-size: 28px; color: #ccc; } }
-		.modal-search { margin-bottom: 15px; .search-input { background: #f5f7fa; height: 44px; border-radius: 22px; padding: 0 20px; font-size: 14px; border: 1px solid #eee; } }
-		.modal-list { flex: 1; overflow: hidden; }
-		.list-item { padding: 16px 0; border-bottom: 1px solid #f5f5f5; display: flex; justify-content: space-between; align-items: center;
-			&.cat { font-weight: 500; .l-arrow { color: #ccc; font-size: 14px; } }
-			&.leaf { flex-direction: column; align-items: flex-start; .l-name { font-size: 15px; margin-bottom: 4px; } .l-path { font-size: 11px; color: $gray; } }
-			&.leaf-simple { font-size: 15px; color: #333; }
+	// Action Footer
+	.action-footer {
+		position: fixed; bottom: 0; left: 0; right: 0; background: #fff; padding: 10px 16px 30px; box-shadow: 0 -4px 20px rgba(0,0,0,0.05); z-index: 100;
+		.meta-info { display: flex; justify-content: space-between; margin-bottom: 8px;
+			.item { font-size: 10px; .lb { color: $text-tip; margin-right: 4px; } .vl { color: $text-secondary; font-family: monospace; } }
 		}
-		.back-nav { display: flex; align-items: center; padding: 12px 0; color: $primary; font-weight: bold; font-size: 14px; .nav-icon { margin-right: 6px; } }
+		.btn-primary-main { background: $accent; color: #fff; height: 44px; line-height: 44px; border-radius: 22px; font-size: 15px; font-weight: 700; border: none; box-shadow: 0 6px 16px rgba($accent, 0.3); }
 	}
+
+	// Modern Modals
+	.modal-mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 999; display: flex; flex-direction: column; justify-content: flex-end; backdrop-filter: blur(4px); }
+	.modal-body { background: #fff; height: 70vh; border-radius: 20px 20px 0 0; display: flex; flex-direction: column; padding: 20px; }
+	.modal-header { display: flex; justify-content: space-between; margin-bottom: 16px; .t { font-size: 16px; font-weight: 800; } .c { font-size: 18px; color: #c9cdd4; } }
+	.modal-search { margin-bottom: 12px; .s-input { background: #f2f3f5; height: 40px; border-radius: 20px; padding: 0 16px; font-size: 13px; } }
+	.modal-scroll { flex: 1; overflow: hidden; }
+	.cat-item { padding: 14px 0; border-bottom: 1px solid #f2f3f5; display: flex; justify-content: space-between; font-weight: 500; .a { color: #c9cdd4; } }
+	.leaf-item { padding: 14px 0; border-bottom: 1px solid #f2f3f5; font-size: 14px; 
+		&.search { display: flex; flex-direction: column; .p { font-size: 10px; color: $text-tip; margin-top: 3px; } }
+	}
+	.nav-back { display: flex; align-items: center; color: $accent; font-weight: 700; padding-bottom: 14px; .i { font-size: 22px; margin-right: 4px; } }
 </style>
