@@ -255,7 +255,7 @@
 				</view>
 				<view class="card-body" v-show="!sectionsCollapsed.confirm">
 					<view class="ui-field column no-border">
-						<text class="field-label required">人机合影（施工现场及合照）</text>
+						<text class="field-label required hmandmachine">人机合影（施工现场及合照）</text>
 						<view class="photo-uploader large" @click="chooseImage('confirm')">
 							<image v-if="formData.confirm.machineUserPhoto" :src="formData.confirm.machineUserPhoto" mode="aspectFill" class="photo-preview"></image>
 							<view v-else class="photo-placeholder">
@@ -303,7 +303,7 @@
 				</view>
 				<scroll-view scroll-y class="modal-scroll">
 					<block v-if="faultSearchKey">
-						<view v-for="(item, idx) in searchResults" :key="idx" class="leaf-item search" @click="selectFaultLeaf(item.name)">
+						<view v-for="(item, idx) in searchResults" :key="idx" class="leaf-item search" @click="selectFaultLeaf(item.name, item.parent)">
 							<text class="n">{{ item.name }}</text>
 							<text class="p">{{ item.parent }}</text>
 						</view>
@@ -318,7 +318,7 @@
 						<view class="nav-back" @click="selectedCategory = null">
 							<text class="i">‹</text><text>{{ selectedCategory.title }}</text>
 						</view>
-						<view v-for="(leaf, idx) in selectedCategory.children" :key="idx" class="leaf-item" @click="selectFaultLeaf(leaf)">
+						<view v-for="(leaf, idx) in selectedCategory.children" :key="idx" class="leaf-item" @click="selectFaultLeaf(leaf, selectedCategory.title)">
 							{{ leaf }}
 						</view>
 					</block>
@@ -433,7 +433,10 @@
 			onPartSourceChange(e, index) { this.$set(this.formData.service.parts[index], 'source', this.partSources[e.detail.value]); },
 			toggleFaultPicker() { this.showFaultPicker = !this.showFaultPicker; this.selectedCategory = null; },
 			selectFaultCategory(cat) { this.selectedCategory = cat; },
-			selectFaultLeaf(leaf) { this.formData.service.faultCategory = leaf; this.showFaultPicker = false; },
+			selectFaultLeaf(leaf, parent) {
+				this.formData.service.faultCategory = parent ? `${parent}-${leaf}` : leaf;
+				this.showFaultPicker = false;
+			},
 			addPart() { this.formData.service.parts.push({ name: '', code: '', count: 1, oldPartAction: '带回', source: '自带', price: 0 }); },
 			updatePartCount(idx, d) { const p = this.formData.service.parts[idx]; if (p.count + d >= 1) p.count += d; },
 			removePart(idx) {
@@ -552,12 +555,13 @@
 		&.column { flex-direction: column; align-items: flex-start; }
 		&.no-border { border-bottom: none; }
 		.field-label { width: 85px; font-size: 13px; font-weight: 500; color: $text-secondary; &.required::after { content: '*'; color: $danger; margin-left: 3px; } }
+		.hmandmachine { width: 185px;}
 		.field-input, .picker-text, .field-picker-box { flex: 1; height: 34px; line-height: 34px; background: #f7f8fa; border-radius: 6px; padding: 0 10px; font-size: 13px; color: $text-primary; }
 		.field-textarea { width: 100%; height: 80px; background: #f7f8fa; border-radius: 8px; padding: 10px; font-size: 13px; box-sizing: border-box; margin-top: 6px; }
 		.ui-radio-box { flex: 1; display: flex; .radio-item { margin-right: 15px; font-size: 13px; display: flex; align-items: center; } }
-		.time-picker-group { flex: 1; display: flex; align-items: center; 
-			.tp { flex: 1; background: #f7f8fa; height: 34px; line-height: 34px; border-radius: 6px; padding: 0 10px; font-size: 13px; text-align: center; }
-			.ml-5 { margin-left: 10px; }
+		.time-picker-group { display: flex; align-items: center; 
+			.tp { background: #f7f8fa; height: 34px; line-height: 34px; border-radius: 6px; padding: 0 12px; font-size: 13px; text-align: center; min-width: 30px; }
+			.ml-5 { margin-left: 8px; }
 		}
 		.ph { color: #c9cdd4; }
 	}
@@ -603,11 +607,10 @@
 		
 		.btn-remove-absolute {
 			position: absolute;
-			top: -2px;
+			top: 0px;
 			right: 4px;
-			font-size: 24px;
+			font-size: 22px;
 			color: $danger;
-			padding: 10px;
 			z-index: 10;
 			line-height: 1;
 		}
