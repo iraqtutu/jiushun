@@ -474,7 +474,18 @@
 					},
 					confirm: { machineUserPhoto: '' }
 				},
-				sectionsCollapsed: { customer: false, product: true, service: false, fees: false, confirm: true }
+				sectionsCollapsed: { customer: false, product: true, service: false, fees: false, confirm: true },
+				allowSave: false
+			}
+		},
+		watch: {
+			formData: {
+				handler(val) {
+					if (this.allowSave) {
+						this.saveDraft(val);
+					}
+				},
+				deep: true
 			}
 		},
 		computed: {
@@ -531,6 +542,8 @@
 		onLoad() {
 			const userInfo = uni.getStorageSync('userInfo');
 			this.currentUser = userInfo ? (userInfo.nickname || userInfo.name) : '填单人';
+			
+			// 默认初始化数据
 			const now = new Date();
 			const today = now.toISOString().slice(0, 10);
 			this.formData.customer.reportTime = today;
@@ -540,6 +553,8 @@
 			this.formData.service.finishDate = today;
 			this.formData.service.finishTime = now.toTimeString().slice(0, 5);
 			this.formData.orderNo = 'JS' + today.replace(/-/g, '') + Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+			
+			// 检查草稿并开启自动保存
 			this.checkDraft();
 		},
 		methods: {
@@ -550,7 +565,33 @@
 			onFinishTimeChange(e) { this.formData.service.finishTime = e.detail.value; },
 			checkDraft() {
 				const draft = uni.getStorageSync('order_draft');
-				if (draft) uni.showModal({ title: '草稿提示', content: '是否恢复上次编辑的工单？', success: (res) => { if (res.confirm) this.formData = draft; } });
+				if (draft) {
+					uni.showModal({
+						title: '草稿提示',
+						content: '发现未完成的工单，是否继续编辑？',
+						cancelText: '重新开始',
+						confirmText: '恢复草稿',
+						success: (res) => {
+							if (res.confirm) {
+								this.formData = draft;
+								uni.showToast({ title: '已恢复草稿', icon: 'none' });
+							} else {
+								// 如果用户选择重新开始，建议清除旧草稿以防混淆
+								uni.removeStorageSync('order_draft');
+							}
+							// 无论用户如何选择，都开启后续的自动保存
+							this.$nextTick(() => { this.allowSave = true; });
+						}
+					});
+				} else {
+					this.allowSave = true;
+				}
+			},
+			saveDraft(data) {
+				if (this.saveTimer) clearTimeout(this.saveTimer);
+				this.saveTimer = setTimeout(() => {
+					uni.setStorageSync('order_draft', data);
+				}, 1000); // 1秒防抖，避免频繁写入磁盘
 			},
 			onUsageChange(e) { this.formData.customer.usageType = e.detail.value; },
 			onDateChange(e) { this.formData.product.productionDate = e.detail.value; },
@@ -692,6 +733,8 @@
 						success: (res) => {
 							uni.hideLoading();
 							if (res.result.code === 0) {
+								// 提交成功，清除本地草稿
+								uni.removeStorageSync('order_draft');
 								uni.showToast({ title: '提交成功' });
 								setTimeout(() => uni.reLaunch({ url: '/pages/index/index' }), 1000);
 							} else uni.showToast({ title: res.result.msg, icon: 'none' });
