@@ -109,9 +109,22 @@
 							<label class="radio-item"><radio value="收费" :checked="formData.service.isChargeable === '收费'" color="#ff4d4f" />收费</label>
 						</radio-group>
 					</view>
-					<view class="ui-field">
-						<text class="field-label required">故障分类</text>
-						<view class="field-picker-box" @click="toggleFaultPicker">{{ formData.service.faultCategory || '点击选择分类' }}</view>
+					<view class="ui-field column no-border">
+						<view class="field-label-row">
+							<text class="field-label required">故障分类</text>
+							<view class="btn-text-add" @click="toggleFaultPicker">+ 选择分类</view>
+						</view>
+						<view class="tag-cloud-wrapper">
+							<view v-if="formData.service.faultCategories.length === 0" class="tag-placeholder" @click="toggleFaultPicker">
+								暂未选择任何分类，点击右侧按钮添加
+							</view>
+							<view v-else class="tag-cloud">
+								<view v-for="(tag, tidx) in formData.service.faultCategories" :key="tidx" class="tag" @click.stop="removeFaultTag(tidx)">
+									<text class="t-text">{{ tag }}</text>
+									<text class="x">✕</text>
+								</view>
+							</view>
+						</view>
 					</view>
 					<view class="ui-field column">
 						<text class="field-label required">故障现象</text>
@@ -170,6 +183,21 @@
 									<view class="price-box-small ml-10">
 										<text class="p-label">小计</text>
 										<text class="p-total-val">￥{{ ((Number(part.price) || 0) * (part.count || 0)).toFixed(1) }}</text>
+									</view>
+								</view>
+							</view>
+
+							<!-- 旧件处理独立一行 -->
+							<view class="entry-row-standalone mt-10">
+								<view class="old-part-toggle-full">
+									<text class="opt-label">旧件处理方式</text>
+									<view class="opt-btns">
+										<view class="opt-btn" :class="{ 'active': part.oldPartAction === '带回' }" @click="onOldPartActionChange(idx, '带回')">
+											<text class="dot" v-if="part.oldPartAction === '带回'"></text>带回
+										</view>
+										<view class="opt-btn" :class="{ 'active': part.oldPartAction === '丢弃' }" @click="onOldPartActionChange(idx, '丢弃')">
+											<text class="dot" v-if="part.oldPartAction === '丢弃'"></text>丢弃
+										</view>
 									</view>
 								</view>
 							</view>
@@ -317,7 +345,10 @@
 					<view class="item"><text class="lb">单号</text><text class="vl">{{ formData.orderNo }}</text></view>
 					<view class="item"><text class="lb">填单</text><text class="vl">{{ currentUser }}</text></view>
 				</view>
-				<button class="btn-primary-main" @click="submitOrder">正式提交服务单</button>
+				<view class="btn-group">
+					<button class="btn-mock-fill" @click="fillMockData">一键填写(测试)</button>
+					<button class="btn-primary-main" @click="submitOrder">正式提交服务单</button>
+				</view>
 			</view>
 		</view>
 
@@ -325,34 +356,77 @@
 		<view class="modal-mask" v-if="showFaultPicker" @click.stop="toggleFaultPicker">
 			<view class="modal-body" @click.stop="">
 				<view class="modal-header">
-					<text class="t">选择故障分类</text>
+					<view class="h-left">
+						<text class="t">选择故障分类</text>
+						<text class="count" v-if="formData.service.faultCategories.length > 0">已选 {{ formData.service.faultCategories.length }}</text>
+					</view>
 					<text class="c" @click="toggleFaultPicker">✕</text>
 				</view>
+				
 				<view class="modal-search">
-					<input v-model="faultSearchKey" placeholder="搜索关键字..." class="s-input" />
+					<text class="search-icon">🔍</text>
+					<input v-model="faultSearchKey" placeholder="快速搜索故障现象或分类..." class="s-input" placeholder-class="ph" />
+					<text class="clear-btn" v-if="faultSearchKey" @click="faultSearchKey = ''">×</text>
 				</view>
+
 				<scroll-view scroll-y class="modal-scroll">
+					<!-- Search Results -->
 					<block v-if="faultSearchKey">
-						<view v-for="(item, idx) in searchResults" :key="idx" class="leaf-item search" @click="selectFaultLeaf(item.name, item.parent)">
-							<text class="n">{{ item.name }}</text>
-							<text class="p">{{ item.parent }}</text>
+						<view v-for="(item, idx) in searchResults" :key="idx" 
+							class="leaf-item search" 
+							:class="{ 'active': formData.service.faultCategories.includes(item.parent + '-' + item.name) }"
+							@click="selectFaultLeaf(item.name, item.parent)">
+							<view class="l-content">
+								<text class="n">{{ item.name }}</text>
+								<text class="p">{{ item.parent }}</text>
+							</view>
+							<view class="check-box" v-if="formData.service.faultCategories.includes(item.parent + '-' + item.name)">
+								<text class="check-icon">✓</text>
+							</view>
 						</view>
+						<view class="empty-results" v-if="searchResults.length === 0">未找到相关分类</view>
 					</block>
+					
+					<!-- Category List -->
 					<block v-else-if="!selectedCategory">
 						<view v-for="(cat, idx) in faultTree" :key="idx" class="cat-item" @click="selectFaultCategory(cat)">
-							<text>{{ cat.title }}</text>
+							<view class="c-info">
+								<text class="c-title">{{ cat.title }}</text>
+								<text class="c-badge" v-if="getCategorySelectedCount(cat.title) > 0">{{ getCategorySelectedCount(cat.title) }}</text>
+							</view>
 							<text class="a">›</text>
 						</view>
 					</block>
+					
+					<!-- Sub-category List -->
 					<block v-else>
-						<view class="nav-back" @click="selectedCategory = null">
-							<text class="i">‹</text><text>{{ selectedCategory.title }}</text>
+						<view class="nav-back-sticky" @click="selectedCategory = null">
+							<text class="i">‹</text><text>返回：{{ selectedCategory.title }}</text>
 						</view>
-						<view v-for="(leaf, idx) in selectedCategory.children" :key="idx" class="leaf-item" @click="selectFaultLeaf(leaf, selectedCategory.title)">
-							{{ leaf }}
+						<view v-for="(leaf, idx) in selectedCategory.children" :key="idx" 
+							class="leaf-item" 
+							:class="{ 'active': formData.service.faultCategories.includes(selectedCategory.title + '-' + leaf) }"
+							@click="selectFaultLeaf(leaf, selectedCategory.title)">
+							<text class="n">{{ leaf }}</text>
+							<view class="check-box" v-if="formData.service.faultCategories.includes(selectedCategory.title + '-' + leaf)">
+								<text class="check-icon">✓</text>
+							</view>
 						</view>
 					</block>
 				</scroll-view>
+				
+				<view class="modal-footer">
+					<view class="selected-summary" v-if="formData.service.faultCategories.length > 0">
+						<scroll-view scroll-x class="summary-scroll">
+							<view class="summary-tags">
+								<view v-for="(tag, tidx) in formData.service.faultCategories" :key="tidx" class="s-tag" @click="removeFaultTag(tidx)">
+									{{ tag.split('-')[1] || tag }}
+								</view>
+							</view>
+						</scroll-view>
+					</view>
+					<button class="confirm-btn" @click="toggleFaultPicker">完成选择</button>
+				</view>
 			</view>
 		</view>
 	</view>
@@ -382,7 +456,18 @@
 					orderNo: '',
 					customer: { name: '', phone: '', address: '', usageType: '自用', distributorName: '', reportTime: '' },
 					product: { machineNo: '', engineNo: '', productionDate: '', platePhoto: '', model: '' },
-					service: { type: '', isChargeable: '免费', faultCategory: '', faultDesc: '', handleDesc: '', finishDate: '', finishTime: '', parts: [], sitePhotos: [], paymentMethod: '微信支付' },
+					service: { 
+						type: '', 
+						isChargeable: '免费', 
+						faultCategories: [], // 改为数组支持多选
+						faultDesc: '', 
+						handleDesc: '', 
+						finishDate: '', 
+						finishTime: '', 
+						parts: [], 
+						sitePhotos: [], 
+						paymentMethod: '微信支付' 
+					},
 					additionalFees: {
 						travelFee: { distance: 0, unitPrice: 1.2, total: 0 },
 						laborFee: { departureDate: '', departureTime: '', returnDuration: 0, unitPrice: 85, totalHours: 0, total: 0 }
@@ -400,12 +485,24 @@
 				const service = this.formData.service;
 				if (!fee.departureDate || !fee.departureTime || !service.finishDate || !service.finishTime) return "0.0";
 				try {
-					const start = new Date(`${fee.departureDate} ${fee.departureTime}:00`.replace(/-/g, '/'));
-					const end = new Date(`${service.finishDate} ${service.finishTime}:00`.replace(/-/g, '/'));
-					let diffMs = end - start;
+					// 统一处理日期连接符，确保移动端兼容性
+					const startStr = `${fee.departureDate} ${fee.departureTime}:00`.replace(/-/g, '/');
+					const endStr = `${service.finishDate} ${service.finishTime}:00`.replace(/-/g, '/');
+					const start = new Date(startStr);
+					const end = new Date(endStr);
+					
+					if (isNaN(start.getTime()) || isNaN(end.getTime())) return "0.0";
+					
+					let diffMs = end.getTime() - start.getTime();
 					if (diffMs <= 0) return "0.0";
-					return (((diffMs / 60000) + Number(fee.returnDuration || 0)) / 60).toFixed(1);
-				} catch (e) { return "0.0"; }
+					
+					// 计算总分钟数
+					const totalMinutes = (diffMs / 60000) + (Number(fee.returnDuration) || 0);
+					return (totalMinutes / 60).toFixed(1);
+				} catch (e) { 
+					console.error('计算工时失败:', e);
+					return "0.0"; 
+				}
 			},
 			laborTotal() { return (Number(this.laborHours) * Number(this.formData.additionalFees.laborFee.unitPrice || 0)).toFixed(1); },
 			additionalTotal() { return (Number(this.travelTotal) + Number(this.laborTotal)).toFixed(1); },
@@ -415,7 +512,7 @@
 			isServiceComplete() {
 				const s = this.formData.service;
 				// 基础必填校验
-				if (!(s.type && s.faultCategory && s.sitePhotos.length > 0)) return false;
+				if (!(s.type && s.faultCategories.length > 0 && s.sitePhotos.length > 0)) return false;
 				// 零件校验：如果有零件来源为“其他”，必须填写备注
 				for (const part of s.parts) {
 					if (part.source === '其他' && !part.sourceRemark) return false;
@@ -462,11 +559,21 @@
 			onIsChargeableChange(e) { this.formData.service.isChargeable = e.detail.value; },
 			onPaymentMethodChange(e) { this.formData.service.paymentMethod = e.detail.value; },
 			onPartSourceChange(e, index) { this.$set(this.formData.service.parts[index], 'source', this.partSources[e.detail.value]); },
+			onOldPartActionChange(idx, action) { this.$set(this.formData.service.parts[idx], 'oldPartAction', action); },
 			toggleFaultPicker() { this.showFaultPicker = !this.showFaultPicker; this.selectedCategory = null; },
 			selectFaultCategory(cat) { this.selectedCategory = cat; },
 			selectFaultLeaf(leaf, parent) {
-				this.formData.service.faultCategory = parent ? `${parent}-${leaf}` : leaf;
-				this.showFaultPicker = false;
+				const val = parent ? `${parent}-${leaf}` : leaf;
+				const idx = this.formData.service.faultCategories.indexOf(val);
+				if (idx > -1) {
+					this.formData.service.faultCategories.splice(idx, 1);
+				} else {
+					this.formData.service.faultCategories.push(val);
+				}
+			},
+			removeFaultTag(idx) { this.formData.service.faultCategories.splice(idx, 1); },
+			getCategorySelectedCount(catTitle) {
+				return this.formData.service.faultCategories.filter(item => item.startsWith(catTitle + '-')).length;
 			},
 			addPart() { this.formData.service.parts.push({ name: '', code: '', count: 1, oldPartAction: '带回', source: '自带', price: 0 }); },
 			updatePartCount(idx, d) { const p = this.formData.service.parts[idx]; if (p.count + d >= 1) p.count += d; },
@@ -493,6 +600,45 @@
 			},
 			removeSitePhoto(idx) { this.formData.service.sitePhotos.splice(idx, 1); },
 			previewImg(url) { uni.previewImage({ urls: [url] }); },
+			fillMockData() {
+				const names = ['张伟', '王芳', '李娜', '刘强', '陈杰'];
+				const addresses = ['山东省临沂市兰山区', '江苏省徐州市铜山区', '安徽省宿州市埇桥区', '河北省石家庄市藁城区'];
+				const models = ['JS-100', 'JS-200', 'JS-300', 'JS-V5'];
+				const faults = ['发动机异响', '液压油漏油', '无法启动', '插植不均', '行走不稳'];
+				
+				const random = (arr) => arr[Math.floor(Math.random() * arr.length)];
+				
+				this.formData.customer.name = random(names);
+				this.formData.customer.phone = '138' + Math.random().toString().slice(2, 10);
+				this.formData.customer.address = random(addresses);
+				this.formData.customer.distributorName = '玖顺农业科技';
+				
+				this.formData.product.machineNo = 'SN' + Date.now().toString().slice(-8);
+				this.formData.product.engineNo = 'EN' + Math.random().toString(36).slice(-6).toUpperCase();
+				this.formData.product.model = random(models);
+				this.formData.product.productionDate = '2025-05-20';
+				this.formData.product.platePhoto = 'https://img-cdn-aliyun.dcloud.net.cn/uni-app/uni-cloud/upload-file.png';
+				
+				this.formData.service.type = '维修';
+				this.formData.service.isChargeable = '收费';
+				this.formData.service.faultCategories = ['动力系统-发动机', '液压系统-HST']; // 填充完整路径
+				this.formData.service.faultDesc = random(faults);
+				this.formData.service.handleDesc = '清理积碳，更换密封圈，试运行正常。';
+				this.formData.service.sitePhotos = ['https://img-cdn-aliyun.dcloud.net.cn/uni-app/uni-cloud/upload-file.png'];
+				
+				this.formData.service.parts = [
+					{ name: '密封圈', code: 'GS-001', count: 2, oldPartAction: '带回', source: '自带', price: 45 },
+					{ name: '液压油', code: 'HO-5L', count: 1, oldPartAction: '丢弃', source: '自带', price: 120 }
+				];
+				
+				this.formData.additionalFees.travelFee.distance = 25.5;
+				this.formData.additionalFees.laborFee.returnDuration = 30;
+				this.formData.additionalFees.laborFee.unitPrice = 85;
+				
+				this.formData.confirm.machineUserPhoto = 'https://img-cdn-aliyun.dcloud.net.cn/uni-app/uni-cloud/upload-file.png';
+				
+				uni.showToast({ title: '表单已自动填充', icon: 'success' });
+			},
 			async submitOrder() {
 				if (!this.formData.customer.name || !this.formData.product.machineNo) { uni.showToast({ title: '核心信息缺失', icon: 'none' }); return; }
 				uni.showLoading({ title: '数据同步中' });
@@ -504,13 +650,38 @@
 					for (const img of this.formData.service.sitePhotos) { const sid = await this.uploadFile(img, orderNo); if (sid) siteIds.push(sid); }
 					const depTime = new Date(`${this.formData.additionalFees.laborFee.departureDate} ${this.formData.additionalFees.laborFee.departureTime}:00`.replace(/-/g, '/')).getTime();
 					const finTime = new Date(`${this.formData.service.finishDate} ${this.formData.service.finishTime}:00`.replace(/-/g, '/')).getTime();
+					const cRepTime = this.formData.customer.reportTime ? new Date(this.formData.customer.reportTime.replace(/-/g, '/')).getTime() : Date.now();
+					const pProdDate = this.formData.product.productionDate ? new Date(this.formData.product.productionDate.replace(/-/g, '/')).getTime() : null;
 					const orderData = {
-						...this.formData,
-						productInfo: { ...this.formData.product, platePhoto: plateId },
-						serviceInfo: { ...this.formData.service, sitePhotos: siteIds, finishTime: finTime },
+						orderNo: this.formData.orderNo,
+						customer: { ...this.formData.customer, reportTime: cRepTime },
+						product: { ...this.formData.product, productionDate: pProdDate, platePhoto: plateId },
+						service: {
+							...this.formData.service,
+							sitePhotos: siteIds,
+							finishTime: finTime,
+							parts: this.formData.service.parts.map(p => ({
+								...p,
+								count: Number(p.count),
+								price: Number(p.price || 0),
+								total: Number(((p.price || 0) * (p.count || 0)).toFixed(1)),
+								oldPartAction: p.oldPartAction || '带回'
+							}))
+						},
 						additionalFees: this.formData.service.isChargeable === '收费' ? {
-							...this.formData.additionalFees,
-							laborFee: { ...this.formData.additionalFees.laborFee, departureTime: depTime, finishTime: finTime, totalHours: Number(this.laborHours) },
+							travelFee: {
+								distance: Number(this.formData.additionalFees.travelFee.distance || 0),
+								unitPrice: Number(this.formData.additionalFees.travelFee.unitPrice || 0),
+								total: Number(this.travelTotal)
+							},
+							laborFee: {
+								departureTime: depTime,
+								finishTime: finTime,
+								returnDuration: Number(this.formData.additionalFees.laborFee.returnDuration || 0),
+								totalHours: Number(this.laborHours),
+								unitPrice: Number(this.formData.additionalFees.laborFee.unitPrice || 0),
+								total: Number(this.laborTotal)
+							},
 							totalAmount: Number(this.additionalTotal)
 						} : null,
 						customerConfirm: { machineUserPhoto: confirmId }
@@ -628,6 +799,41 @@
 			.ml-5 { margin-left: 8px; }
 		}
 		.ph { color: #c9cdd4; }
+	}
+
+	.field-label-row { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+		.btn-text-add { font-size: 13px; color: $accent; font-weight: 600; padding: 4px 12px; background: rgba($accent, 0.08); border-radius: 4px; }
+	}
+	
+	.tag-cloud-wrapper { width: 100%; min-height: 40px; background: #fbfbfc; border: 1px dashed #e5e6eb; border-radius: 8px; padding: 10px; box-sizing: border-box;
+		.tag-placeholder { font-size: 13px; color: $text-tip; text-align: center; line-height: 40px; }
+	}
+
+	.tag-cloud {
+		display: flex; flex-wrap: wrap; gap: 8px;
+		.tag { background: #fff; color: $accent; font-size: 12px; padding: 6px 12px; border-radius: 6px; display: flex; align-items: center; border: 1px solid #adc6ff; box-shadow: 0 2px 4px rgba($accent, 0.05);
+			.t-text { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+			.x { margin-left: 8px; font-size: 14px; color: rgba($accent, 0.4); font-weight: bold; }
+		}
+	}
+
+	.old-part-toggle { display: flex; align-items: center; background: #f7f8fa; padding: 2px 6px; border-radius: 4px; margin-left: 8px;
+		.opt-label { font-size: 10px; color: $text-tip; margin-right: 6px; }
+		.opt-btns { display: flex; background: #fff; border: 1px solid #eee; border-radius: 4px; overflow: hidden;
+			.opt-btn { padding: 4px 8px; font-size: 11px; color: $text-secondary; &.active { background: $accent; color: #fff; font-weight: bold; } }
+		}
+	}
+
+	.old-part-toggle-full { 
+		display: flex; align-items: center; justify-content: space-between; background: #fbfbfc; padding: 10px 12px; border-radius: 8px; border: 1px solid #f0f2f5;
+		.opt-label { font-size: 12px; font-weight: 700; color: #4e5969; }
+		.opt-btns { display: flex; gap: 10px;
+			.opt-btn { 
+				display: flex; align-items: center; padding: 6px 16px; border-radius: 6px; font-size: 13px; color: #86909c; background: #fff; border: 1px solid #e5e6eb; transition: all 0.2s;
+				.dot { width: 6px; height: 6px; background: #fff; border-radius: 50%; margin-right: 6px; }
+				&.active { background: $accent; color: #fff; border-color: $accent; font-weight: 700; box-shadow: 0 2px 8px rgba($accent, 0.2); }
+			}
+		}
 	}
 
 	// Multi Photo Uploader
@@ -783,14 +989,44 @@
 	}
 
 	// Modern Modals
-	.modal-mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 999; display: flex; flex-direction: column; justify-content: flex-end; backdrop-filter: blur(4px); }
-	.modal-body { background: #fff; height: 70vh; border-radius: 20px 20px 0 0; display: flex; flex-direction: column; padding: 20px; }
-	.modal-header { display: flex; justify-content: space-between; margin-bottom: 16px; .t { font-size: 16px; font-weight: 800; } .c { font-size: 18px; color: #c9cdd4; } }
-	.modal-search { margin-bottom: 12px; .s-input { background: #f2f3f5; height: 40px; border-radius: 20px; padding: 0 16px; font-size: 13px; } }
-	.modal-scroll { flex: 1; overflow: hidden; }
-	.cat-item { padding: 14px 0; border-bottom: 1px solid #f2f3f5; display: flex; justify-content: space-between; font-weight: 500; .a { color: #c9cdd4; } }
-	.leaf-item { padding: 14px 0; border-bottom: 1px solid #f2f3f5; font-size: 14px; 
-		&.search { display: flex; flex-direction: column; .p { font-size: 10px; color: $text-tip; margin-top: 3px; } }
+	.modal-mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 999; display: flex; flex-direction: column; justify-content: flex-end; backdrop-filter: blur(4px); }
+	.modal-body { background: #fff; height: 80vh; border-radius: 20px 20px 0 0; display: flex; flex-direction: column; }
+	.modal-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f2f3f5;
+		.h-left { display: flex; align-items: center; .t { font-size: 17px; font-weight: 800; } .count { margin-left: 10px; font-size: 11px; background: $accent; color: #fff; padding: 2px 8px; border-radius: 10px; } }
+		.c { font-size: 20px; color: #c9cdd4; padding: 4px; }
 	}
+	.modal-search { padding: 12px 20px; position: relative; display: flex; align-items: center;
+		.search-icon { position: absolute; left: 32px; font-size: 14px; color: #86909c; }
+		.s-input { flex: 1; background: #f2f3f5; height: 38px; border-radius: 19px; padding: 0 40px; font-size: 14px; }
+		.clear-btn { position: absolute; right: 32px; font-size: 18px; color: #c9cdd4; padding: 4px; }
+	}
+	.modal-scroll { flex: 1; padding: 0 20px; overflow: hidden; }
+	
+	.cat-item { padding: 16px 0; border-bottom: 1px solid #f2f3f5; display: flex; justify-content: space-between; align-items: center; 
+		.c-info { display: flex; align-items: center; .c-title { font-size: 15px; font-weight: 600; } .c-badge { margin-left: 8px; width: 16px; height: 16px; background: #e6f7ff; border: 1px solid #91d5ff; color: $accent; font-size: 10px; border-radius: 50%; display: flex; align-items: center; justify-content: center; } }
+		.a { color: #c9cdd4; font-size: 18px; }
+	}
+	
+	.nav-back-sticky { position: sticky; top: 0; background: #fff; z-index: 10; display: flex; align-items: center; color: $accent; font-weight: 700; padding: 12px 0; border-bottom: 1px solid #f2f3f5; .i { font-size: 24px; margin-right: 4px; } }
+	
+	.leaf-item { padding: 16px 0; border-bottom: 1px solid #f2f3f5; display: flex; justify-content: space-between; align-items: center;
+		.n { font-size: 15px; color: $text-primary; }
+		&.active { .n { color: $accent; font-weight: 700; } }
+		&.search { .l-content { display: flex; flex-direction: column; .p { font-size: 11px; color: $text-tip; margin-top: 4px; } } }
+		.check-box { width: 20px; height: 20px; background: $accent; border-radius: 50%; display: flex; align-items: center; justify-content: center; .check-icon { color: #fff; font-size: 12px; font-weight: bold; } }
+	}
+
+	.empty-results { padding: 40px 0; text-align: center; color: $text-tip; font-size: 14px; }
+
+	.modal-footer { padding: 16px 20px 34px; background: #fff; border-top: 1px solid #f2f3f5;
+		.selected-summary { margin-bottom: 12px;
+			.summary-scroll { width: 100%; white-space: nowrap; }
+			.summary-tags { display: flex; gap: 8px;
+				.s-tag { display: inline-block; background: #f0f5ff; color: $accent; font-size: 12px; padding: 4px 12px; border-radius: 15px; border: 1px solid #adc6ff; }
+			}
+		}
+		.confirm-btn { background: $accent; color: #fff; border-radius: 22px; height: 44px; line-height: 44px; font-size: 16px; font-weight: 700; }
+	}
+	
 	.nav-back { display: flex; align-items: center; color: $accent; font-weight: 700; padding-bottom: 14px; .i { font-size: 22px; margin-right: 4px; } }
 </style>

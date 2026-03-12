@@ -157,14 +157,26 @@
 						if (res.result.code === 0) {
 							// Transform data for display and export
 							this.list = res.result.data.map(item => {
-								const c = item.customerInfo || {};
-								const p = item.productInfo || {};
-								const s = item.serviceInfo || {};
+								const c = item.customer || {};
+								const p = item.product || {};
+								const s = item.service || {};
 								
-								// Process parts list into a readable string: 零件A(型号A)x4 旧件:丢弃; 零件B...
-								const partsStr = (s.parts || []).map(pt => 
-									`${pt.name}(${pt.code})x${pt.count} 旧件:${pt.oldPartAction || '未知'}`
-								).join('; ');
+								// Process parts list into a readable string
+								const partsStr = (s.parts || []).map(pt => {
+									let str = `${pt.name}(${pt.code})x${pt.count} 旧件:${pt.oldPartAction || '未知'} 来源:${pt.source || '未知'}`;
+									if (pt.sourceRemark) str += `(${pt.sourceRemark})`;
+									if (s.isChargeable === '收费') {
+										str += ` 单价:${pt.price || 0} 小计:${pt.total || 0}`;
+									}
+									return str;
+								}).join('; ');
+								
+								const af = item.additionalFees || {};
+								const isChargeable = s.isChargeable || '免费';
+								const partsTotal = (s.parts || []).reduce((sum, p) => sum + (p.total || 0), 0);
+								const travelFeeTotal = af.travelFee?.total || 0;
+								const laborFeeTotal = af.laborFee?.total || 0;
+								const grandTotal = af.totalAmount ? (af.totalAmount + partsTotal) : partsTotal;
 								
 								return {
 									id: item._id,
@@ -188,6 +200,12 @@
 									
 									// Service
 									serviceType: s.type || '未知',
+									isChargeable: isChargeable,
+									paymentMethod: s.paymentMethod || '-',
+									partsTotal: partsTotal.toFixed(1),
+									travelFeeTotal: travelFeeTotal.toFixed(1),
+									laborFeeTotal: laborFeeTotal.toFixed(1),
+									grandTotal: grandTotal.toFixed(1),
 									faultCategory: s.faultCategory || '-',
 									faultDesc: s.faultDesc || '-',
 									handleDesc: s.handleDesc || '-',
@@ -286,11 +304,17 @@
     <Cell><Data ss:Type="String">发动机号</Data></Cell>
     <Cell><Data ss:Type="String">生产日期</Data></Cell>
     <Cell><Data ss:Type="String">服务类型</Data></Cell>
+    <Cell><Data ss:Type="String">是否收费</Data></Cell>
     <Cell><Data ss:Type="String">故障分类</Data></Cell>
     <Cell><Data ss:Type="String">故障现象</Data></Cell>
     <Cell><Data ss:Type="String">处理方法</Data></Cell>
     <Cell><Data ss:Type="String">更换零件</Data></Cell>
     <Cell><Data ss:Type="String">维修完成时间</Data></Cell>
+    <Cell><Data ss:Type="String">零件费</Data></Cell>
+    <Cell><Data ss:Type="String">路程费</Data></Cell>
+    <Cell><Data ss:Type="String">工时费</Data></Cell>
+    <Cell><Data ss:Type="String">总应收(元)</Data></Cell>
+    <Cell><Data ss:Type="String">支付方式</Data></Cell>
     <Cell><Data ss:Type="String">铭牌照片链接</Data></Cell>
     <Cell><Data ss:Type="String">现场照片链接</Data></Cell>
     <Cell><Data ss:Type="String">人机合影链接</Data></Cell>
@@ -318,11 +342,17 @@
     <Cell><Data ss:Type="String">${escapeXml(item.engineNo)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.productionDate)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.serviceType)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.isChargeable)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.faultCategory)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.faultDesc)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.handleDesc)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.partsInfo)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.finishTime)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.partsTotal)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.travelFeeTotal)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.laborFeeTotal)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.grandTotal)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.paymentMethod)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(plateUrl)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(siteUrls)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(confirmUrl)}</Data></Cell>

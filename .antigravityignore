@@ -1,0 +1,30 @@
+# --- HBuilderX & Uniapp 冗余文件 ---
+.hbuilderx/
+unpackage/
+bin/
+*.log
+
+# --- 依赖与构建产物 (防索引死锁) ---
+node_modules/
+dist/
+dev/
+.temp/
+.cache/
+
+# --- 静态资源 (防止 AI 扫描大二进制文件) ---
+static/fonts/
+static/images/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.mp4
+*.mp3
+
+# --- 操作系统与 IDE 配置文件 ---
+.DS_Store
+.vscode/
+.idea/
+.project
+.plugin.conf

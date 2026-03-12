@@ -74,17 +74,17 @@ exports.main = async (event, context) => {
 		if (isAdmin) {
 			// Customer Name Filter (Fuzzy)
 			if (customerName) {
-				match['customerInfo.name'] = new RegExp(customerName)
+				match['customer.name'] = new RegExp(customerName, 'i')
 			}
 
 			// Customer Phone Filter (Fuzzy)
 			if (customerPhone) {
-				match['customerInfo.phone'] = new RegExp(customerPhone)
+				match['customer.phone'] = new RegExp(customerPhone, 'i')
 			}
 
 			// Product Model Filter (Fuzzy)
 			if (productModel) {
-				match['productInfo.model'] = new RegExp(productModel)
+				match['product.model'] = new RegExp(productModel, 'i')
 			}
 
 			// Reporter Name Filter (Requires User Lookup)
@@ -92,9 +92,9 @@ exports.main = async (event, context) => {
 				// Find users matching the name
 				const reporterRes = await db.collection('uni-id-users')
 					.where(dbCmd.or([
-						{ nickname: new RegExp(reporterName) },
-						{ username: new RegExp(reporterName) },
-						{ mobile: new RegExp(reporterName) }
+						{ nickname: new RegExp(reporterName, 'i') },
+						{ username: new RegExp(reporterName, 'i') },
+						{ mobile: new RegExp(reporterName, 'i') }
 					]))
 					.field({ _id: 1 })
 					.get()
