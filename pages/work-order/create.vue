@@ -939,7 +939,10 @@
 	$danger: #ff4d4f;
 
 	.page-wrapper { min-height: 100vh; background-color: $bg-page; color: $text-primary; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-	.container { padding: 16px; padding-bottom: 120px; }
+	.container { 
+		padding: 16px; 
+		padding-bottom: calc(160px + env(safe-area-inset-bottom)); // 增加间距并适配安全区
+	}
 
 	// UI Cards
 	.ui-card {
