@@ -46,12 +46,25 @@
 				<text class="section-title">系统功能</text>
 			</view>
 			<view class="action-list">
+				<view v-if="isAdmin" class="action-item" @click="navTo('/pages/admin/distributor-list')" hover-class="hover-effect">
+					<view class="item-left">
+						<view class="action-icon dealer-icon">🏬</view>
+						<view class="item-text">
+							<text class="item-title">经销商管理</text>
+							<text class="item-desc">维护系统内客户及经销商基础信息</text>
+						</view>
+					</view>
+					<view class="item-right">
+						<text class="arrow">›</text>
+					</view>
+				</view>
+
 				<view v-if="isAdmin" class="action-item" @click="navTo('/pages/admin/approval')" hover-class="hover-effect">
 					<view class="item-left">
-						<view class="action-icon admin-icon">👮</view>
+						<view class="action-icon admin-icon">👤</view>
 						<view class="item-text">
 							<text class="item-title">成员审批</text>
-							<text class="item-desc">审核新用户申请及系统权限</text>
+							<text class="item-desc">处理新用户的入驻申请</text>
 						</view>
 					</view>
 					<view class="item-right">
@@ -335,6 +348,7 @@
 				font-size: 18px;
 				
 				&.admin-icon { background: #fff7e8; }
+				&.dealer-icon { background: #e6fcf5; }
 				&.feedback-icon { background: #e8f3ff; }
 			}
 			

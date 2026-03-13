@@ -1,0 +1,44 @@
+{
+	"bsonType": "object",
+	"required": ["name"],
+	"permission": {
+		"read": "auth.uid != null",
+		"create": "'admin' in auth.role",
+		"update": "'admin' in auth.role",
+		"delete": "'admin' in auth.role"
+	},
+	"properties": {
+		"_id": {
+			"description": "ID，系统自动生成",
+			"bsonType": "string"
+		},
+		"name": {
+			"bsonType": "string",
+			"description": "经销商名称/客户名称",
+			"minLength": 2
+		},
+		"salesman": {
+			"bsonType": "string",
+			"description": "业务员"
+		},
+		"region": {
+			"bsonType": "string",
+			"description": "地区"
+		},
+		"creator_uid": {
+			"bsonType": "string",
+			"description": "创建者ID",
+			"foreignKey": "uni-id-users._id",
+			"forceDefaultValue": {
+				"add": "$method.auth.uid"
+			}
+		},
+		"create_date": {
+			"bsonType": "timestamp",
+			"description": "创建时间",
+			"forceDefaultValue": {
+				"add": "$method.now"
+			}
+		}
+	}
+}

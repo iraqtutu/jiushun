@@ -63,6 +63,13 @@
 			"style": {
 				"navigationBarTitleText": "反馈详情"
 			}
+		},
+		{
+			"path": "pages/admin/distributor-list",
+			"style": {
+				"navigationBarTitleText": "经销商维护",
+				"enablePullDownRefresh": true
+			}
 		}
 	],
 	"globalStyle": {

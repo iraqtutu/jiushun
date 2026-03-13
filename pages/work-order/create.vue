@@ -31,8 +31,10 @@
 						</radio-group>
 					</view>
 					<view class="ui-field">
-						<text class="field-label">经销商</text>
-						<input class="field-input" v-model="formData.customer.distributorName" placeholder="经销商名称（选填）" placeholder-class="ph" />
+						<text class="field-label required">经销商</text>
+						<view class="picker-text" @click="toggleDistributorPicker">
+							{{ formData.customer.distributorName || '点击搜索并选择经销商' }}
+						</view>
 					</view>
 					<view class="ui-field">
 						<text class="field-label required">报修时间</text>
@@ -352,6 +354,44 @@
 			</view>
 		</view>
 
+		<!-- Distributor Picker Modal -->
+		<view class="modal-mask" v-if="showDistributorPicker" @click.stop="toggleDistributorPicker">
+			<view class="modal-body" @click.stop="">
+				<view class="modal-header">
+					<view class="h-left">
+						<text class="t">选择经销商</text>
+					</view>
+					<text class="c" @click="toggleDistributorPicker">✕</text>
+				</view>
+				
+				<view class="modal-search">
+					<text class="search-icon">🔍</text>
+					<input v-model="distributorSearchKey" placeholder="输入名称或业务员模糊搜索..." class="s-input" placeholder-class="ph" />
+					<text class="clear-btn" v-if="distributorSearchKey" @click="distributorSearchKey = ''">×</text>
+				</view>
+
+				<scroll-view scroll-y class="modal-scroll">
+					<view v-for="(item, idx) in filteredDistributors" :key="idx" 
+						class="leaf-item search" 
+						:class="{ 'active': formData.customer.distributorName === item.name }"
+						@click="selectDistributor(item)">
+						<view class="l-content">
+							<text class="n">{{ item.name }}</text>
+							<text class="p">{{ item.region || '未设地区' }} | 业务员: {{ item.salesman || '未指定' }}</text>
+						</view>
+						<view class="check-box" v-if="formData.customer.distributorName === item.name">
+							<text class="check-icon">✓</text>
+						</view>
+					</view>
+					<view class="empty-results" v-if="filteredDistributors.length === 0">未找到相关经销商</view>
+				</scroll-view>
+				
+				<view class="modal-footer">
+					<button class="confirm-btn" @click="toggleDistributorPicker">关闭</button>
+				</view>
+			</view>
+		</view>
+
 		<!-- Fault Picker Modal -->
 		<view class="modal-mask" v-if="showFaultPicker" @click.stop="toggleFaultPicker">
 			<view class="modal-body" @click.stop="">
@@ -439,6 +479,9 @@
 				currentUser: '',
 				serviceTypes: ['三包', '维修', '保养', '技改', '其他'],
 				partSources: ['自带', '经销商调拨', '同厂调拨', '其他'],
+				distributors: [],
+				showDistributorPicker: false,
+				distributorSearchKey: '',
 				showFaultPicker: false,
 				faultSearchKey: '',
 				selectedCategory: null,
@@ -531,6 +574,14 @@
 				return true;
 			},
 			isConfirmComplete() { return !!this.formData.confirm.machineUserPhoto; },
+			filteredDistributors() {
+				if (!this.distributorSearchKey) return this.distributors;
+				const key = this.distributorSearchKey.toLowerCase();
+				return this.distributors.filter(item => 
+					(item.name && item.name.toLowerCase().indexOf(key) !== -1) || 
+					(item.salesman && item.salesman.toLowerCase().indexOf(key) !== -1)
+				);
+			},
 			searchResults() {
 				if (!this.faultSearchKey) return [];
 				const res = [];
@@ -542,6 +593,9 @@
 		onLoad() {
 			const userInfo = uni.getStorageSync('userInfo');
 			this.currentUser = userInfo ? (userInfo.nickname || userInfo.name) : '填单人';
+			
+			// 加载经销商列表
+			this.loadDistributors();
 			
 			// 默认初始化数据
 			const now = new Date();
@@ -558,6 +612,31 @@
 			this.checkDraft();
 		},
 		methods: {
+			async loadDistributors() {
+				try {
+					const db = uniCloud.database();
+					const res = await db.collection('jiushun-distributors').limit(500).get();
+					if (res.result.data) {
+						this.distributors = res.result.data;
+					}
+				} catch (e) {
+					console.error('加载经销商失败:', e);
+				}
+			},
+			onDistributorChange(e) {
+				const index = e.detail.value;
+				this.formData.customer.distributorName = this.distributors[index].name;
+			},
+			toggleDistributorPicker() {
+				this.showDistributorPicker = !this.showDistributorPicker;
+				if (this.showDistributorPicker) {
+					this.distributorSearchKey = '';
+				}
+			},
+			selectDistributor(item) {
+				this.formData.customer.distributorName = item.name;
+				this.toggleDistributorPicker();
+			},
 			toggleSection(key) { this.sectionsCollapsed[key] = !this.sectionsCollapsed[key]; },
 			onDepartureDateChange(e) { this.formData.additionalFees.laborFee.departureDate = e.detail.value; },
 			onDepartureTimeChange(e) { this.formData.additionalFees.laborFee.departureTime = e.detail.value; },
@@ -588,6 +667,10 @@
 				}
 			},
 			saveDraft(data) {
+				// 检查是否有实质性的用户输入（排除自动生成的单号和时间）
+				const hasContent = !!(data.customer.name || data.customer.phone || data.customer.address || data.product.machineNo || data.service.faultDesc);
+				if (!hasContent) return;
+
 				if (this.saveTimer) clearTimeout(this.saveTimer);
 				this.saveTimer = setTimeout(() => {
 					uni.setStorageSync('order_draft', data);
@@ -681,7 +764,10 @@
 				uni.showToast({ title: '表单已自动填充', icon: 'success' });
 			},
 			async submitOrder() {
-				if (!this.formData.customer.name || !this.formData.product.machineNo) { uni.showToast({ title: '核心信息缺失', icon: 'none' }); return; }
+				if (!this.formData.customer.name || !this.formData.product.machineNo || !this.formData.customer.distributorName) { 
+					uni.showToast({ title: '信息不全(姓名/机号/经销商)', icon: 'none' }); 
+					return; 
+				}
 				uni.showLoading({ title: '数据同步中' });
 				try {
 					const orderNo = this.formData.orderNo;
