@@ -261,15 +261,18 @@
 	
 					<view class="fee-card mt-15">
 						<text class="f-title">工时费核算</text>
-						<view class="f-time-line">
-							<view class="time-tag">
-								<text class="l">出发</text>
-								<picker mode="date" @change="onDepartureDateChange"><text>{{ formData.additionalFees.laborFee.departureDate }}</text></picker>
-								<picker mode="time" @change="onDepartureTimeChange" class="ml-5"><text>{{ formData.additionalFees.laborFee.departureTime }}</text></picker>
+						<view class="f-duration-grid">
+							<view class="d-item">
+								<text class="l">出发用时</text>
+								<view class="i-box"><input type="number" v-model="formData.additionalFees.laborFee.onWayDuration" placeholder="0" />min</view>
 							</view>
-							<view class="time-tag mt-5">
-								<text class="l">返程</text>
-								<view class="item-input"><input type="number" v-model="formData.additionalFees.laborFee.returnDuration" /> min</view>
+							<view class="d-item">
+								<text class="l">维修用时</text>
+								<view class="i-box"><input type="number" v-model="formData.additionalFees.laborFee.repairDuration" placeholder="0" />min</view>
+							</view>
+							<view class="d-item">
+								<text class="l">返程用时</text>
+								<view class="i-box"><input type="number" v-model="formData.additionalFees.laborFee.returnDuration" placeholder="0" />min</view>
 							</view>
 						</view>
 						<view class="f-inputs mt-10">
@@ -516,7 +519,14 @@
 					},
 					additionalFees: {
 						travelFee: { distance: 0, unitPrice: 1.2, total: 0 },
-						laborFee: { departureDate: '', departureTime: '', returnDuration: 0, unitPrice: 85, totalHours: 0, total: 0 }
+						laborFee: { 
+							onWayDuration: 0, // 出发用时(min)
+							repairDuration: 0, // 维修用时(min)
+							returnDuration: 0, // 返程用时(min)
+							unitPrice: 85, 
+							totalHours: 0, 
+							total: 0 
+						}
 					},
 					confirm: { machineUserPhoto: '' }
 				},
@@ -548,21 +558,10 @@
 				return (Number(fee.distance || 0) * Number(fee.unitPrice || 0)).toFixed(1); 
 			},
 			laborHours() {
-				if (!this.formData.additionalFees || !this.formData.additionalFees.laborFee || !this.formData.service) return "0.0";
-				const fee = this.formData.additionalFees.laborFee;
-				const service = this.formData.service;
-				if (!fee.departureDate || !fee.departureTime || !service.finishDate || !service.finishTime) return "0.0";
-				try {
-					const startStr = `${fee.departureDate} ${fee.departureTime}:00`.replace(/-/g, '/');
-					const endStr = `${service.finishDate} ${service.finishTime}:00`.replace(/-/g, '/');
-					const start = new Date(startStr);
-					const end = new Date(endStr);
-					if (isNaN(start.getTime()) || isNaN(end.getTime())) return "0.0";
-					let diffMs = end.getTime() - start.getTime();
-					if (diffMs <= 0) return "0.0";
-					const totalMinutes = (diffMs / 60000) + (Number(fee.returnDuration) || 0);
-					return (totalMinutes / 60).toFixed(1);
-				} catch (e) { return "0.0"; }
+				if (!this.formData.additionalFees || !this.formData.additionalFees.laborFee) return "0.0";
+				const f = this.formData.additionalFees.laborFee;
+				const totalMinutes = (Number(f.onWayDuration) || 0) + (Number(f.repairDuration) || 0) + (Number(f.returnDuration) || 0);
+				return (totalMinutes / 60).toFixed(1);
 			},
 			laborTotal() { 
 				if (!this.formData.additionalFees || !this.formData.additionalFees.laborFee) return "0.0";
@@ -1180,6 +1179,15 @@
 	.fee-card {
 		padding: 10px; background: #fbfbfc; border-radius: 8px; border: 1px solid $border-light;
 		.f-title { font-size: 11px; font-weight: 700; color: $accent; margin-bottom: 8px; display: block; }
+		.f-duration-grid { display: flex; justify-content: space-between; gap: 8px; background: #fff; padding: 10px; border-radius: 6px; border: 1px solid #eee;
+			.d-item { flex: 1; display: flex; flex-direction: column; align-items: center;
+				.l { font-size: 10px; color: $text-tip; margin-bottom: 4px; }
+				.i-box { display: flex; align-items: center; font-size: 11px; color: $text-secondary;
+					input { width: 35px; background: #f7f8fa; border: 1px solid #e5e6eb; border-radius: 4px; padding: 2px 4px; margin-right: 2px; text-align: center; color: $text-primary; font-weight: 700; }
+				}
+			}
+		}
+		
 		.f-inputs { display: flex; gap: 8px; .f-item { flex: 1; background: #fff; border: 1px solid #eee; padding: 4px 8px; border-radius: 4px; font-size: 11px; color: $text-tip; display: flex; justify-content: space-between; input { width: 35px; text-align: right; color: $text-primary; font-weight: 700; } .v { color: $accent; font-weight: 700; } } }
 		.f-subtotal { text-align: right; margin-top: 8px; font-size: 12px; font-weight: 700; color: $danger; }
 		.f-time-line { background: #fff; padding: 10px; border-radius: 6px; border: 1px solid #eee;
