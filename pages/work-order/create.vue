@@ -304,6 +304,15 @@
 							</view>
 						</view>
 					</view>
+					
+					<!-- Moved Finish Time here -->
+					<view class="ui-field mt-10">
+						<text class="field-label required">维修完成时间</text>
+						<view class="time-picker-group">
+							<picker mode="date" @change="onFinishDateChange" class="tp"><view>{{ formData.service.finishDate }}</view></picker>
+							<picker mode="time" @change="onFinishTimeChange" class="tp ml-5"><view>{{ formData.service.finishTime || '00:00' }}</view></picker>
+						</view>
+					</view>
 				</view>
 			</view>
 
@@ -791,40 +800,69 @@
 				const names = ['张伟', '王芳', '李娜', '刘强', '陈杰'];
 				const addresses = ['山东省临沂市兰山区', '江苏省徐州市铜山区', '安徽省宿州市埇桥区', '河北省石家庄市藁城区'];
 				const models = ['JS-100', 'JS-200', 'JS-300', 'JS-V5'];
-				const faults = ['发动机异响', '液压油漏油', '无法启动', '插植不均', '行走不稳'];
-				
 				const random = (arr) => arr[Math.floor(Math.random() * arr.length)];
 				
+				// 1. 基本信息
 				this.formData.customer.name = random(names);
 				this.formData.customer.phone = '138' + Math.random().toString().slice(2, 10);
 				this.formData.customer.address = random(addresses);
-				this.formData.customer.distributorName = '玖顺农业科技';
 				
+				// 随机选择经销商 (如果列表为空，则填默认值)
+				if (this.distributors && this.distributors.length > 0) {
+					this.formData.customer.distributorName = random(this.distributors).name;
+				} else {
+					this.formData.customer.distributorName = '玖顺默认经销商';
+				}
+				
+				// 2. 产品信息
 				this.formData.product.machineNo = 'SN' + Date.now().toString().slice(-8);
 				this.formData.product.engineNo = 'EN' + Math.random().toString(36).slice(-6).toUpperCase();
 				this.formData.product.model = random(models);
 				this.formData.product.productionDate = '2025-05-20';
-				this.formData.product.platePhoto = 'https://img-cdn-aliyun.dcloud.net.cn/uni-app/uni-cloud/upload-file.png';
+				this.formData.product.platePhoto = 'https://mp-e053b326-d336-455f-9572-3993ef17dc83.cdn.bspapp.com/cloudstorage/427c8d67-b213-45bf-b999-d038e82592aa.jpg';
 				
-				this.formData.service.type = '维修';
-				this.formData.service.isChargeable = '收费';
-				this.selectedFaultCategoryNames = ['动力系统-发动机', '液压系统-HST']; // 填充完整路径
-				this.formData.service.faultDesc = random(faults);
-				this.formData.service.handleDesc = '清理积碳，更换密封圈，试运行正常。';
-				this.formData.service.sitePhotos = ['https://img-cdn-aliyun.dcloud.net.cn/uni-app/uni-cloud/upload-file.png'];
+				// 3. 服务内容
+				this.formData.service.type = random(['三包', '维修', '保养']);
+				this.formData.service.isChargeable = random(['免费', '收费']);
 				
-				this.formData.service.parts = [
-					{ name: '密封圈', code: 'GS-001', count: 2, oldPartAction: '带回', source: '自带', price: 45 },
-					{ name: '液压油', code: 'HO-5L', count: 1, oldPartAction: '丢弃', source: '自带', price: 120 }
+				// 生成 1-2 个故障条目
+				const demoFaults = [
+					{ cat: '动力系统-发动机', desc: '发动机冷启动困难，伴有异响' },
+					{ cat: '液压系统-HST', desc: '行走时液压泵噪音大，压力不稳定' },
+					{ cat: '行走系统-车轮', desc: '后轮轴承松动，需要调整' }
 				];
+				const count = Math.random() > 0.5 ? 2 : 1;
+				this.formData.service.faultItems = [];
+				for (let i = 0; i < count; i++) {
+					const f = demoFaults[i];
+					this.formData.service.faultItems.push({
+						category: f.cat,
+						faultDesc: f.desc,
+						handleDesc: '经检查确认为部件磨损，已清理并更换相关零件，试机运行正常。',
+						parts: [
+							{ name: '专用密封垫', code: 'SP-882', count: 1, oldPartAction: '带回', source: '自带', price: 120 },
+							{ name: '液压油(1L)', code: 'OIL-01', count: 2, oldPartAction: '丢弃', source: '自带', price: 45 }
+						],
+						sitePhotos: ['https://mp-e053b326-d336-455f-9572-3993ef17dc83.cdn.bspapp.com/cloudstorage/8835e3b1-5287-4595-bd2b-30a7a9733aaf.jpg']
+					});
+				}
 				
-				this.formData.additionalFees.travelFee.distance = 25.5;
-				this.formData.additionalFees.laborFee.returnDuration = 30;
-				this.formData.additionalFees.laborFee.unitPrice = 85;
+				// 4. 附加费用
+				if (this.formData.service.isChargeable === '收费') {
+					this.formData.additionalFees.travelFee.distance = (Math.random() * 50 + 10).toFixed(1);
+					this.formData.additionalFees.laborFee.onWayDuration = 45;
+					this.formData.additionalFees.laborFee.repairDuration = 90;
+					this.formData.additionalFees.laborFee.returnDuration = 40;
+					this.formData.additionalFees.laborFee.unitPrice = 85;
+				}
 				
-				this.formData.confirm.machineUserPhoto = 'https://img-cdn-aliyun.dcloud.net.cn/uni-app/uni-cloud/upload-file.png';
+				// 5. 最终确认
+				this.formData.confirm.machineUserPhoto = 'https://mp-e053b326-d336-455f-9572-3993ef17dc83.cdn.bspapp.com/cloudstorage/9a0a25ca-f26e-4b4d-8a00-20cf8607fe06.jpg';
+				const now = new Date();
+				this.formData.service.finishDate = now.toISOString().slice(0, 10);
+				this.formData.service.finishTime = now.toTimeString().slice(0, 5);
 				
-				uni.showToast({ title: '表单已自动填充', icon: 'success' });
+				uni.showToast({ title: '表单已按新流程模拟填充', icon: 'success' });
 			},
 			async submitOrder() {
 				if (!this.formData.customer.name || !this.formData.product.machineNo || !this.formData.customer.distributorName) { 
