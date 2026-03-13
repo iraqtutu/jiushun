@@ -140,13 +140,9 @@
 		
 			<!-- Payment Info -->
 			<view class="detail-block" v-if="order.service.isChargeable" style="margin-top: 15px; border-top: 1px dashed #eee; padding-top: 15px;">
-				<view class="detail-item" style="margin-bottom: 5px;">
+				<view class="detail-item" style="margin-bottom: 0;">
 					<text class="label">收费类型</text>
 					<text class="value" :class="order.service.isChargeable === '收费' ? 'red bold' : 'green'">{{ order.service.isChargeable }}</text>
-				</view>
-				<view class="detail-item" v-if="order.service.isChargeable === '收费' && order.service.paymentMethod">
-					<text class="label">支付方式</text>
-					<text class="value">{{ order.service.paymentMethod }}</text>
 				</view>
 			</view>
 		</view>
@@ -184,6 +180,10 @@
 		
 		<!-- Settlement Dashboard -->
 		<view class="section settlement-section" v-if="order.service.isChargeable === '收费'">
+			<view class="settlement-header" v-if="order.service.paymentMethod" style="border-bottom: 1px dashed rgba(255,255,255,0.2); margin-bottom: 8px; padding-bottom: 8px;">
+				<text style="font-size: 14px; color: rgba(255,255,255,0.8);">支付方式</text>
+				<text style="font-size: 15px;">{{ order.service.paymentMethod }}</text>
+			</view>
 			<view class="settlement-header">
 				<text>工单应收合计</text>
 				<text class="grand-total">￥{{ grandTotal }}</text>
