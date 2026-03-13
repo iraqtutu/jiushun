@@ -198,13 +198,13 @@
 										<text class="s-btn" @click.stop="updatePartCount(itemIdx, pIdx, 1)">+</text>
 									</view>
 								</view>
-								<view class="entry-bottom-inline" v-if="formData.service.isChargeable === '收费'">
+								<view class="entry-bottom-inline">
 									<view class="price-box-small">
 										<text class="p-label">单价</text>
 										<input type="digit" v-model="part.price" class="p-val" />
 									</view>
 									<view class="price-box-small ml-10">
-										<text class="p-label">小计</text>
+										<text class="p-label">金额</text>
 										<text class="p-total-val">￥{{ ((Number(part.price) || 0) * (part.count || 0)).toFixed(1) }}</text>
 									</view>
 								</view>
@@ -307,17 +307,17 @@
 				</view>
 			</view>
 
-			<!-- Settlement Dashboard -->
-			<view class="settlement-panel" v-if="formData.service.isChargeable === '收费'">
-				<view class="panel-header">费用结算概览</view>
+			<!-- Settlement Dashboard (Always show for cost tracking) -->
+			<view class="settlement-panel">
+				<view class="panel-header">{{ formData.service.isChargeable === '收费' ? '费用结算概览' : '服务成本统计' }}</view>
 				<view class="panel-grid">
-					<view class="p-item"><text class="l">零件总额</text><text class="v">￥{{ partsTotal }}</text></view>
-					<view class="p-item"><text class="l">路程费</text><text class="v">￥{{ travelTotal }}</text></view>
-					<view class="p-item"><text class="l">工时费</text><text class="v">￥{{ laborTotal }}</text></view>
+					<view class="p-item"><text class="l">零件费用</text><text class="v">￥{{ partsTotal }}</text></view>
+					<view class="p-item" v-if="formData.service.isChargeable === '收费'"><text class="l">路程费</text><text class="v">￥{{ travelTotal }}</text></view>
+					<view class="p-item" v-if="formData.service.isChargeable === '收费'"><text class="l">工时费</text><text class="v">￥{{ laborTotal }}</text></view>
 				</view>
 				<view class="panel-total">
-					<text>应收合计</text>
-					<text class="total-v">￥{{ grandTotal }}</text>
+					<text>{{ formData.service.isChargeable === '收费' ? '应收合计' : '物料成本合计' }}</text>
+					<text class="total-v">￥{{ formData.service.isChargeable === '收费' ? grandTotal : partsTotal }}</text>
 				</view>
 			</view>
 
