@@ -53,7 +53,7 @@
 		"service": {
 			"bsonType": "object",
 			"description": "服务内容",
-			"required": ["type", "faultCategory", "faultDesc", "handleDesc"],
+			"required": ["type", "faultItems"],
 			"properties": {
 				"type": { 
 					"bsonType": "string", 
@@ -62,35 +62,42 @@
 				},
 				"isChargeable": { "bsonType": "string", "enum": ["免费", "收费"] },
 				"paymentMethod": { "bsonType": "string" },
-				"faultCategory": { 
-					"bsonType": "string",
-					"description": "故障信息分类"
-				},
-				"faultDesc": { "bsonType": "string", "description": "故障现象" },
-				"handleDesc": { "bsonType": "string", "description": "处理方法" },
-				"parts": {
+				"faultItems": {
 					"bsonType": "array",
-					"description": "更换零件列表",
+					"description": "故障条目列表",
 					"items": {
 						"bsonType": "object",
-						"required": ["name", "code", "count", "oldPartAction"],
+						"required": ["category", "faultDesc", "handleDesc"],
 						"properties": {
-							"name": { "bsonType": "string", "description": "零件名称" },
-							"code": { "bsonType": "string", "description": "图号" },
-							"count": { "bsonType": "int", "description": "数量" },
-							"price": { "bsonType": "double", "description": "单价" },
-							"total": { "bsonType": "double", "description": "单项总价" },
-							"oldPartAction": { "bsonType": "string" },
-							"source": { "bsonType": "string" },
-							"sourceRemark": { "bsonType": "string" }
+							"category": { "bsonType": "string", "description": "分类名称" },
+							"faultDesc": { "bsonType": "string", "description": "现象" },
+							"handleDesc": { "bsonType": "string", "description": "处理方法" },
+							"parts": {
+								"bsonType": "array",
+								"description": "更换零件列表",
+								"items": {
+									"bsonType": "object",
+									"required": ["name", "code", "count", "oldPartAction"],
+									"properties": {
+										"name": { "bsonType": "string" },
+										"code": { "bsonType": "string" },
+										"count": { "bsonType": "int" },
+										"price": { "bsonType": "double" },
+										"total": { "bsonType": "double" },
+										"oldPartAction": { "bsonType": "string" },
+										"source": { "bsonType": "string" },
+										"sourceRemark": { "bsonType": "string" }
+									}
+								}
+							},
+							"sitePhotos": { 
+								"bsonType": "array", 
+								"items": { "bsonType": "file" }
+							}
 						}
 					}
 				},
-				"finishTime": { "bsonType": "timestamp", "description": "维修完成时间" },
-				"sitePhotos": { 
-					"bsonType": "array", 
-					"items": { "bsonType": "file" }
-				}
+				"finishTime": { "bsonType": "timestamp", "description": "维修完成时间" }
 			}
 		},
 		"customerConfirm": {

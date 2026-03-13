@@ -88,12 +88,12 @@
 				</view>
 			</view>
 
-			<!-- Section D: Service Info -->
+			<!-- Section D: Service Info (Summary) -->
 			<view class="ui-card" :class="{ 'card-active': !sectionsCollapsed.service }">
 				<view class="card-header" @click="toggleSection('service')">
 					<view class="header-left">
-						<text class="header-title">服务内容</text>
-						<text v-if="isServiceComplete" class="header-status">已填写</text>
+						<text class="header-title">服务基础信息</text>
+						<text v-if="formData.service.type" class="header-status">已选择</text>
 					</view>
 					<text class="header-arrow" :class="{ 'arrow-up': !sectionsCollapsed.service }"></text>
 				</view>
@@ -114,38 +114,62 @@
 					<view class="ui-field column no-border">
 						<view class="field-label-row">
 							<text class="field-label required">故障分类</text>
-							<view class="btn-text-add" @click="toggleFaultPicker">+ 选择分类</view>
+							<view class="btn-text-add" @click="toggleFaultPicker">+ 添加/修改分类</view>
 						</view>
 						<view class="tag-cloud-wrapper">
-							<view v-if="formData.service.faultCategories.length === 0" class="tag-placeholder" @click="toggleFaultPicker">
-								暂未选择任何分类，点击右侧按钮添加
+							<view v-if="!formData.service || !formData.service.faultItems || formData.service.faultItems.length === 0" class="tag-placeholder" @click="toggleFaultPicker">
+								点击此处选择故障分类，将为您生成对应卡片
 							</view>
 							<view v-else class="tag-cloud">
-								<view v-for="(tag, tidx) in formData.service.faultCategories" :key="tidx" class="tag" @click.stop="removeFaultTag(tidx)">
-									<text class="t-text">{{ tag }}</text>
+								<view v-for="(item, tidx) in formData.service.faultItems" :key="tidx" class="tag" @click.stop="removeFaultTag(tidx)">
+									<text class="t-text">{{ item.category }}</text>
 									<text class="x">✕</text>
 								</view>
 							</view>
 						</view>
 					</view>
+					<view class="ui-field">
+						<text class="field-label required">完成时间</text>
+						<view class="time-picker-group">
+							<picker mode="date" @change="onFinishDateChange" class="tp"><view>{{ formData.service.finishDate }}</view></picker>
+							<picker mode="time" @change="onFinishTimeChange" class="tp ml-5"><view>{{ formData.service.finishTime || '00:00' }}</view></picker>
+						</view>
+					</view>
+				</view>
+			</view>
+
+			<!-- Dynamic Fault Cards: One for each selected category -->
+			<view v-for="(item, itemIdx) in formData.service.faultItems" :key="itemIdx" class="ui-card" :class="{ 'card-active': !sectionsCollapsed['fault_' + itemIdx] }">
+				<view class="card-header" @click="toggleSection('fault_' + itemIdx)">
+					<view class="header-left">
+						<text class="header-title">{{ itemIdx + 1 }}、{{ item.category }}</text>
+					</view>
+					<view class="header-right-actions">
+						<text class="btn-remove-emoji" @click.stop="removeFaultTag(itemIdx)">🗑️</text>
+						<text class="header-arrow" :class="{ 'arrow-up': !sectionsCollapsed['fault_' + itemIdx] }"></text>
+					</view>
+				</view>
+				
+				<view class="card-body" v-show="!sectionsCollapsed['fault_' + itemIdx]">
 					<view class="ui-field column">
 						<text class="field-label required">故障现象</text>
-						<textarea class="field-textarea" v-model="formData.service.faultDesc" placeholder="简述故障表现..." placeholder-class="ph" />
+						<textarea class="field-textarea" v-model="item.faultDesc" placeholder="请详细描述故障表现..." placeholder-class="ph" />
 					</view>
+					
 					<view class="ui-field column">
 						<text class="field-label required">处理方法</text>
-						<textarea class="field-textarea" v-model="formData.service.handleDesc" placeholder="简述维修过程..." placeholder-class="ph" />
+						<textarea class="field-textarea" v-model="item.handleDesc" placeholder="请详细描述处理过程..." placeholder-class="ph" />
 					</view>
-							
-					<!-- Parts Detail -->
+
+					<!-- Parts Detail for THIS category -->
 					<view class="ui-field column no-border">
 						<view class="list-header">
 							<text class="list-title">更换零件明细</text>
-							<view class="btn-text-add" @click="addPart">+ 新增</view>
+							<view class="btn-text-add" @click="addPart(itemIdx)">+ 新增零件</view>
 						</view>
 						
-						<view v-for="(part, idx) in formData.service.parts" :key="idx" class="part-entry">
-							<text class="btn-remove-absolute" @click="removePart(idx)">×</text>
+						<view v-for="(part, pIdx) in item.parts" :key="pIdx" class="part-entry">
+							<text class="btn-remove-absolute" @click="removePart(itemIdx, pIdx)">×</text>
 							<view class="entry-row">
 								<input v-model="part.name" placeholder="零件名称" class="input-name" placeholder-class="ph" />
 							</view>
@@ -154,7 +178,7 @@
 								<input v-model="part.code" placeholder="图号/编码" class="input-code" placeholder-class="ph" />
 								<view class="source-picker-inline">
 									<text class="s-label">来源</text>
-									<picker :range="partSources" @change="onPartSourceChange($event, idx)" class="s-picker">
+									<picker :range="partSources" @change="onPartSourceChange($event, itemIdx, pIdx)" class="s-picker">
 										<view class="s-value">{{ part.source || '选择来源' }}</view>
 									</picker>
 								</view>
@@ -162,21 +186,18 @@
 
 							<view class="part-ext-row" v-if="part.source === '其他'">
 								<text class="ext-label required">来源备注</text>
-								<input v-model="part.sourceRemark" placeholder="请输入具体来源说明" class="input-remark" placeholder-class="ph-warning" />
+								<input v-model="part.sourceRemark" placeholder="具体来源说明" class="input-remark" placeholder-class="ph-warning" />
 							</view>
 
 							<view class="entry-row mt-10 flex-align-center">
-								<!-- 数量 -->
 								<view class="entry-stepper-wrapper">
 									<text class="st-label">数量</text>
 									<view class="entry-stepper">
-										<text class="s-btn" @click.stop="updatePartCount(idx, -1)">-</text>
+										<text class="s-btn" @click.stop="updatePartCount(itemIdx, pIdx, -1)">-</text>
 										<text class="s-num">{{ part.count }}</text>
-										<text class="s-btn" @click.stop="updatePartCount(idx, 1)">+</text>
+										<text class="s-btn" @click.stop="updatePartCount(itemIdx, pIdx, 1)">+</text>
 									</view>
 								</view>
-								
-								<!-- 价格组并排 -->
 								<view class="entry-bottom-inline" v-if="formData.service.isChargeable === '收费'">
 									<view class="price-box-small">
 										<text class="p-label">单价</text>
@@ -189,46 +210,32 @@
 								</view>
 							</view>
 
-							<!-- 旧件处理独立一行 -->
 							<view class="entry-row-standalone mt-10">
 								<view class="old-part-toggle-full">
 									<text class="opt-label">旧件处理方式</text>
 									<view class="opt-btns">
-										<view class="opt-btn" :class="{ 'active': part.oldPartAction === '带回' }" @click="onOldPartActionChange(idx, '带回')">
-											<text class="dot" v-if="part.oldPartAction === '带回'"></text>带回
-										</view>
-										<view class="opt-btn" :class="{ 'active': part.oldPartAction === '丢弃' }" @click="onOldPartActionChange(idx, '丢弃')">
-											<text class="dot" v-if="part.oldPartAction === '丢弃'"></text>丢弃
-										</view>
+										<view class="opt-btn" :class="{ 'active': part.oldPartAction === '带回' }" @click="onOldPartActionChange(itemIdx, pIdx, '带回')">带回</view>
+										<view class="opt-btn" :class="{ 'active': part.oldPartAction === '丢弃' }" @click="onOldPartActionChange(itemIdx, pIdx, '丢弃')">丢弃</view>
 									</view>
 								</view>
 							</view>
 						</view>
-	
-						<view class="list-summary" v-if="formData.service.isChargeable === '收费' && formData.service.parts.length > 0">
-							<text>零件费用小计</text>
-							<text class="v">￥{{ partsTotal }}</text>
-						</view>
 					</view>
-					
-					<view class="ui-field column">
-						<text class="field-label required">现场照片</text>
+
+					<!-- Site Photos for THIS category -->
+					<view class="ui-field column no-border mt-10">
+						<view class="field-label-full">
+							<text class="field-label required">现场照片</text>
+							<text class="field-label-tip">(故障、维修后、旧件照片)</text>
+						</view>
 						<view class="grid-uploader">
-							<view class="grid-add" @click="chooseImage('site')">
+							<view class="grid-add" @click="chooseImage('site', itemIdx)">
 								<text class="icon">+</text>
 							</view>
-							<view v-for="(img, idx) in formData.service.sitePhotos" :key="idx" class="grid-item">
+							<view v-for="(img, pIdx) in item.sitePhotos" :key="pIdx" class="grid-item">
 								<image :src="img" class="img" mode="aspectFill" @click="previewImg(img)"></image>
-								<text class="btn-del" @click.stop="removeSitePhoto(idx)">×</text>
+								<text class="btn-del" @click.stop="removeSitePhoto(itemIdx, pIdx)">×</text>
 							</view>
-						</view>
-					</view>
-					
-					<view class="ui-field">
-						<text class="field-label required">完成时间</text>
-						<view class="time-picker-group">
-							<picker mode="date" @change="onFinishDateChange" class="tp"><view>{{ formData.service.finishDate }}</view></picker>
-							<picker mode="time" @change="onFinishTimeChange" class="tp ml-5"><view>{{ formData.service.finishTime || '00:00' }}</view></picker>
 						</view>
 					</view>
 				</view>
@@ -398,7 +405,7 @@
 				<view class="modal-header">
 					<view class="h-left">
 						<text class="t">选择故障分类</text>
-						<text class="count" v-if="formData.service.faultCategories.length > 0">已选 {{ formData.service.faultCategories.length }}</text>
+						<text class="count" v-if="selectedFaultCategoryNames && selectedFaultCategoryNames.length > 0">已选 {{ selectedFaultCategoryNames.length }}</text>
 					</view>
 					<text class="c" @click="toggleFaultPicker">✕</text>
 				</view>
@@ -414,13 +421,13 @@
 					<block v-if="faultSearchKey">
 						<view v-for="(item, idx) in searchResults" :key="idx" 
 							class="leaf-item search" 
-							:class="{ 'active': formData.service.faultCategories.includes(item.parent + '-' + item.name) }"
+							:class="{ 'active': selectedFaultCategoryNames.includes(item.parent + '-' + item.name) }"
 							@click="selectFaultLeaf(item.name, item.parent)">
 							<view class="l-content">
 								<text class="n">{{ item.name }}</text>
 								<text class="p">{{ item.parent }}</text>
 							</view>
-							<view class="check-box" v-if="formData.service.faultCategories.includes(item.parent + '-' + item.name)">
+							<view class="check-box" v-if="selectedFaultCategoryNames.includes(item.parent + '-' + item.name)">
 								<text class="check-icon">✓</text>
 							</view>
 						</view>
@@ -445,10 +452,10 @@
 						</view>
 						<view v-for="(leaf, idx) in selectedCategory.children" :key="idx" 
 							class="leaf-item" 
-							:class="{ 'active': formData.service.faultCategories.includes(selectedCategory.title + '-' + leaf) }"
+							:class="{ 'active': selectedFaultCategoryNames.includes(selectedCategory.title + '-' + leaf) }"
 							@click="selectFaultLeaf(leaf, selectedCategory.title)">
 							<text class="n">{{ leaf }}</text>
-							<view class="check-box" v-if="formData.service.faultCategories.includes(selectedCategory.title + '-' + leaf)">
+							<view class="check-box" v-if="selectedFaultCategoryNames.includes(selectedCategory.title + '-' + leaf)">
 								<text class="check-icon">✓</text>
 							</view>
 						</view>
@@ -456,11 +463,11 @@
 				</scroll-view>
 				
 				<view class="modal-footer">
-					<view class="selected-summary" v-if="formData.service.faultCategories.length > 0">
+					<view class="selected-summary" v-if="selectedFaultCategoryNames && selectedFaultCategoryNames.length > 0">
 						<scroll-view scroll-x class="summary-scroll">
 							<view class="summary-tags">
-								<view v-for="(tag, tidx) in formData.service.faultCategories" :key="tidx" class="s-tag" @click="removeFaultTag(tidx)">
-									{{ tag.split('-')[1] || tag }}
+								<view v-for="(tagName, tidx) in selectedFaultCategoryNames" :key="tidx" class="s-tag" @click="removeFaultTag(tidx)">
+									{{ tagName.split('-')[1] || tagName }}
 								</view>
 							</view>
 						</scroll-view>
@@ -502,13 +509,9 @@
 					service: { 
 						type: '', 
 						isChargeable: '免费', 
-						faultCategories: [], // 改为数组支持多选
-						faultDesc: '', 
-						handleDesc: '', 
+						faultItems: [], // 改为对象数组，支持“一故障一卡片”
 						finishDate: '', 
 						finishTime: '', 
-						parts: [], 
-						sitePhotos: [], 
 						paymentMethod: '微信支付' 
 					},
 					additionalFees: {
@@ -532,48 +535,66 @@
 			}
 		},
 		computed: {
-			partsTotal() { return this.formData.service.parts.reduce((sum, part) => sum + (Number(part.price) || 0) * (part.count || 0), 0).toFixed(1); },
-			travelTotal() { const fee = this.formData.additionalFees.travelFee; return (Number(fee.distance || 0) * Number(fee.unitPrice || 0)).toFixed(1); },
+			partsTotal() {
+				if (!this.formData.service || !this.formData.service.faultItems) return "0.0";
+				return this.formData.service.faultItems.reduce((total, item) => {
+					const itemTotal = (item.parts || []).reduce((sum, part) => sum + (Number(part.price) || 0) * (part.count || 0), 0);
+					return total + itemTotal;
+				}, 0).toFixed(1);
+			},
+			travelTotal() { 
+				if (!this.formData.additionalFees || !this.formData.additionalFees.travelFee) return "0.0";
+				const fee = this.formData.additionalFees.travelFee; 
+				return (Number(fee.distance || 0) * Number(fee.unitPrice || 0)).toFixed(1); 
+			},
 			laborHours() {
+				if (!this.formData.additionalFees || !this.formData.additionalFees.laborFee || !this.formData.service) return "0.0";
 				const fee = this.formData.additionalFees.laborFee;
 				const service = this.formData.service;
 				if (!fee.departureDate || !fee.departureTime || !service.finishDate || !service.finishTime) return "0.0";
 				try {
-					// 统一处理日期连接符，确保移动端兼容性
 					const startStr = `${fee.departureDate} ${fee.departureTime}:00`.replace(/-/g, '/');
 					const endStr = `${service.finishDate} ${service.finishTime}:00`.replace(/-/g, '/');
 					const start = new Date(startStr);
 					const end = new Date(endStr);
-					
 					if (isNaN(start.getTime()) || isNaN(end.getTime())) return "0.0";
-					
 					let diffMs = end.getTime() - start.getTime();
 					if (diffMs <= 0) return "0.0";
-					
-					// 计算总分钟数
 					const totalMinutes = (diffMs / 60000) + (Number(fee.returnDuration) || 0);
 					return (totalMinutes / 60).toFixed(1);
-				} catch (e) { 
-					console.error('计算工时失败:', e);
-					return "0.0"; 
-				}
+				} catch (e) { return "0.0"; }
 			},
-			laborTotal() { return (Number(this.laborHours) * Number(this.formData.additionalFees.laborFee.unitPrice || 0)).toFixed(1); },
+			laborTotal() { 
+				if (!this.formData.additionalFees || !this.formData.additionalFees.laborFee) return "0.0";
+				return (Number(this.laborHours) * Number(this.formData.additionalFees.laborFee.unitPrice || 0)).toFixed(1); 
+			},
 			additionalTotal() { return (Number(this.travelTotal) + Number(this.laborTotal)).toFixed(1); },
 			grandTotal() { return (Number(this.partsTotal) + Number(this.additionalTotal)).toFixed(1); },
-			isCustomerComplete() { const c = this.formData.customer; return !!(c.name && c.phone && c.address); },
-			isProductComplete() { const p = this.formData.product; return !!(p.machineNo && p.platePhoto); },
+			isCustomerComplete() { 
+				const c = this.formData.customer; 
+				return !!(c && c.name && c.phone && c.address); 
+			},
+			isProductComplete() { 
+				const p = this.formData.product; 
+				return !!(p && p.machineNo && p.platePhoto); 
+			},
 			isServiceComplete() {
 				const s = this.formData.service;
-				// 基础必填校验
-				if (!(s.type && s.faultCategories.length > 0 && s.sitePhotos.length > 0)) return false;
-				// 零件校验：如果有零件来源为“其他”，必须填写备注
-				for (const part of s.parts) {
-					if (part.source === '其他' && !part.sourceRemark) return false;
+				if (!s || !s.type || !s.faultItems || s.faultItems.length === 0) return false;
+				for (const item of s.faultItems) {
+					if (!item.faultDesc || !item.handleDesc || !item.sitePhotos || item.sitePhotos.length === 0) return false;
+					for (const part of (item.parts || [])) {
+						if (!part.name || !part.code) return false;
+						if (part.source === '其他' && !part.sourceRemark) return false;
+					}
 				}
 				return true;
 			},
-			isConfirmComplete() { return !!this.formData.confirm.machineUserPhoto; },
+			isConfirmComplete() { return !!(this.formData.confirm && this.formData.confirm.machineUserPhoto); },
+			selectedFaultCategoryNames() {
+				if (!this.formData.service || !this.formData.service.faultItems) return [];
+				return this.formData.service.faultItems.map(item => item.category);
+			},
 			filteredDistributors() {
 				if (!this.distributorSearchKey) return this.distributors;
 				const key = this.distributorSearchKey.toLowerCase();
@@ -682,47 +703,90 @@
 			onServiceTypeChange(e) { this.formData.service.type = this.serviceTypes[e.detail.value]; },
 			onIsChargeableChange(e) { this.formData.service.isChargeable = e.detail.value; },
 			onPaymentMethodChange(e) { this.formData.service.paymentMethod = e.detail.value; },
-			onPartSourceChange(e, index) { this.$set(this.formData.service.parts[index], 'source', this.partSources[e.detail.value]); },
-			onOldPartActionChange(idx, action) { this.$set(this.formData.service.parts[idx], 'oldPartAction', action); },
+			onPartSourceChange(e, itemIdx, partIdx) { 
+				this.$set(this.formData.service.faultItems[itemIdx].parts[partIdx], 'source', this.partSources[e.detail.value]); 
+			},
+			onOldPartActionChange(itemIdx, partIdx, action) { 
+				this.$set(this.formData.service.faultItems[itemIdx].parts[partIdx], 'oldPartAction', action); 
+			},
 			toggleFaultPicker() { this.showFaultPicker = !this.showFaultPicker; this.selectedCategory = null; },
 			selectFaultCategory(cat) { this.selectedCategory = cat; },
 			selectFaultLeaf(leaf, parent) {
-				const val = parent ? `${parent}-${leaf}` : leaf;
-				const idx = this.formData.service.faultCategories.indexOf(val);
+				const categoryName = parent ? `${parent}-${leaf}` : leaf;
+				const idx = this.formData.service.faultItems.findIndex(item => item.category === categoryName);
+				
 				if (idx > -1) {
-					this.formData.service.faultCategories.splice(idx, 1);
+					// 如果已存在，则移除该故障条目（卡片）
+					uni.showModal({
+						title: '确认移除',
+						content: `取消选择 "${categoryName}" 将删除该分类下已填写的所有内容，确认吗？`,
+						success: (res) => {
+							if (res.confirm) {
+								this.formData.service.faultItems.splice(idx, 1);
+							}
+						}
+					});
 				} else {
-					this.formData.service.faultCategories.push(val);
+					// 如果不存在，则新增一个故障条目（卡片）
+					this.formData.service.faultItems.push({
+						category: categoryName,
+						faultDesc: '',
+						handleDesc: '',
+						parts: [],
+						sitePhotos: []
+					});
 				}
 			},
-			removeFaultTag(idx) { this.formData.service.faultCategories.splice(idx, 1); },
-			getCategorySelectedCount(catTitle) {
-				return this.formData.service.faultCategories.filter(item => item.startsWith(catTitle + '-')).length;
-			},
-			addPart() { this.formData.service.parts.push({ name: '', code: '', count: 1, oldPartAction: '带回', source: '自带', price: 0 }); },
-			updatePartCount(idx, d) { const p = this.formData.service.parts[idx]; if (p.count + d >= 1) p.count += d; },
-			removePart(idx) {
+			removeFaultTag(idx) { 
 				uni.showModal({
-					title: '确认删除',
-					content: `是否确定删除第 ${idx + 1} 项零件？`,
+					title: '确认移除',
+					content: '确认删除该故障卡片吗？',
 					success: (res) => {
 						if (res.confirm) {
-							this.formData.service.parts.splice(idx, 1);
+							this.formData.service.faultItems.splice(idx, 1);
 						}
 					}
 				});
 			},
-			chooseImage(type) {
+			getCategorySelectedCount(catTitle) {
+				if (!this.formData.service || !this.formData.service.faultItems) return 0;
+				return this.formData.service.faultItems.filter(item => item.category && item.category.startsWith(catTitle + '-')).length;
+			},
+			addPart(itemIdx) { 
+				this.formData.service.faultItems[itemIdx].parts.push({ 
+					name: '', code: '', count: 1, oldPartAction: '带回', source: '自带', price: 0 
+				}); 
+			},
+			updatePartCount(itemIdx, partIdx, d) { 
+				const p = this.formData.service.faultItems[itemIdx].parts[partIdx]; 
+				if (p.count + d >= 1) p.count += d; 
+			},
+			removePart(itemIdx, partIdx) {
+				uni.showModal({
+					title: '确认删除',
+					content: '是否确定删除该项零件？',
+					success: (res) => {
+						if (res.confirm) {
+							this.formData.service.faultItems[itemIdx].parts.splice(partIdx, 1);
+						}
+					}
+				});
+			},
+			chooseImage(type, itemIdx = -1) {
 				uni.chooseImage({
 					count: type === 'site' ? 9 : 1,
 					success: (res) => {
 						if (type === 'plate') this.formData.product.platePhoto = res.tempFilePaths[0];
 						else if (type === 'confirm') this.formData.confirm.machineUserPhoto = res.tempFilePaths[0];
-						else if (type === 'site') this.formData.service.sitePhotos.push(...res.tempFilePaths);
+						else if (type === 'site' && itemIdx !== -1) {
+							this.formData.service.faultItems[itemIdx].sitePhotos.push(...res.tempFilePaths);
+						}
 					}
 				});
 			},
-			removeSitePhoto(idx) { this.formData.service.sitePhotos.splice(idx, 1); },
+			removeSitePhoto(itemIdx, photoIdx) { 
+				this.formData.service.faultItems[itemIdx].sitePhotos.splice(photoIdx, 1); 
+			},
 			previewImg(url) { uni.previewImage({ urls: [url] }); },
 			fillMockData() {
 				const names = ['张伟', '王芳', '李娜', '刘强', '陈杰'];
@@ -745,7 +809,7 @@
 				
 				this.formData.service.type = '维修';
 				this.formData.service.isChargeable = '收费';
-				this.formData.service.faultCategories = ['动力系统-发动机', '液压系统-HST']; // 填充完整路径
+				this.selectedFaultCategoryNames = ['动力系统-发动机', '液压系统-HST']; // 填充完整路径
 				this.formData.service.faultDesc = random(faults);
 				this.formData.service.handleDesc = '清理积碳，更换密封圈，试运行正常。';
 				this.formData.service.sitePhotos = ['https://img-cdn-aliyun.dcloud.net.cn/uni-app/uni-cloud/upload-file.png'];
@@ -768,32 +832,53 @@
 					uni.showToast({ title: '信息不全(姓名/机号/经销商)', icon: 'none' }); 
 					return; 
 				}
-				uni.showLoading({ title: '数据同步中' });
+				if (!this.isServiceComplete) {
+					uni.showToast({ title: '请完整填写每个故障卡片的内容及照片', icon: 'none' });
+					return;
+				}
+				
+				uni.showLoading({ title: '数据同步中', mask: true });
 				try {
 					const orderNo = this.formData.orderNo;
+					
+					// 1. 上传基础照片
 					const plateId = await this.uploadFile(this.formData.product.platePhoto, orderNo);
 					const confirmId = await this.uploadFile(this.formData.confirm.machineUserPhoto, orderNo);
-					const siteIds = [];
-					for (const img of this.formData.service.sitePhotos) { const sid = await this.uploadFile(img, orderNo); if (sid) siteIds.push(sid); }
-					const depTime = new Date(`${this.formData.additionalFees.laborFee.departureDate} ${this.formData.additionalFees.laborFee.departureTime}:00`.replace(/-/g, '/')).getTime();
-					const finTime = new Date(`${this.formData.service.finishDate} ${this.formData.service.finishTime}:00`.replace(/-/g, '/')).getTime();
-					const cRepTime = this.formData.customer.reportTime ? new Date(this.formData.customer.reportTime.replace(/-/g, '/')).getTime() : Date.now();
-					const pProdDate = this.formData.product.productionDate ? new Date(this.formData.product.productionDate.replace(/-/g, '/')).getTime() : null;
-					const orderData = {
-						orderNo: this.formData.orderNo,
-						customer: { ...this.formData.customer, reportTime: cRepTime },
-						product: { ...this.formData.product, productionDate: pProdDate, platePhoto: plateId },
-						service: {
-							...this.formData.service,
+					
+					// 2. 递归处理故障条目（上传每个卡片的照片）
+					const finalFaultItems = [];
+					for (const item of this.formData.service.faultItems) {
+						const siteIds = [];
+						for (const img of item.sitePhotos) {
+							const sid = await this.uploadFile(img, orderNo);
+							if (sid) siteIds.push(sid);
+						}
+						finalFaultItems.push({
+							...item,
 							sitePhotos: siteIds,
-							finishTime: finTime,
-							parts: this.formData.service.parts.map(p => ({
+							parts: item.parts.map(p => ({
 								...p,
 								count: Number(p.count),
 								price: Number(p.price || 0),
 								total: Number(((p.price || 0) * (p.count || 0)).toFixed(1)),
 								oldPartAction: p.oldPartAction || '带回'
 							}))
+						});
+					}
+
+					const depTime = new Date(`${this.formData.additionalFees.laborFee.departureDate} ${this.formData.additionalFees.laborFee.departureTime}:00`.replace(/-/g, '/')).getTime();
+					const finTime = new Date(`${this.formData.service.finishDate} ${this.formData.service.finishTime}:00`.replace(/-/g, '/')).getTime();
+					const cRepTime = this.formData.customer.reportTime ? new Date(this.formData.customer.reportTime.replace(/-/g, '/')).getTime() : Date.now();
+					const pProdDate = this.formData.product.productionDate ? new Date(this.formData.product.productionDate.replace(/-/g, '/')).getTime() : null;
+					
+					const orderData = {
+						orderNo: this.formData.orderNo,
+						customer: { ...this.formData.customer, reportTime: cRepTime },
+						product: { ...this.formData.product, productionDate: pProdDate, platePhoto: plateId },
+						service: {
+							...this.formData.service,
+							faultItems: finalFaultItems,
+							finishTime: finTime
 						},
 						additionalFees: this.formData.service.isChargeable === '收费' ? {
 							travelFee: {
@@ -826,7 +911,10 @@
 							} else uni.showToast({ title: res.result.msg, icon: 'none' });
 						}
 					});
-				} catch (e) { uni.hideLoading(); }
+				} catch (e) { 
+					uni.hideLoading(); 
+					console.error('提交失败:', e);
+				}
 			},
 			uploadFile(path, folder) {
 				return new Promise((resolve) => {
@@ -872,10 +960,35 @@
 		.header-title { font-size: 15px; font-weight: 700; color: $text-primary; }
 		.header-status { font-size: 10px; background: rgba($success, 0.1); color: $success; padding: 2px 8px; border-radius: 4px; margin-left: 8px; }
 		.header-status-warn { font-size: 10px; background: rgba($danger, 0.1); color: $danger; padding: 2px 8px; border-radius: 4px; margin-left: 8px; }
+		
+		.header-right-actions {
+			display: flex;
+			align-items: center;
+			.btn-remove-emoji { 
+				font-size: 16px; 
+				margin-right: 20px; // 增加间距
+				padding: 4px; 
+				opacity: 0.8;
+				&:active { opacity: 1; transform: scale(1.1); }
+			}
+		}
+		
 		.header-arrow { width: 7px; height: 7px; border-right: 2px solid $text-tip; border-bottom: 2px solid $text-tip; transform: rotate(45deg); transition: transform 0.3s; &.arrow-up { transform: rotate(-135deg); } }
 		&.no-border { border-bottom: none; }
 	}
 
+	.fault-badge-mini {
+		font-size: 10px;
+		background: $accent;
+		color: #fff;
+		width: 16px;
+		height: 16px;
+		text-align: center;
+		line-height: 16px;
+		border-radius: 4px;
+		margin-right: 8px;
+		font-weight: bold;
+	}
 
 	.card-body { padding: 0 16px 12px; }
 
@@ -888,6 +1001,12 @@
 		&:last-child { border-bottom: none; }
 		&.column { flex-direction: column; align-items: flex-start; }
 		&.no-border { border-bottom: none; }
+		
+		.field-label-full { width: 100%; display: flex; align-items: center; flex-wrap: nowrap; margin-bottom: 6px; 
+			.field-label { width: auto; margin-right: 6px; margin-bottom: 0; }
+			.field-label-tip { font-size: 11px; color: $text-tip; white-space: nowrap; }
+		}
+		
 		.field-label { width: 85px; font-size: 13px; font-weight: 500; color: $text-secondary; &.required::after { content: '*'; color: $danger; margin-left: 3px; } }
 		.hmandmachine { width: 185px;}
 		.field-input, .picker-text, .field-picker-box { 
