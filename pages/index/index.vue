@@ -1,36 +1,76 @@
 <template>
 	<view class="container">
-		<view class="user-info-card">
-			<view class="user-identity">
-				<image src="/static/logo.png" class="logo" mode="aspectFit" />
-				<view class="greeting">欢迎你，{{ userName }}</view>
+		<!-- Header User Info Card -->
+		<view class="welcome-card">
+			<view class="welcome-bg"></view>
+			<view class="welcome-content">
+				<view class="user-info">
+					<image src="/static/logo.png" class="avatar" mode="aspectFill" />
+					<view class="user-text">
+						<text class="greeting">欢迎你，{{ userName }}</text>
+						<view class="role-badges">
+							<text class="role-badge" v-for="(role, idx) in userRolesArray" :key="idx">{{ role }}</text>
+						</view>
+					</view>
+				</view>
 			</view>
-			<view class="role-tag">{{ userRoles }}</view>
 		</view>
 		
-		<view class="menu-grid">
-			<view class="menu-item primary" @click="navTo('/pages/work-order/create')">
-				<view class="icon">+</view>
-				<text class="menu-title">新建派工单</text>
-				<text class="menu-desc">填写新的售后服务工单</text>
+		<!-- Service Actions Grid -->
+		<view class="section-container">
+			<view class="section-header">
+				<text class="section-title">常用服务</text>
 			</view>
-			
-			<view class="menu-item secondary" @click="navTo('/pages/work-order/list')">
-				<view class="icon">📄</view>
-				<text class="menu-title">{{ isAdmin ? '工单查询' : '我的工单' }}</text>
-				<text class="menu-desc">{{ isAdmin ? '查询所有工单记录' : '查看历史提交记录' }}</text>
+			<view class="service-grid">
+				<view class="service-card primary" @click="navTo('/pages/work-order/create')">
+					<view class="icon-circle"><text class="icon">➕</text></view>
+					<view class="card-info">
+						<text class="title">新建派工单</text>
+						<text class="desc">填写新工单</text>
+					</view>
+				</view>
+				
+				<view class="service-card secondary" @click="navTo('/pages/work-order/list')">
+					<view class="icon-circle"><text class="icon">📄</text></view>
+					<view class="card-info">
+						<text class="title">{{ isAdmin ? '工单管理' : '我的工单' }}</text>
+						<text class="desc">{{ isAdmin ? '统筹所有工单' : '历史提交记录' }}</text>
+					</view>
+				</view>
 			</view>
-			
-			<view v-if="isAdmin" class="menu-item admin" @click="navTo('/pages/admin/approval')">
-				<view class="icon">👮</view>
-				<text class="menu-title">成员审批</text>
-				<text class="menu-desc">审核新用户申请</text>
+		</view>
+
+		<!-- Secondary Actions List -->
+		<view class="section-container mt-4">
+			<view class="section-header">
+				<text class="section-title">系统功能</text>
 			</view>
-			
-			<view class="menu-item feedback" @click="navTo('/pages/feedback/list')">
-				<view class="icon">💬</view>
-				<text class="menu-title">意见反馈</text>
-				<text class="menu-desc">提交问题或建议</text>
+			<view class="action-list">
+				<view v-if="isAdmin" class="action-item" @click="navTo('/pages/admin/approval')" hover-class="hover-effect">
+					<view class="item-left">
+						<view class="action-icon admin-icon">👮</view>
+						<view class="item-text">
+							<text class="item-title">成员审批</text>
+							<text class="item-desc">审核新用户申请及系统权限</text>
+						</view>
+					</view>
+					<view class="item-right">
+						<text class="arrow">›</text>
+					</view>
+				</view>
+				
+				<view class="action-item" @click="navTo('/pages/feedback/list')" hover-class="hover-effect">
+					<view class="item-left">
+						<view class="action-icon feedback-icon">💬</view>
+						<view class="item-text">
+							<text class="item-title">意见反馈</text>
+							<text class="item-desc">提交问题建议或申请协助</text>
+						</view>
+					</view>
+					<view class="item-right">
+						<text class="arrow">›</text>
+					</view>
+				</view>
 			</view>
 		</view>
 	</view>
@@ -43,6 +83,11 @@
 				userName: '用户',
 				userRoles: '',
 				isAdmin: false
+			}
+		},
+		computed: {
+			userRolesArray() {
+				return this.userRoles ? this.userRoles.split(' / ') : [];
 			}
 		},
 		onShow() {
@@ -105,94 +150,214 @@
 </script>
 
 <style lang="scss">
+	page {
+		background-color: #f4f6f8;
+	}
+
 	.container {
-		padding: 20px;
-		background-color: #f5f5f5;
+		padding: 16px;
 		min-height: 100vh;
 	}
 	
-	.user-info-card {
-		background: #fff;
-		padding: 20px;
-		border-radius: 10px;
-		margin-bottom: 20px;
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
+	/* Welcome Card Module */
+	.welcome-card {
+		position: relative;
+		border-radius: 16px;
+		overflow: hidden;
+		margin-bottom: 24px;
+		box-shadow: 0 8px 16px rgba(22, 93, 255, 0.15);
 		
-		.user-identity {
+		.welcome-bg {
+			position: absolute;
+			top: 0; left: 0; right: 0; bottom: 0;
+			background: linear-gradient(135deg, #165dff, #4080ff);
+			z-index: 1;
+		}
+		
+		.welcome-content {
+			position: relative;
+			z-index: 2;
+			padding: 24px 20px;
+		}
+		
+		.user-info {
 			display: flex;
 			align-items: center;
-			gap: 12px;
+			gap: 16px;
 			
-			.logo {
-				width: 40px;
-				height: 40px;
+			.avatar {
+				width: 56px;
+				height: 56px;
 				border-radius: 50%;
+				background-color: #fff;
+				border: 2px solid rgba(255, 255, 255, 0.4);
+			}
+			
+			.user-text {
+				display: flex;
+				flex-direction: column;
+				gap: 8px;
 			}
 			
 			.greeting {
 				font-size: 18px;
-				font-weight: bold;
-				color: #333;
+				font-weight: 600;
+				color: #fff;
+				letter-spacing: 0.5px;
+			}
+			
+			.role-badges {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 6px;
+				
+				.role-badge {
+					background: rgba(255, 255, 255, 0.2);
+					color: #fff;
+					padding: 2px 8px;
+					border-radius: 4px;
+					font-size: 11px;
+					font-weight: 500;
+					backdrop-filter: blur(4px);
+				}
+			}
+		}
+	}
+
+	/* Section Globals */
+	.section-container {
+		margin-bottom: 20px;
+		
+		&.mt-4 { margin-top: 24px; }
+	}
+	
+	.section-header {
+		margin-bottom: 12px;
+		padding-left: 4px;
+		
+		.section-title {
+			font-size: 16px;
+			font-weight: 600;
+			color: #1d2129;
+		}
+	}
+	
+	/* Service Grid (Top action buttons) */
+	.service-grid {
+		display: flex;
+		gap: 12px;
+	}
+	
+	.service-card {
+		flex: 1;
+		background: #fff;
+		border-radius: 12px;
+		padding: 16px;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+		position: relative;
+		overflow: hidden;
+		
+		&::after {
+			content: '';
+			position: absolute;
+			right: -10px;
+			bottom: -10px;
+			width: 60px;
+			height: 60px;
+			border-radius: 50%;
+			opacity: 0.05;
+			z-index: 1;
+		}
+		
+		&.primary::after { background-color: #165dff; }
+		&.secondary::after { background-color: #00b42a; }
+		
+		.icon-circle {
+			width: 40px;
+			height: 40px;
+			border-radius: 10px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			z-index: 2;
+		}
+		
+		&.primary .icon-circle { background: #e8f3ff; }
+		&.secondary .icon-circle { background: #e6fcf5; }
+		
+		.icon { font-size: 20px; }
+		
+		.card-info {
+			display: flex;
+			flex-direction: column;
+			gap: 4px;
+			z-index: 2;
+			
+			.title { font-size: 15px; font-weight: bold; color: #1d2129; }
+			.desc { font-size: 12px; color: #86909c; }
+		}
+	}
+	
+	/* Action List (Bottom entries) */
+	.action-list {
+		background: #fff;
+		border-radius: 12px;
+		padding: 0 16px;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+	}
+	
+	.action-item {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 16px 0;
+		border-bottom: 1px solid #f2f3f5;
+		
+		&:last-child {
+			border-bottom: none;
+		}
+		
+		.item-left {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			
+			.action-icon {
+				width: 36px;
+				height: 36px;
+				border-radius: 8px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				font-size: 18px;
+				
+				&.admin-icon { background: #fff7e8; }
+				&.feedback-icon { background: #e8f3ff; }
+			}
+			
+			.item-text {
+				display: flex;
+				flex-direction: column;
+				gap: 4px;
+				
+				.item-title { font-size: 15px; font-weight: 600; color: #1d2129; }
+				.item-desc { font-size: 12px; color: #86909c; }
 			}
 		}
 		
-		.role-tag {
-			background: #e1f5fe;
-			color: #0288d1;
-			padding: 4px 10px;
-			border-radius: 20px;
-			font-size: 12px;
+		.item-right {
+			.arrow {
+				font-size: 24px;
+				color: #c9cdd4;
+				font-weight: 300;
+			}
 		}
 	}
 	
-	.menu-grid {
-		display: flex;
-		flex-direction: column;
-		gap: 15px;
-	}
-	
-	.menu-item {
-		padding: 25px;
-		border-radius: 10px;
-		color: #fff;
-		position: relative;
-		overflow: hidden;
-		box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-		
-		&.primary {
-			background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-		}
-		
-		&.secondary {
-			background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-		}
-		
-		&.admin {
-			background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
-		}
-		
-		&.feedback {
-			background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
-		}
-		
-		.icon {
-			font-size: 40px;
-			margin-bottom: 10px;
-			opacity: 0.8;
-		}
-		
-		.menu-title {
-			display: block;
-			font-size: 20px;
-			font-weight: bold;
-			margin-bottom: 5px;
-		}
-		
-		.menu-desc {
-			font-size: 14px;
-			opacity: 0.9;
-		}
+	.hover-effect {
+		background-color: rgba(0, 0, 0, 0.02);
 	}
 </style>
