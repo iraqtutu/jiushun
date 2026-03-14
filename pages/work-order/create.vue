@@ -128,13 +128,6 @@
 							</view>
 						</view>
 					</view>
-					<view class="ui-field">
-						<text class="field-label required">完成时间</text>
-						<view class="time-picker-group">
-							<picker mode="date" @change="onFinishDateChange" class="tp"><view>{{ formData.service.finishDate }}</view></picker>
-							<picker mode="time" @change="onFinishTimeChange" class="tp ml-5"><view>{{ formData.service.finishTime || '00:00' }}</view></picker>
-						</view>
-					</view>
 				</view>
 			</view>
 
@@ -242,7 +235,7 @@
 			</view>
 
 			<!-- Section E: Additional Fees -->
-			<view class="ui-card" v-if="formData.service.isChargeable === '收费'" :class="{ 'card-active': !sectionsCollapsed.fees }">
+			<view class="ui-card" :class="{ 'card-active': !sectionsCollapsed.fees }">
 				<view class="card-header" @click="toggleSection('fees')">
 					<view class="header-left">
 						<text class="header-title">附加费用</text>
@@ -254,7 +247,7 @@
 						<text class="f-title">路程费核算</text>
 						<view class="f-inputs">
 							<view class="f-item">里程<input type="digit" v-model="formData.additionalFees.travelFee.distance" />km</view>
-							<view class="f-item">单价<input type="digit" v-model="formData.additionalFees.travelFee.unitPrice" />元</view>
+							<view class="f-item">单价<input type="digit" v-model="formData.additionalFees.travelFee.unitPrice" :disabled="formData.service.isChargeable === '免费'" />元</view>
 						</view>
 						<text class="f-subtotal">合计: ￥{{ travelTotal }}</text>
 					</view>
@@ -277,7 +270,7 @@
 						</view>
 						<view class="f-inputs mt-10">
 							<view class="f-item">总时长<text class="v">{{ laborHours }} h</text></view>
-							<view class="f-item">单价<input type="digit" v-model="formData.additionalFees.laborFee.unitPrice" />元</view>
+							<view class="f-item">单价<input type="digit" v-model="formData.additionalFees.laborFee.unitPrice" :disabled="formData.service.isChargeable === '免费'" />元</view>
 						</view>
 						<text class="f-subtotal">合计: ￥{{ laborTotal }}</text>
 					</view>
@@ -307,7 +300,7 @@
 					
 					<!-- Moved Finish Time here -->
 					<view class="ui-field mt-10">
-						<text class="field-label required">维修完成时间</text>
+						<text class="field-label required" style="width: 100px;">服务完成时间</text>
 						<view class="time-picker-group">
 							<picker mode="date" @change="onFinishDateChange" class="tp"><view>{{ formData.service.finishDate }}</view></picker>
 							<picker mode="time" @change="onFinishTimeChange" class="tp ml-5"><view>{{ formData.service.finishTime || '00:00' }}</view></picker>
@@ -321,8 +314,19 @@
 				<view class="panel-header">{{ formData.service.isChargeable === '收费' ? '费用结算概览' : '服务成本统计' }}</view>
 				<view class="panel-grid">
 					<view class="p-item"><text class="l">零件费用</text><text class="v">￥{{ partsTotal }}</text></view>
-					<view class="p-item" v-if="formData.service.isChargeable === '收费'"><text class="l">路程费</text><text class="v">￥{{ travelTotal }}</text></view>
-					<view class="p-item" v-if="formData.service.isChargeable === '收费'"><text class="l">工时费</text><text class="v">￥{{ laborTotal }}</text></view>
+					<view class="p-item">
+						<text class="l">总里程</text>
+						<text class="v">{{ formData.additionalFees.travelFee.distance }} km</text>
+					</view>
+					<view class="p-item">
+						<text class="l">总工时</text>
+						<text class="v">{{ laborHours }} h</text>
+					</view>
+				</view>
+				<view class="panel-grid mt-10" v-if="formData.service.isChargeable === '收费'">
+					<view class="p-item"><text class="l">路程费用</text><text class="v">￥{{ travelTotal }}</text></view>
+					<view class="p-item"><text class="l">工时费用</text><text class="v">￥{{ laborTotal }}</text></view>
+					<view class="p-item"><text class="l">附加合计</text><text class="v">￥{{ additionalTotal }}</text></view>
 				</view>
 				<view class="panel-total">
 					<text>{{ formData.service.isChargeable === '收费' ? '应收合计' : '物料成本合计' }}</text>
@@ -527,12 +531,12 @@
 						paymentMethod: '微信支付' 
 					},
 					additionalFees: {
-						travelFee: { distance: 0, unitPrice: 1.2, total: 0 },
+						travelFee: { distance: 0, unitPrice: 0, total: 0 },
 						laborFee: { 
 							onWayDuration: 0, // 出发用时(min)
 							repairDuration: 0, // 维修用时(min)
 							returnDuration: 0, // 返程用时(min)
-							unitPrice: 85, 
+							unitPrice: 0, 
 							totalHours: 0, 
 							total: 0 
 						}
@@ -709,7 +713,17 @@
 			onDateChange(e) { this.formData.product.productionDate = e.detail.value; },
 			onReportDateChange(e) { this.formData.customer.reportTime = e.detail.value; },
 			onServiceTypeChange(e) { this.formData.service.type = this.serviceTypes[e.detail.value]; },
-			onIsChargeableChange(e) { this.formData.service.isChargeable = e.detail.value; },
+			onIsChargeableChange(e) { 
+				this.formData.service.isChargeable = e.detail.value; 
+				if (this.formData.service.isChargeable === '免费') {
+					this.formData.additionalFees.travelFee.unitPrice = 0;
+					this.formData.additionalFees.laborFee.unitPrice = 0;
+				} else {
+					// 恢复默认单价
+					this.formData.additionalFees.travelFee.unitPrice = 1.2;
+					this.formData.additionalFees.laborFee.unitPrice = 85;
+				}
+			},
 			onPaymentMethodChange(e) { this.formData.service.paymentMethod = e.detail.value; },
 			onPartSourceChange(e, itemIdx, partIdx) { 
 				this.$set(this.formData.service.faultItems[itemIdx].parts[partIdx], 'source', this.partSources[e.detail.value]); 
@@ -850,10 +864,18 @@
 				// 4. 附加费用
 				if (this.formData.service.isChargeable === '收费') {
 					this.formData.additionalFees.travelFee.distance = (Math.random() * 50 + 10).toFixed(1);
+					this.formData.additionalFees.travelFee.unitPrice = 1.2;
 					this.formData.additionalFees.laborFee.onWayDuration = 45;
 					this.formData.additionalFees.laborFee.repairDuration = 90;
 					this.formData.additionalFees.laborFee.returnDuration = 40;
 					this.formData.additionalFees.laborFee.unitPrice = 85;
+				} else {
+					this.formData.additionalFees.travelFee.distance = (Math.random() * 50 + 10).toFixed(1);
+					this.formData.additionalFees.travelFee.unitPrice = 0;
+					this.formData.additionalFees.laborFee.onWayDuration = 30;
+					this.formData.additionalFees.laborFee.repairDuration = 60;
+					this.formData.additionalFees.laborFee.returnDuration = 30;
+					this.formData.additionalFees.laborFee.unitPrice = 0;
 				}
 				
 				// 5. 最终确认
@@ -917,7 +939,7 @@
 							faultItems: finalFaultItems,
 							finishTime: finTime
 						},
-						additionalFees: this.formData.service.isChargeable === '收费' ? {
+						additionalFees: {
 							travelFee: {
 								distance: Number(this.formData.additionalFees.travelFee.distance || 0),
 								unitPrice: Number(this.formData.additionalFees.travelFee.unitPrice || 0),
@@ -932,7 +954,7 @@
 								total: Number(this.laborTotal)
 							},
 							totalAmount: Number(this.additionalTotal)
-						} : null,
+						},
 						customerConfirm: { machineUserPhoto: confirmId }
 					};
 					uniCloud.callFunction({

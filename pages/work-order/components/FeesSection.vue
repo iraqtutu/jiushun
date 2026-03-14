@@ -1,5 +1,5 @@
 <template>
-<view class="ui-card" v-if="service.isChargeable === '收费'" :class="{ 'card-active': !collapsed }">
+<view class="ui-card" :class="{ 'card-active': !collapsed }">
 <view class="card-header" @click="$emit('toggle')">
 <view class="header-left">
 <text class="header-title">附加费用</text>
@@ -11,7 +11,7 @@
 <text class="f-title">路程费核算</text>
 <view class="f-inputs">
 <view class="f-item">里程<input type="digit" :value="fees.travelFee.distance" @input="updateTravel('distance', $event.detail.value)" />km</view>
-<view class="f-item">单价<input type="digit" :value="fees.travelFee.unitPrice" @input="updateTravel('unitPrice', $event.detail.value)" />元</view>
+<view class="f-item">单价<input type="digit" :value="fees.travelFee.unitPrice" @input="updateTravel('unitPrice', $event.detail.value)" :disabled="service.isChargeable === '免费'" />元</view>
 </view>
 <text class="f-subtotal">合计: ￥{{ travelTotal }}</text>
 </view>
@@ -36,7 +36,7 @@
 </view>
 <view class="f-inputs mt-10">
 <view class="f-item">总时长<text class="v">{{ laborHours }} h</text></view>
-<view class="f-item">单价<input type="digit" :value="fees.laborFee.unitPrice" @input="updateLabor('unitPrice', $event.detail.value)" />元</view>
+<view class="f-item">单价<input type="digit" :value="fees.laborFee.unitPrice" @input="updateLabor('unitPrice', $event.detail.value)" :disabled="service.isChargeable === '免费'" />元</view>
 </view>
 <text class="f-subtotal">合计: ￥{{ laborTotal }}</text>
 </view>
