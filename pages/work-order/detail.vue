@@ -170,13 +170,12 @@
 					<text class="fee-title">⏱️ 工时记录</text>
 					<text class="fee-amount">￥{{ order.additionalFees.laborFee.total || 0 }}</text>
 				</view>
-				<view class="fee-detail" v-if="order.additionalFees.laborFee.departureTime">
-					<view class="time-row"><text class="t-label">出发:</text> <text class="t-val">{{ formatDate(order.additionalFees.laborFee.departureTime, 'datetime') }}</text></view>
-					<view class="time-row"><text class="t-label">完成:</text> <text class="t-val">{{ formatDate(order.additionalFees.laborFee.finishTime, 'datetime') }}</text></view>
-					<view class="time-row"><text class="t-label">预计返程:</text> <text class="t-val">{{ order.additionalFees.laborFee.returnDuration || 0 }} 分钟</text></view>
+				<view class="fee-detail">
+					<view class="time-row"><text class="t-label">维修完成时间:</text> <text class="t-val">{{ formatDate(order.additionalFees.laborFee.finishTime, 'datetime') }}</text></view>
+					<view class="time-row"><text class="t-label">维修用时:</text> <text class="t-val">{{ order.additionalFees.laborFee.repairDuration || 0 }} 分钟</text></view>
 				</view>
 				<view class="fee-desc mt-2">
-					<text>总工时: {{ order.additionalFees.laborFee.totalHours || 0 }}h</text>
+					<text>合计工时: {{ order.additionalFees.laborFee.totalHours || 0 }}h</text>
 					<text>单价: ￥{{ order.additionalFees.laborFee.unitPrice || 0 }}/h</text>
 				</view>
 			</view>

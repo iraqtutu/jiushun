@@ -12,16 +12,16 @@
 		"tokenExpiresIn": 2592000,
 		"oauth": {
 			"weixin": {
-				"appid": "weixin_appid",
-				"appsecret": "weixin_appsecret"
+				"appid": "wxdc66c87e75d3df8d",
+				"appsecret": "238f0ce27770d832ef0e5718af211097"
 			}
 		}
 	},
 	"mp-weixin": {
 		"oauth": {
 			"weixin": {
-				"appid": "wxa848103d74750b7e",
-				"appsecret": "255dbf9f4a85c173c398445cbe682151"
+				"appid": "wxdc66c87e75d3df8d",
+				"appsecret": "238f0ce27770d832ef0e5718af211097"
 			}
 		}
 	},
@@ -33,7 +33,7 @@
 			"smsSecret": "your_sms_secret"
 		},
 		"univerify": {
-			"appid": "your_univerify_appid"
+			"appid": "__UNI__2174B9F"
 		}
 	}
 }

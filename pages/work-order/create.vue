@@ -254,22 +254,8 @@
 	
 					<view class="fee-card mt-15">
 						<text class="f-title">工时费核算</text>
-						<view class="f-duration-grid">
-							<view class="d-item">
-								<text class="l">出发用时</text>
-								<view class="i-box"><input type="number" v-model="formData.additionalFees.laborFee.onWayDuration" placeholder="0" />min</view>
-							</view>
-							<view class="d-item">
-								<text class="l">维修用时</text>
-								<view class="i-box"><input type="number" v-model="formData.additionalFees.laborFee.repairDuration" placeholder="0" />min</view>
-							</view>
-							<view class="d-item">
-								<text class="l">返程用时</text>
-								<view class="i-box"><input type="number" v-model="formData.additionalFees.laborFee.returnDuration" placeholder="0" />min</view>
-							</view>
-						</view>
-						<view class="f-inputs mt-10">
-							<view class="f-item">总时长<text class="v">{{ laborHours }} h</text></view>
+						<view class="f-inputs">
+							<view class="f-item">维修用时<input type="number" v-model="formData.additionalFees.laborFee.repairDuration" />min</view>
 							<view class="f-item">单价<input type="digit" v-model="formData.additionalFees.laborFee.unitPrice" :disabled="formData.service.isChargeable === '免费'" />元</view>
 						</view>
 						<text class="f-subtotal">合计: ￥{{ laborTotal }}</text>
@@ -533,9 +519,7 @@
 					additionalFees: {
 						travelFee: { distance: 0, unitPrice: 0, total: 0 },
 						laborFee: { 
-							onWayDuration: 0, // 出发用时(min)
 							repairDuration: 0, // 维修用时(min)
-							returnDuration: 0, // 返程用时(min)
 							unitPrice: 0, 
 							totalHours: 0, 
 							total: 0 
@@ -573,7 +557,7 @@
 			laborHours() {
 				if (!this.formData.additionalFees || !this.formData.additionalFees.laborFee) return "0.0";
 				const f = this.formData.additionalFees.laborFee;
-				const totalMinutes = (Number(f.onWayDuration) || 0) + (Number(f.repairDuration) || 0) + (Number(f.returnDuration) || 0);
+				const totalMinutes = (Number(f.repairDuration) || 0);
 				return (totalMinutes / 60).toFixed(1);
 			},
 			laborTotal() { 
@@ -634,9 +618,6 @@
 			const now = new Date();
 			const today = now.toISOString().slice(0, 10);
 			this.formData.customer.reportTime = today;
-			const depTime = new Date(now.getTime() - 3600000);
-			this.formData.additionalFees.laborFee.departureDate = depTime.toISOString().slice(0, 10);
-			this.formData.additionalFees.laborFee.departureTime = depTime.toTimeString().slice(0, 5);
 			this.formData.service.finishDate = today;
 			this.formData.service.finishTime = now.toTimeString().slice(0, 5);
 			this.formData.orderNo = 'JS' + today.replace(/-/g, '') + Math.floor(Math.random() * 1000).toString().padStart(3, '0');
@@ -865,16 +846,12 @@
 				if (this.formData.service.isChargeable === '收费') {
 					this.formData.additionalFees.travelFee.distance = (Math.random() * 50 + 10).toFixed(1);
 					this.formData.additionalFees.travelFee.unitPrice = 1.2;
-					this.formData.additionalFees.laborFee.onWayDuration = 45;
 					this.formData.additionalFees.laborFee.repairDuration = 90;
-					this.formData.additionalFees.laborFee.returnDuration = 40;
 					this.formData.additionalFees.laborFee.unitPrice = 85;
 				} else {
 					this.formData.additionalFees.travelFee.distance = (Math.random() * 50 + 10).toFixed(1);
 					this.formData.additionalFees.travelFee.unitPrice = 0;
-					this.formData.additionalFees.laborFee.onWayDuration = 30;
 					this.formData.additionalFees.laborFee.repairDuration = 60;
-					this.formData.additionalFees.laborFee.returnDuration = 30;
 					this.formData.additionalFees.laborFee.unitPrice = 0;
 				}
 				
@@ -925,7 +902,6 @@
 						});
 					}
 
-					const depTime = new Date(`${this.formData.additionalFees.laborFee.departureDate} ${this.formData.additionalFees.laborFee.departureTime}:00`.replace(/-/g, '/')).getTime();
 					const finTime = new Date(`${this.formData.service.finishDate} ${this.formData.service.finishTime}:00`.replace(/-/g, '/')).getTime();
 					const cRepTime = this.formData.customer.reportTime ? new Date(this.formData.customer.reportTime.replace(/-/g, '/')).getTime() : Date.now();
 					const pProdDate = this.formData.product.productionDate ? new Date(this.formData.product.productionDate.replace(/-/g, '/')).getTime() : null;
@@ -946,9 +922,8 @@
 								total: Number(this.travelTotal)
 							},
 							laborFee: {
-								departureTime: depTime,
+								repairDuration: Number(this.formData.additionalFees.laborFee.repairDuration || 0),
 								finishTime: finTime,
-								returnDuration: Number(this.formData.additionalFees.laborFee.returnDuration || 0),
 								totalHours: Number(this.laborHours),
 								unitPrice: Number(this.formData.additionalFees.laborFee.unitPrice || 0),
 								total: Number(this.laborTotal)
@@ -1239,14 +1214,6 @@
 	.fee-card {
 		padding: 10px; background: #fbfbfc; border-radius: 8px; border: 1px solid $border-light;
 		.f-title { font-size: 11px; font-weight: 700; color: $accent; margin-bottom: 8px; display: block; }
-		.f-duration-grid { display: flex; justify-content: space-between; gap: 8px; background: #fff; padding: 10px; border-radius: 6px; border: 1px solid #eee;
-			.d-item { flex: 1; display: flex; flex-direction: column; align-items: center;
-				.l { font-size: 10px; color: $text-tip; margin-bottom: 4px; }
-				.i-box { display: flex; align-items: center; font-size: 11px; color: $text-secondary;
-					input { width: 35px; background: #f7f8fa; border: 1px solid #e5e6eb; border-radius: 4px; padding: 2px 4px; margin-right: 2px; text-align: center; color: $text-primary; font-weight: 700; }
-				}
-			}
-		}
 		
 		.f-inputs { display: flex; gap: 8px; .f-item { flex: 1; background: #fff; border: 1px solid #eee; padding: 4px 8px; border-radius: 4px; font-size: 11px; color: $text-tip; display: flex; justify-content: space-between; input { width: 35px; text-align: right; color: $text-primary; font-weight: 700; } .v { color: $accent; font-weight: 700; } } }
 		.f-subtotal { text-align: right; margin-top: 8px; font-size: 12px; font-weight: 700; color: $danger; }
