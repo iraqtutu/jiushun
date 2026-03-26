@@ -51,7 +51,14 @@
 			</view>
 		</view>
 		
-		<view v-if="list.length === 0" class="empty-state">
+		<!-- Loading Status -->
+		<view class="load-status" v-if="list.length > 0">
+			<text v-if="isLoadingMore">正在加载...</text>
+			<text v-else-if="!hasMore">—— 已展示全部工单 ——</text>
+			<text v-else>上滑加载更多</text>
+		</view>
+
+		<view v-if="list.length === 0 && !isLoading" class="empty-state">
 			<text>暂无工单记录</text>
 		</view>
 		
@@ -69,8 +76,13 @@
 			return {
 				list: [],
 				isLoading: false,
+				isLoadingMore: false,
 				showFilter: false,
 				isAdmin: false,
+				page: 1,
+				pageSize: 10,
+				total: 0,
+				hasMore: true,
 				filter: {
 					startDate: '',
 					endDate: '',
@@ -85,9 +97,16 @@
 			this.checkRole();
 			// Initialize dates if empty
 			if (!this.filter.startDate) {
-				this.resetFilter(); // Sets default dates
+				this.resetFilter(); // Sets default dates and loads data
+			} else {
+				this.doSearch();
 			}
-			this.loadData();
+		},
+		onReachBottom() {
+			if (this.hasMore && !this.isLoadingMore) {
+				this.page++;
+				this.loadData(true);
+			}
 		},
 		methods: {
 			checkRole() {
@@ -121,15 +140,23 @@
 					reporterName: '',
 					productModel: ''
 				};
+				this.doSearch();
 			},
 			doSearch() {
-				this.loadData();
+				this.page = 1;
+				this.hasMore = true;
+				this.list = [];
+				this.loadData(false);
 			},
-			loadData() {
-				this.isLoading = true;
+			loadData(isAppend = false) {
+				if (isAppend) this.isLoadingMore = true;
+				else this.isLoading = true;
 				
 				// Prepare params
-				const params = {};
+				const params = {
+					page: this.page,
+					pageSize: this.pageSize
+				};
 				if (this.filter.startDate) {
 					params.startDate = new Date(this.filter.startDate + 'T00:00:00').getTime();
 				}
@@ -153,30 +180,55 @@
 						params: params
 					},
 					success: (res) => {
-						this.isLoading = false;
 						if (res.result.code === 0) {
+							this.total = res.result.total || 0;
+							
 							// Transform data for display and export
-							this.list = res.result.data.map(item => {
+							const newList = res.result.data.map(item => {
 								const c = item.customer || {};
 								const p = item.product || {};
 								const s = item.service || {};
+								const faultItems = s.faultItems || [];
 								
-								// Process parts list into a readable string
-								const partsStr = (s.parts || []).map(pt => {
-									let str = `${pt.name}(${pt.code})x${pt.count} 旧件:${pt.oldPartAction || '未知'} 来源:${pt.source || '未知'}`;
-									if (pt.sourceRemark) str += `(${pt.sourceRemark})`;
-									if (s.isChargeable === '收费') {
-										str += ` 单价:${pt.price || 0} 小计:${pt.total || 0}`;
+								// 1. Aggregate Fault Categories, Descs, and Handles
+								const categories = faultItems.map(f => f.category).filter(v => v).join('\n');
+								const descs = faultItems.map(f => `【${f.category}】${f.faultDesc}`).filter(v => v).join('\n');
+								const handles = faultItems.map(f => `【${f.category}】${f.handleDesc}`).filter(v => v).join('\n');
+								
+								// 2. Aggregate Parts Info
+								let allParts = [];
+								let partsTotal = 0;
+								faultItems.forEach(f => {
+									(f.parts || []).forEach(pt => {
+										let str = `[${f.category}] ${pt.name}(${pt.code})x${pt.count} 旧件:${pt.oldPartAction || '带回'} 来源:${pt.source || '自带'}`;
+										if (pt.sourceRemark) str += `(${pt.sourceRemark})`;
+										if (s.isChargeable === '收费') {
+											const price = Number(pt.price) || 0;
+											const count = Number(pt.count) || 0;
+											const subtotal = Number(pt.total) || (price * count);
+											str += ` 单价:${price} 小计:${subtotal.toFixed(1)}`;
+											partsTotal += subtotal;
+										} else {
+											partsTotal += (Number(pt.total) || 0);
+										}
+										allParts.push(str);
+									});
+								});
+								const partsStr = allParts.join('\n');
+								
+								// 3. Aggregate Site Photos
+								let sitePhotos = [];
+								faultItems.forEach(f => {
+									if (f.sitePhotos && f.sitePhotos.length > 0) {
+										sitePhotos = sitePhotos.concat(f.sitePhotos);
 									}
-									return str;
-								}).join('; ');
+								});
 								
 								const af = item.additionalFees || {};
 								const isChargeable = s.isChargeable || '免费';
-								const partsTotal = (s.parts || []).reduce((sum, p) => sum + (p.total || 0), 0);
 								const travelFeeTotal = af.travelFee?.total || 0;
 								const laborFeeTotal = af.laborFee?.total || 0;
-								const grandTotal = af.totalAmount ? (af.totalAmount + partsTotal) : partsTotal;
+								const grandTotal = af.totalAmount ? (Number(af.totalAmount) + partsTotal) : partsTotal;
 								
 								return {
 									id: item._id,
@@ -206,26 +258,41 @@
 									travelFeeTotal: travelFeeTotal.toFixed(1),
 									laborFeeTotal: laborFeeTotal.toFixed(1),
 									grandTotal: grandTotal.toFixed(1),
-									faultCategory: s.faultCategory || '-',
-									faultDesc: s.faultDesc || '-',
-									handleDesc: s.handleDesc || '-',
+									faultCategory: categories || '-',
+									faultDesc: descs || '-',
+									handleDesc: handles || '-',
 									partsInfo: partsStr || '无',
 									finishTime: this.formatDate(s.finishTime),
 									
+									// New fields for complete export
+									travelDistance: af.travelFee?.distance || 0,
+									repairDuration: af.laborFee?.repairDuration || 0,
+									
 									// Image IDs for export
 									platePhoto: p.platePhoto,
-									sitePhotos: s.sitePhotos || [],
+									sitePhotos: sitePhotos,
 									machineUserPhoto: item.customerConfirm?.machineUserPhoto
 								};
 							});
+							
+							if (isAppend) {
+								this.list = this.list.concat(newList);
+							} else {
+								this.list = newList;
+							}
+							
+							this.hasMore = this.list.length < this.total;
 						} else {
 							uni.showToast({ title: '加载失败', icon: 'none' });
 						}
 					},
 					fail: (err) => {
-						this.isLoading = false;
 						console.error(err);
 						uni.showToast({ title: '网络错误', icon: 'none' });
+					},
+					complete: () => {
+						this.isLoading = false;
+						this.isLoadingMore = false;
 					}
 				});
 			},
@@ -309,6 +376,8 @@
     <Cell><Data ss:Type="String">故障现象</Data></Cell>
     <Cell><Data ss:Type="String">处理方法</Data></Cell>
     <Cell><Data ss:Type="String">更换零件</Data></Cell>
+    <Cell><Data ss:Type="String">里程(km)</Data></Cell>
+    <Cell><Data ss:Type="String">维修用时(min)</Data></Cell>
     <Cell><Data ss:Type="String">维修完成时间</Data></Cell>
     <Cell><Data ss:Type="String">零件费</Data></Cell>
     <Cell><Data ss:Type="String">路程费</Data></Cell>
@@ -347,6 +416,8 @@
     <Cell><Data ss:Type="String">${escapeXml(item.faultDesc)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.handleDesc)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.partsInfo)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.travelDistance)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.repairDuration)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.finishTime)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.partsTotal)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.travelFeeTotal)}</Data></Cell>
@@ -533,11 +604,16 @@
 		}
 	}
 	
+	.order-list {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+
 	.order-item {
 		background: #fff;
 		border-radius: 8px;
 		padding: 15px;
-		margin-bottom: 15px;
 		box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 		
 		.order-header {
@@ -575,6 +651,13 @@
 		}
 	}
 	
+	.load-status {
+		padding: 20px 0;
+		text-align: center;
+		color: #999;
+		font-size: 13px;
+	}
+
 	.empty-state {
 		text-align: center;
 		margin-top: 50px;

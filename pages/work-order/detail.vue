@@ -9,6 +9,10 @@
 				</view>
 				<view class="status-box">
 					<text class="status-tag" :class="statusClass">{{ order.status || '已完成' }}</text>
+					<view v-if="isAdmin" class="admin-actions">
+						<view class="btn-edit-top" @click="goToEdit">编辑</view>
+						<view class="btn-delete-top" @click="handleDelete">删除</view>
+					</view>
 				</view>
 			</view>
 			<view class="header-sub">
@@ -69,45 +73,54 @@
 				<text class="label">生产日期</text>
 				<text class="value">{{ formatDate(order.product.productionDate, 'date') }}</text>
 			</view>
-			<view class="detail-block mt-4" v-if="order.product.platePhoto">
+			
+			<!-- 铭牌照片 -->
+			<view class="detail-block mt-4">
 				<text class="label">铭牌照片</text>
-				<image :src="order.product.platePhoto" mode="aspectFill" class="single-img" @click="previewImage(order.product.platePhoto)"></image>
+				<image v-if="order.product.platePhoto" :src="order.product.platePhoto" mode="aspectFill" class="single-img" @click="previewImage(order.product.platePhoto)"></image>
+				<view v-else class="image-placeholder">未上传铭牌照片</view>
 			</view>
 		</view>
-		
+
 		<!-- Section D: Service Info -->
 		<view class="section card">
-			<view class="section-title">服务内容</view>
+			<view class="section-title">服务基础信息</view>
 			<view class="detail-item">
 				<text class="label">服务类型</text>
 				<text class="value">{{ order.service.type || '-' }}</text>
 			</view>
-			<view class="detail-item m-0">
-				<text class="label">故障分类</text>
-				<text class="value">{{ faultCategoryText }}</text>
-			</view>
-			<view class="detail-block mt-4">
-				<text class="label">故障现象</text>
-				<text class="block-value">{{ order.service.faultDesc || '无描述' }}</text>
-			</view>
-			<view class="detail-block mt-3">
-				<text class="label">处理方法</text>
-				<text class="block-value">{{ order.service.handleDesc || '无描述' }}</text>
+			<view class="detail-item">
+				<text class="label">收费类型</text>
+				<text class="value charge-type" :class="order.service.isChargeable === '收费' ? 'red' : 'green'">{{ order.service.isChargeable }}</text>
 			</view>
 			<view class="detail-item mt-3">
 				<text class="label">完成时间</text>
 				<text class="value">{{ formatDate(order.service.finishTime, 'datetime') }}</text>
 			</view>
+		</view>
+
+		<!-- Dynamic Fault Cards (一故障一卡片) -->
+		<view v-for="(item, itemIdx) in order.service.faultItems" :key="itemIdx" class="section card">
+			<view class="section-title fault-title">{{ itemIdx + 1 }}、{{ item.category }}</view>
 			
-			<!-- Parts List -->
-			<view class="detail-block mt-4" v-if="order.service.parts && order.service.parts.length > 0">
+			<view class="detail-block">
+				<text class="label">故障现象</text>
+				<text class="block-value">{{ item.faultDesc || '无描述' }}</text>
+			</view>
+			
+			<view class="detail-block mt-3">
+				<text class="label">处理方法</text>
+				<text class="block-value">{{ item.handleDesc || '无描述' }}</text>
+			</view>
+
+			<!-- 零件明细 -->
+			<view class="detail-block mt-4" v-if="item.parts && item.parts.length > 0">
 				<view class="flex-title">
 					<text class="label m-0 font-medium">更换零件</text>
-					<text class="part-count">共 {{ order.service.parts.length }} 项</text>
+					<text class="part-count">该项共 {{ item.parts.length }} 件</text>
 				</view>
-				
 				<view class="parts-list">
-					<view class="part-card" v-for="(part, idx) in order.service.parts" :key="idx">
+					<view class="part-card" v-for="(part, pIdx) in item.parts" :key="pIdx">
 						<view class="part-main">
 							<text class="part-name">{{ part.name }}</text>
 							<text class="part-qty">x{{ part.count }}</text>
@@ -117,37 +130,28 @@
 							<text class="p-badge action" :class="part.oldPartAction === '丢弃' ? 'gray' : 'blue'">
 								旧件: {{ part.oldPartAction || '带回' }}
 							</text>
-							<text class="p-badge source" :class="part.source === '自带' ? 'gray' : 'orange'">
-								{{ part.source || '自带' }}
-							</text>
 						</view>
-						<view class="part-remark" v-if="part.sourceRemark">备注: {{ part.sourceRemark }}</view>
 						<view class="part-price" v-if="order.service.isChargeable === '收费'">
 							<text class="price-symbol">￥</text>
 							<text class="price-num">{{ part.total || ((part.price || 0) * (part.count || 0)).toFixed(1) }}</text>
 						</view>
 					</view>
 				</view>
-				<view class="parts-total" v-if="order.service.isChargeable === '收费'">
-					零件小计: <text class="price-highlight">￥{{ partsTotal }}</text>
-				</view>
 			</view>
 
-			<!-- Site Photos -->
-			<view class="detail-block mt-4" v-if="order.service.sitePhotos && order.service.sitePhotos.length > 0">
+			<!-- 现场照片 (强制显示容器) -->
+			<view class="detail-block mt-4">
 				<text class="label">现场照片</text>
-				<view class="photo-grid">
-					<image v-for="(img, idx) in order.service.sitePhotos" :key="idx" :src="img" mode="aspectFill" class="grid-img" @click="previewImage(img, order.service.sitePhotos)"></image>
+				<view v-if="item.sitePhotos && item.sitePhotos.length > 0" class="photo-grid">
+					<image v-for="(img, idx) in item.sitePhotos" :key="idx" :src="img" mode="aspectFill" class="grid-img" @click="previewImage(img, item.sitePhotos)"></image>
 				</view>
+				<view v-else class="image-placeholder">未上传现场照片</view>
 			</view>
-		
-			<!-- Payment Info -->
-			<view class="detail-block charge-block" v-if="order.service.isChargeable">
-				<view class="detail-item m-0" style="border-bottom: none;">
-					<text class="label" style="margin-bottom: 0;">收费类型</text>
-					<text class="value charge-type" :class="order.service.isChargeable === '收费' ? 'red' : 'green'">{{ order.service.isChargeable }}</text>
-				</view>
-			</view>
+		</view>
+
+		<view class="parts-summary-bar card" v-if="order.service.isChargeable === '收费' && Number(partsTotal) > 0">
+			<text class="label">所有零件合计</text>
+			<text class="price-highlight">￥{{ partsTotal }}</text>
 		</view>
 
 		<!-- Section E: Additional Fees & Labor Info -->
@@ -205,11 +209,12 @@
 		</view>
 
 		<!-- Section F: Confirmation -->
-		<view class="section card mb-safe" v-if="order.confirm.machineUserPhoto">
+		<view class="section card mb-safe">
 			<view class="section-title">客户确认</view>
 			<view class="detail-block m-0">
 				<text class="label">人机合影</text>
-				<image :src="order.confirm.machineUserPhoto" mode="aspectFill" class="single-img" @click="previewImage(order.confirm.machineUserPhoto)"></image>
+				<image v-if="order.confirm.machineUserPhoto" :src="order.confirm.machineUserPhoto" mode="aspectFill" class="single-img" @click="previewImage(order.confirm.machineUserPhoto)"></image>
+				<view v-else class="image-placeholder">未上传人机合影</view>
 			</view>
 		</view>
 	</view>
@@ -220,15 +225,19 @@
 		data() {
 			return {
 				order: {
+					_id: '',
 					orderNo: '',
 					creator: '',
 					status: '',
 					customer: {},
 					product: {},
-					service: {},
+					service: {
+						faultItems: []
+					},
 					confirm: {},
 					additionalFees: null
-				}
+				},
+				isAdmin: false
 			}
 		},
 		computed: {
@@ -239,19 +248,19 @@
 				if (s === '已评价') return 'status-evaluated';
 				return 'status-completed'; // 已完成 or other
 			},
-			faultCategoryText() {
-				const svc = this.order.service || {};
-				if (Array.isArray(svc.faultCategories)) {
-					return svc.faultCategories.join('、');
-				}
-				return svc.faultCategory || svc.faultCategories || '-';
-			},
 			partsTotal() {
-				if (!this.order.service || !this.order.service.parts) return "0.0";
-				return this.order.service.parts.reduce((sum, part) => {
-					let lineTotal = part.total ? Number(part.total) : (Number(part.price || 0) * Number(part.count || 0));
-					return sum + lineTotal;
-				}, 0).toFixed(1);
+				const svc = this.order.service || {};
+				if (!svc.faultItems) return "0.0";
+				
+				let total = 0;
+				svc.faultItems.forEach(item => {
+					if (item.parts) {
+						item.parts.forEach(part => {
+							total += part.total ? Number(part.total) : (Number(part.price || 0) * Number(part.count || 0));
+						});
+					}
+				});
+				return total.toFixed(1);
 			},
 			grandTotal() {
 				let addFee = this.order.additionalFees ? Number(this.order.additionalFees.totalAmount || 0) : 0;
@@ -260,11 +269,58 @@
 			}
 		},
 		onLoad(options) {
+			const userInfo = uni.getStorageSync('userInfo');
+			if (userInfo && userInfo.role) {
+				this.isAdmin = userInfo.role.includes('admin');
+			}
 			if (options.id) {
 				this.loadDetail(options.id);
 			}
 		},
 		methods: {
+			goToEdit() {
+				uni.navigateTo({
+					url: `/pages/work-order/create?id=${this.order._id}`
+				});
+			},
+			handleDelete() {
+				uni.showModal({
+					title: '确认删除',
+					content: '工单删除后将无法恢复，确定要删除吗？',
+					confirmColor: '#f53f3f',
+					success: (res) => {
+						if (res.confirm) {
+							this.executeDelete();
+						}
+					}
+				});
+			},
+			executeDelete() {
+				uni.showLoading({ title: '正在删除...' });
+				uniCloud.callFunction({
+					name: 'work-order-manager',
+					data: {
+						action: 'delete',
+						params: { id: this.order._id },
+						uniIdToken: uni.getStorageSync('uni_id_token')
+					},
+					success: (res) => {
+						uni.hideLoading();
+						if (res.result.code === 0) {
+							uni.showToast({ title: '删除成功' });
+							setTimeout(() => {
+								uni.navigateBack();
+							}, 1000);
+						} else {
+							uni.showToast({ title: res.result.msg || '删除失败', icon: 'none' });
+						}
+					},
+					fail: () => {
+						uni.hideLoading();
+						uni.showToast({ title: '网络错误', icon: 'none' });
+					}
+				});
+			},
 			loadDetail(id) {
 				uni.showLoading({ title: '加载中' });
 				uniCloud.callFunction({
@@ -274,21 +330,70 @@
 						params: { id },
 						uniIdToken: uni.getStorageSync('uni_id_token')
 					},
-					success: (res) => {
-						uni.hideLoading();
+					success: async (res) => {
 						if (res.result.code === 0) {
 							const data = res.result.data;
 							
-							// Map DB structure to View structure
-							// Use default empty objects to prevent v-if errors
+							// 收集所有图片 ID 进行转换
+							let fileList = [];
+							const plateIdRaw = data.product?.platePhoto;
+							const confirmIdRaw = data.customerConfirm?.machineUserPhoto || data.confirm?.machineUserPhoto;
+							
+							if (plateIdRaw && plateIdRaw.startsWith('cloud://')) fileList.push(plateIdRaw);
+							if (confirmIdRaw && confirmIdRaw.startsWith('cloud://')) fileList.push(confirmIdRaw);
+							
+							const faultItems = data.service?.faultItems || [];
+							faultItems.forEach(item => {
+								if (item.sitePhotos) {
+									item.sitePhotos.forEach(p => {
+										if (p && p.startsWith('cloud://')) fileList.push(p);
+									});
+								}
+							});
+							
+							console.log('待转换文件列表:', fileList);
+							
+							let urlMap = {};
+							if (fileList.length > 0) {
+								try {
+									const urlRes = await uniCloud.getTempFileURL({ fileList });
+									console.log('转换结果:', urlRes);
+									if (urlRes && urlRes.fileList) {
+										urlRes.fileList.forEach(f => {
+											if (f.tempFileURL) {
+												urlMap[f.fileID] = f.tempFileURL;
+											}
+										});
+									}
+								} catch (e) {
+									console.error('获取图片链接异常', e);
+								}
+							}
+
+							// 处理 faultItems 中的图片
+							const processedFaultItems = faultItems.map(item => ({
+								...item,
+								sitePhotos: (item.sitePhotos || []).map(id => urlMap[id] || id)
+							}));
+
+							// 处理 confirm 数据，确保 mapping 正确
 							this.order = {
+								_id: data._id,
 								orderNo: data.orderNo,
-								creator: data.userInfo ? (data.userInfo.nickname || data.userInfo.name || '未知') : '未知', // Assuming DB joins userInfo
-								status: data.status, // Assuming status exists
+								creator: data.userInfo ? (data.userInfo.nickname || data.userInfo.name || '未知') : '未知',
+								status: data.status,
 								customer: data.customer || {},
-								product: data.product || {},
-								service: data.service || {},
-								confirm: data.customerConfirm || {},
+								product: {
+									...(data.product || {}),
+									platePhoto: urlMap[plateIdRaw] || plateIdRaw
+								},
+								service: {
+									...(data.service || {}),
+									faultItems: processedFaultItems
+								},
+								confirm: {
+									machineUserPhoto: urlMap[confirmIdRaw] || confirmIdRaw
+								},
 								additionalFees: data.additionalFees || null
 							};
 						} else {
@@ -296,14 +401,17 @@
 						}
 					},
 					fail: () => {
-						uni.hideLoading();
 						uni.showToast({ title: '网络错误', icon: 'none' });
+					},
+					complete: () => {
+						uni.hideLoading();
 					}
 				});
 			},
 			formatDate(timestamp, type) {
 				if (!timestamp) return '-';
 				const date = new Date(timestamp);
+				if (isNaN(date.getTime())) return '-';
 				const y = date.getFullYear();
 				const m = String(date.getMonth() + 1).padStart(2, '0');
 				const d = String(date.getDate()).padStart(2, '0');
@@ -362,6 +470,38 @@
 			.order-no { font-size: 19px; font-weight: bold; letter-spacing: 0.5px; line-height: 1.2; }
 		}
 		
+		.status-box {
+			display: flex;
+			flex-direction: column;
+			align-items: flex-end;
+			gap: 8px;
+		}
+		
+		.admin-actions {
+			display: flex;
+			gap: 8px;
+		}
+		
+		.btn-edit-top {
+			font-size: 11px;
+			color: #fff;
+			background-color: rgba(255, 255, 255, 0.1);
+			padding: 4px 10px;
+			border-radius: 4px;
+			border: 1px solid rgba(255, 255, 255, 0.2);
+			&:active { background-color: rgba(255, 255, 255, 0.2); }
+		}
+		
+		.btn-delete-top {
+			font-size: 11px;
+			color: #fff;
+			background-color: rgba(245, 63, 63, 0.2);
+			padding: 4px 10px;
+			border-radius: 4px;
+			border: 1px solid rgba(245, 63, 63, 0.4);
+			&:active { background-color: rgba(245, 63, 63, 0.4); }
+		}
+		
 		.status-tag {
 			font-size: 13px;
 			padding: 4px 12px;
@@ -410,6 +550,22 @@
 			border-radius: 2px;
 			margin-right: 8px;
 		}
+		
+		&.fault-title {
+			color: #165dff;
+			&::before { background-color: #ff7d00; }
+		}
+	}
+	
+	.parts-summary-bar {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		background: #fff7e8;
+		border: 1px solid #ffe58f;
+		
+		.label { font-size: 14px; font-weight: 600; color: #856404; }
+		.price-highlight { color: #f53f3f; font-size: 18px; font-weight: bold; }
 	}
 	
 	/* Detail Items */
@@ -478,6 +634,19 @@
 	.font-medium { font-weight: 500; }
 	
 	.single-img { width: 100%; height: 200px; border-radius: 8px; background-color: #f7f8fa; }
+	
+	.image-placeholder {
+		width: 100%;
+		height: 120px;
+		background-color: #f7f8fa;
+		border-radius: 8px;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		color: #c9cdd4;
+		font-size: 13px;
+		border: 1px dashed #e5e6eb;
+	}
 	
 	.photo-grid {
 		display: flex;

@@ -38,19 +38,9 @@ exports.main = async (event, context) => {
 		const isAdmin = roles.includes('admin')
 		
 		let match = {}
-		let queryLimit = 50 // Default for non-admins
-
-		// 1. Permission & Limit Setup
-		if (isAdmin) {
-			queryLimit = 100
-			// Admin can view all, so no default creator_uid constraint
-		} else {
-			// Non-admin can ONLY view their own
-			match.creator_uid = uid
-		}
-
-		// 2. Query Parameters
 		const { 
+			page = 1,
+			pageSize = 10,
 			startDate, 
 			endDate, 
 			customerName, 
@@ -59,6 +49,13 @@ exports.main = async (event, context) => {
 			productModel 
 		} = params
 
+		// 1. Permission Setup
+		if (!isAdmin) {
+			// Non-admin can ONLY view their own
+			match.creator_uid = uid
+		}
+
+		// 2. Query Parameters
 		// Date Range Filter (Available to ALL)
 		if (startDate || endDate) {
 			if (startDate && endDate) {
@@ -72,24 +69,11 @@ exports.main = async (event, context) => {
 
 		// Advanced Filters (ADMIN ONLY)
 		if (isAdmin) {
-			// Customer Name Filter (Fuzzy)
-			if (customerName) {
-				match['customer.name'] = new RegExp(customerName, 'i')
-			}
+			if (customerName) match['customer.name'] = new RegExp(customerName, 'i')
+			if (customerPhone) match['customer.phone'] = new RegExp(customerPhone, 'i')
+			if (productModel) match['product.model'] = new RegExp(productModel, 'i')
 
-			// Customer Phone Filter (Fuzzy)
-			if (customerPhone) {
-				match['customer.phone'] = new RegExp(customerPhone, 'i')
-			}
-
-			// Product Model Filter (Fuzzy)
-			if (productModel) {
-				match['product.model'] = new RegExp(productModel, 'i')
-			}
-
-			// Reporter Name Filter (Requires User Lookup)
 			if (reporterName) {
-				// Find users matching the name
 				const reporterRes = await db.collection('uni-id-users')
 					.where(dbCmd.or([
 						{ nickname: new RegExp(reporterName, 'i') },
@@ -100,20 +84,24 @@ exports.main = async (event, context) => {
 					.get()
 				
 				const reporterIds = reporterRes.data.map(u => u._id)
-				
 				if (reporterIds.length > 0) {
 					match.creator_uid = dbCmd.in(reporterIds)
 				} else {
-					return { code: 0, data: [] } // No reporter found
+					return { code: 0, data: [], total: 0 }
 				}
 			}
 		}
 		
+		// 3. Execute Count and Data Query
+		const totalRes = await db.collection('jiushun-work-orders').where(match).count()
+		const total = totalRes.total
+
 		const res = await db.collection('jiushun-work-orders')
-			.aggregate() // Use aggregate to lookup reporter info
+			.aggregate()
 			.match(match)
 			.sort({ create_date: -1 })
-			.limit(queryLimit)
+			.skip((page - 1) * pageSize)
+			.limit(pageSize)
 			.lookup({
 				from: 'uni-id-users',
 				localField: 'creator_uid',
@@ -127,13 +115,14 @@ exports.main = async (event, context) => {
 			if (item.userInfo && item.userInfo.length > 0) {
 				item.reporterName = item.userInfo[0].nickname || item.userInfo[0].username || item.userInfo[0].mobile
 			}
-			delete item.userInfo // Clean up
+			delete item.userInfo
 			return item
 		})
 			
 		return {
 			code: 0,
-			data: data
+			data: data,
+			total: total
 		}
 	}
 	
@@ -142,11 +131,20 @@ exports.main = async (event, context) => {
 		const { id } = params
 		if (!id) return { code: 400, msg: 'ID required' }
 		
+		// Permission Check for Detail
+		const userRes = await db.collection('uni-id-users').doc(uid).get()
+		const roles = userRes.data[0].role || []
+		const isAdmin = roles.includes('admin')
+		
+		let match = { _id: id }
+		if (!isAdmin) {
+			// Non-admin can ONLY view their own detail
+			match.creator_uid = uid
+		}
+		
 		// Use aggregate to join with user info
 		const res = await db.collection('jiushun-work-orders').aggregate()
-			.match({
-				_id: id
-			})
+			.match(match)
 			.lookup({
 				from: 'uni-id-users',
 				localField: 'creator_uid',
@@ -168,6 +166,51 @@ exports.main = async (event, context) => {
 		return {
 			code: 0,
 			data: order
+		}
+	}
+	
+	// Action: Update Work Order (Admin Only)
+	if (action === 'update') {
+		const { id, data } = params
+		if (!id) return { code: 400, msg: 'ID required' }
+		
+		// Permission Check
+		const userRes = await db.collection('uni-id-users').doc(uid).get()
+		const roles = userRes.data[0].role || []
+		if (!roles.includes('admin')) {
+			return { code: 403, msg: '无权修改' }
+		}
+		
+		// Remove fields that shouldn't be updated via this action if any
+		delete data._id
+		delete data.create_date
+		delete data.creator_uid
+		
+		await db.collection('jiushun-work-orders').doc(id).update(data)
+		
+		return {
+			code: 0,
+			msg: '修改成功'
+		}
+	}
+	
+	// Action: Delete Work Order (Admin Only)
+	if (action === 'delete') {
+		const { id } = params
+		if (!id) return { code: 400, msg: 'ID required' }
+		
+		// Permission Check
+		const userRes = await db.collection('uni-id-users').doc(uid).get()
+		const roles = userRes.data[0].role || []
+		if (!roles.includes('admin')) {
+			return { code: 403, msg: '无权删除' }
+		}
+		
+		await db.collection('jiushun-work-orders').doc(id).remove()
+		
+		return {
+			code: 0,
+			msg: '删除成功'
 		}
 	}
 

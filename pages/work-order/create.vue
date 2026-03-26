@@ -357,8 +357,8 @@
 					<view class="item"><text class="lb">填单</text><text class="vl">{{ currentUser }}</text></view>
 				</view>
 				<view class="btn-group">
-					<button class="btn-mock-fill" @click="fillMockData">一键填写(测试)</button>
-					<button class="btn-primary-main" @click="submitOrder">正式提交服务单</button>
+					<button v-if="!isEditMode" class="btn-mock-fill" @click="fillMockData">一键填写(测试)</button>
+					<button class="btn-primary-main" @click="submitOrder">{{ isEditMode ? '确认修改工单' : '正式提交服务单' }}</button>
 				</view>
 			</view>
 		</view>
@@ -528,7 +528,9 @@
 					confirm: { machineUserPhoto: '' }
 				},
 				sectionsCollapsed: { customer: false, product: true, service: false, fees: false, confirm: true },
-				allowSave: false
+				allowSave: false,
+				isEditMode: false,
+				editId: ''
 			}
 		},
 		watch: {
@@ -607,25 +609,109 @@
 				return res;
 			}
 		},
-		onLoad() {
+		onLoad(options) {
 			const userInfo = uni.getStorageSync('userInfo');
 			this.currentUser = userInfo ? (userInfo.nickname || userInfo.name) : '填单人';
 			
+			// 检查是否为编辑模式
+			if (options.id) {
+				this.isEditMode = true;
+				this.editId = options.id;
+				this.loadDetailForEdit(options.id);
+				uni.setNavigationBarTitle({ title: '编辑工单' });
+			} else {
+				// 默认初始化数据
+				const now = new Date();
+				const today = now.toISOString().slice(0, 10);
+				this.formData.customer.reportTime = today;
+				this.formData.service.finishDate = today;
+				this.formData.service.finishTime = now.toTimeString().slice(0, 5);
+				this.formData.orderNo = 'JS' + today.replace(/-/g, '') + Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+				
+				// 检查草稿并开启自动保存
+				this.checkDraft();
+			}
+			
 			// 加载经销商列表
 			this.loadDistributors();
-			
-			// 默认初始化数据
-			const now = new Date();
-			const today = now.toISOString().slice(0, 10);
-			this.formData.customer.reportTime = today;
-			this.formData.service.finishDate = today;
-			this.formData.service.finishTime = now.toTimeString().slice(0, 5);
-			this.formData.orderNo = 'JS' + today.replace(/-/g, '') + Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-			
-			// 检查草稿并开启自动保存
-			this.checkDraft();
 		},
 		methods: {
+			async loadDetailForEdit(id) {
+				uni.showLoading({ title: '加载中' });
+				try {
+					const res = await uniCloud.callFunction({
+						name: 'work-order-manager',
+						data: { action: 'get', params: { id }, uniIdToken: uni.getStorageSync('uni_id_token') }
+					});
+					
+					if (res.result.code === 0) {
+						const data = res.result.data;
+						if (!data) {
+							uni.showToast({ title: '未找到工单数据', icon: 'none' });
+							return;
+						}
+						
+						// 数据回显处理
+						this.formData.orderNo = data.orderNo;
+						this.formData.customer = {
+							...data.customer,
+							reportTime: this.formatTimeStamp(data.customer.reportTime, 'date')
+						};
+						this.formData.product = {
+							...data.product,
+							productionDate: this.formatTimeStamp(data.product.productionDate, 'date')
+						};
+						
+						const finishTimeVal = (data.service && data.service.finishTime) || Date.now();
+						const finishDate = new Date(finishTimeVal);
+						this.formData.service = {
+							...(data.service || {}),
+							faultItems: (data.service && data.service.faultItems) || [],
+							finishDate: finishDate.toISOString().slice(0, 10),
+							finishTime: finishDate.toTimeString().slice(0, 5)
+						};
+						
+						const addFees = data.additionalFees || {};
+						this.formData.additionalFees = {
+							travelFee: addFees.travelFee || { distance: 0, unitPrice: 0, total: 0 },
+							laborFee: {
+								...(addFees.laborFee || {}),
+								repairDuration: (addFees.laborFee && addFees.laborFee.repairDuration) || 0,
+								unitPrice: (addFees.laborFee && addFees.laborFee.unitPrice) || 0
+							}
+						};
+						this.formData.confirm = data.customerConfirm || { machineUserPhoto: '' };
+						
+						// 展开所有卡片以便查看
+						Object.keys(this.sectionsCollapsed).forEach(k => {
+							this.sectionsCollapsed[k] = false;
+						});
+					} else {
+						uni.showModal({
+							title: '加载失败',
+							content: `错误码: ${res.result.code}\n错误信息: ${res.result.msg}`,
+							showCancel: false
+						});
+					}
+				} catch (e) {
+					console.error('加载工单详情失败:', e);
+					uni.showModal({
+						title: '程序异常',
+						content: e.message || '未知错误',
+						showCancel: false
+					});
+				} finally {
+					uni.hideLoading();
+				}
+			},
+			formatTimeStamp(timestamp, type) {
+				if (!timestamp) return '';
+				const date = new Date(timestamp);
+				const y = date.getFullYear();
+				const m = String(date.getMonth() + 1).padStart(2, '0');
+				const d = String(date.getDate()).padStart(2, '0');
+				return `${y}-${m}-${d}`;
+			},
 			async loadDistributors() {
 				try {
 					const db = uniCloud.database();
@@ -779,10 +865,18 @@
 				uni.chooseImage({
 					count: type === 'site' ? 9 : 1,
 					success: (res) => {
-						if (type === 'plate') this.formData.product.platePhoto = res.tempFilePaths[0];
-						else if (type === 'confirm') this.formData.confirm.machineUserPhoto = res.tempFilePaths[0];
-						else if (type === 'site' && itemIdx !== -1) {
-							this.formData.service.faultItems[itemIdx].sitePhotos.push(...res.tempFilePaths);
+						const paths = res.tempFilePaths;
+						console.log(`[选择图片] 类型:${type}, 路径:`, paths);
+						
+						if (type === 'plate') {
+							this.formData.product.platePhoto = paths[0];
+						} else if (type === 'confirm') {
+							this.formData.confirm.machineUserPhoto = paths[0];
+						} else if (type === 'site' && itemIdx !== -1) {
+							if (!this.formData.service.faultItems[itemIdx].sitePhotos) {
+								this.$set(this.formData.service.faultItems[itemIdx], 'sitePhotos', []);
+							}
+							this.formData.service.faultItems[itemIdx].sitePhotos.push(...paths);
 						}
 					}
 				});
@@ -814,7 +908,7 @@
 				this.formData.product.engineNo = 'EN' + Math.random().toString(36).slice(-6).toUpperCase();
 				this.formData.product.model = random(models);
 				this.formData.product.productionDate = '2025-05-20';
-				this.formData.product.platePhoto = 'https://mp-e053b326-d336-455f-9572-3993ef17dc83.cdn.bspapp.com/cloudstorage/427c8d67-b213-45bf-b999-d038e82592aa.jpg';
+				this.formData.product.platePhoto = 'https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/mockimgs/0fa2e2c9-4105-49a0-8f18-714efb08644b.jpg';
 				
 				// 3. 服务内容
 				this.formData.service.type = random(['三包', '维修', '保养']);
@@ -838,7 +932,7 @@
 							{ name: '专用密封垫', code: 'SP-882', count: 1, oldPartAction: '带回', source: '自带', price: 120 },
 							{ name: '液压油(1L)', code: 'OIL-01', count: 2, oldPartAction: '丢弃', source: '自带', price: 45 }
 						],
-						sitePhotos: ['https://mp-e053b326-d336-455f-9572-3993ef17dc83.cdn.bspapp.com/cloudstorage/8835e3b1-5287-4595-bd2b-30a7a9733aaf.jpg']
+						sitePhotos: ['https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/mockimgs/06064ddb-0496-4aa2-bc92-a9406a6aac9e.jpg']
 					});
 				}
 				
@@ -856,7 +950,7 @@
 				}
 				
 				// 5. 最终确认
-				this.formData.confirm.machineUserPhoto = 'https://mp-e053b326-d336-455f-9572-3993ef17dc83.cdn.bspapp.com/cloudstorage/9a0a25ca-f26e-4b4d-8a00-20cf8607fe06.jpg';
+				this.formData.confirm.machineUserPhoto = 'https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/mockimgs/1.png';
 				const now = new Date();
 				this.formData.service.finishDate = now.toISOString().slice(0, 10);
 				this.formData.service.finishTime = now.toTimeString().slice(0, 5);
@@ -909,7 +1003,11 @@
 					const orderData = {
 						orderNo: this.formData.orderNo,
 						customer: { ...this.formData.customer, reportTime: cRepTime },
-						product: { ...this.formData.product, productionDate: pProdDate, platePhoto: plateId },
+						product: { 
+							...this.formData.product, 
+							productionDate: pProdDate, 
+							platePhoto: plateId // 明确使用上传后的 ID
+						},
 						service: {
 							...this.formData.service,
 							faultItems: finalFaultItems,
@@ -930,18 +1028,32 @@
 							},
 							totalAmount: Number(this.additionalTotal)
 						},
-						customerConfirm: { machineUserPhoto: confirmId }
+						customerConfirm: { machineUserPhoto: confirmId } // 明确使用上传后的 ID
 					};
+
+					const actionType = this.isEditMode ? 'update' : 'create';
+					const actionParams = this.isEditMode ? { id: this.editId, data: orderData } : orderData;
+
 					uniCloud.callFunction({
 						name: 'work-order-manager',
-						data: { action: 'create', params: orderData, uniIdToken: uni.getStorageSync('uni_id_token') },
+						data: { 
+							action: actionType, 
+							params: actionParams, 
+							uniIdToken: uni.getStorageSync('uni_id_token') 
+						},
 						success: (res) => {
 							uni.hideLoading();
 							if (res.result.code === 0) {
 								// 提交成功，清除本地草稿
 								uni.removeStorageSync('order_draft');
-								uni.showToast({ title: '提交成功' });
-								setTimeout(() => uni.reLaunch({ url: '/pages/index/index' }), 1000);
+								uni.showToast({ title: this.isEditMode ? '修改成功' : '提交成功' });
+								setTimeout(() => {
+									if (this.isEditMode) {
+										uni.navigateBack();
+									} else {
+										uni.reLaunch({ url: '/pages/index/index' });
+									}
+								}, 1000);
 							} else uni.showToast({ title: res.result.msg, icon: 'none' });
 						}
 					});
@@ -952,9 +1064,34 @@
 			},
 			uploadFile(path, folder) {
 				return new Promise((resolve) => {
-					if (!path || path.startsWith('cloud://')) return resolve(path);
-					const ext = path.split('.').pop();
-					uniCloud.uploadFile({ filePath: path, cloudPath: `${folder}/${Date.now()}_${Math.random().toString(36).slice(-4)}.${ext}`, success: (res) => resolve(res.fileID), fail: () => resolve(null) });
+					if (!path) return resolve(null);
+					
+					// 1. 判定是否为不需要上传的路径
+					const isCloudPath = path.startsWith('cloud://');
+					// 网络图片：以 http 开头，且不是本地临时路径(blob 或 tmp)
+					const isNetworkPath = path.startsWith('http') && !path.includes('blob:') && !path.includes('tmp');
+					
+					if (isCloudPath || isNetworkPath) {
+						console.log('[上传文件] 跳过(已是网络或云端路径):', path);
+						return resolve(path);
+					}
+					
+					console.log('[上传文件] 开始:', path);
+					const ext = path.split('.').pop() || 'jpg';
+					const cloudPath = `${folder}/${Date.now()}_${Math.random().toString(36).slice(-4)}.${ext}`;
+					
+					uniCloud.uploadFile({
+						filePath: path,
+						cloudPath: cloudPath,
+						success: (res) => {
+							console.log('[上传文件] 成功, fileID:', res.fileID);
+							resolve(res.fileID);
+						},
+						fail: (err) => {
+							console.error('[上传文件] 失败:', err);
+							resolve(null);
+						}
+					});
 				});
 			}
 		}
