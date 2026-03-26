@@ -357,7 +357,7 @@
 					<view class="item"><text class="lb">填单</text><text class="vl">{{ currentUser }}</text></view>
 				</view>
 				<view class="btn-group">
-					<button v-if="!isEditMode" class="btn-mock-fill" @click="fillMockData">一键填写(测试)</button>
+					<button v-if="!isEditMode && isAdmin" class="btn-mock-fill" @click="fillMockData">一键填写(测试)</button>
 					<button class="btn-primary-main" @click="submitOrder">{{ isEditMode ? '确认修改工单' : '正式提交服务单' }}</button>
 				</view>
 			</view>
@@ -530,7 +530,8 @@
 				sectionsCollapsed: { customer: false, product: true, service: false, fees: false, confirm: true },
 				allowSave: false,
 				isEditMode: false,
-				editId: ''
+				editId: '',
+				isAdmin: false
 			}
 		},
 		watch: {
@@ -612,6 +613,7 @@
 		onLoad(options) {
 			const userInfo = uni.getStorageSync('userInfo');
 			this.currentUser = userInfo ? (userInfo.nickname || userInfo.name) : '填单人';
+			this.isAdmin = userInfo && userInfo.role && userInfo.role.includes('admin');
 			
 			// 检查是否为编辑模式
 			if (options.id) {
