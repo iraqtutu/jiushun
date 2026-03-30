@@ -35,23 +35,24 @@
 		</view>
 
 		<!-- 4. 自定义弹出层 (代替 uni-popup，彻底避免组件 Bug) -->
-		<view class="custom-overlay" v-if="showPopup" @click.self="closePopup">
-			<view class="popup-panel">
+		<view v-show="showPopup" class="custom-overlay">
+			<view class="mask" @click="closePopup"></view>
+			<view class="popup-panel" @click.stop>
 				<view class="popup-title">{{ formData._id ? '修改经销商' : '新增经销商' }}</view>
 				
-				<view class="form-item">
+				<view class="form-item" @click.stop>
 					<text class="label">客户名称 <text class="required">*</text></text>
-					<input class="input" v-model="formData.name" placeholder="请输入客户名称" :focus="showPopup" />
+					<input class="input" v-model="formData.name" placeholder="请输入客户名称" @focus="onInputFocus" @click.stop adjust-position="false" />
 				</view>
 				
-				<view class="form-item">
+				<view class="form-item" @click.stop>
 					<text class="label">业务员</text>
-					<input class="input" v-model="formData.salesman" placeholder="请输入业务员姓名" />
+					<input class="input" v-model="formData.salesman" placeholder="请输入业务员姓名" @focus="onInputFocus" @click.stop adjust-position="false" />
 				</view>
 				
-				<view class="form-item">
+				<view class="form-item" @click.stop>
 					<text class="label">地区</text>
-					<input class="input" v-model="formData.region" placeholder="请输入省市区" />
+					<input class="input" v-model="formData.region" placeholder="请输入省市区" @focus="onInputFocus" @click.stop adjust-position="false" />
 				</view>
 				
 				<view class="popup-actions">
@@ -111,6 +112,9 @@
 			handleEdit(item) {
 				this.formData = JSON.parse(JSON.stringify(item));
 				this.showPopup = true;
+			},
+			onInputFocus() {
+				// 阻止输入框聚焦时意外关闭弹窗
 			},
 			closePopup() {
 				this.showPopup = false;
@@ -266,13 +270,23 @@
 		left: 0;
 		right: 0;
 		bottom: 0;
-		background-color: rgba(0, 0, 0, 0.6);
 		z-index: 999;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		
+		.mask {
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background-color: rgba(0, 0, 0, 0.6);
+		}
+		
 		.popup-panel {
+			position: relative;
+			z-index: 1000;
 			background-color: #fff;
 			width: 85vw;
 			border-radius: 12px;
