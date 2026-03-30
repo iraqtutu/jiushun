@@ -14,9 +14,21 @@
 				<!-- Show error or status message -->
 				<text v-if="statusMsg" class="status-msg">{{ statusMsg }}</text>
 				
-				<button class="btn-weixin" @click="handleWxLogin">
+				<button class="btn-weixin" @click="handleWxLoginClick">
 					<text>微信一键登录</text>
 				</button>
+				
+				<view class="agreement-box">
+					<checkbox-group @change="onAgreementChange">
+						<label class="agreement-label">
+							<checkbox value="agree" :checked="isAgree" style="transform:scale(0.7)" />
+							<text class="agreement-text">登录即代表您已同意</text>
+						</label>
+					</checkbox-group>
+					<text class="link" @click="goAgreement('user-agreement')">《用户协议》</text>
+					<text class="agreement-text">与</text>
+					<text class="link" @click="goAgreement('privacy-policy')">《隐私政策》</text>
+				</view>
 			</view>
 		</view>
 	</view>
@@ -27,14 +39,35 @@
 		data() {
 			return {
 				isLoading: true,
-				statusMsg: ''
+				statusMsg: '',
+				isAgree: false
 			}
 		},
 		onLoad() {
-			this.handleWxLogin();
+			this.handleWxLogin(true);
 		},
 		methods: {
-			handleWxLogin() {
+			onAgreementChange(e) {
+				this.isAgree = e.detail.value.length > 0;
+			},
+			goAgreement(type) {
+				uni.navigateTo({
+					url: `/pages/agreement/${type}`
+				});
+			},
+			handleWxLoginClick() {
+				if (!this.isAgree) {
+					uni.showToast({ title: '请先阅读并同意用户协议及隐私政策', icon: 'none' });
+					return;
+				}
+				this.handleWxLogin(false);
+			},
+			handleWxLogin(isAuto = false) {
+				if (isAuto === false && !this.isAgree) {
+					uni.showToast({ title: '请先阅读并同意用户协议及隐私政策', icon: 'none' });
+					return;
+				}
+				
 				this.isLoading = true;
 				this.statusMsg = '';
 				
@@ -167,5 +200,29 @@
 		&::after {
 			border: none;
 		}
+	}
+	
+	.agreement-box {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		justify-content: center;
+		font-size: 13px;
+		margin-top: 20px;
+		color: #666;
+		width: 80%;
+	}
+	
+	.agreement-label {
+		display: flex;
+		align-items: center;
+	}
+	
+	.agreement-text {
+		color: #666;
+	}
+	
+	.link {
+		color: #007aff;
 	}
 </style>

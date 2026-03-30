@@ -26,6 +26,18 @@
 				<textarea class="textarea" v-model="formData.reason" placeholder="例如：我是XX地区经销商王某某" />
 			</view>
 			
+			<view class="agreement-box">
+				<checkbox-group @change="onAgreementChange">
+					<label class="agreement-label">
+						<checkbox value="agree" :checked="isAgree" style="transform:scale(0.7)" />
+						<text class="agreement-text">我已阅读并同意</text>
+					</label>
+				</checkbox-group>
+				<text class="link" @click="goAgreement('user-agreement')">《用户服务协议》</text>
+				<text class="agreement-text">和</text>
+				<text class="link" @click="goAgreement('privacy-policy')">《隐私政策》</text>
+			</view>
+			
 			<button class="btn-submit" @click="submitApply" :disabled="isSubmitting">
 				{{ isSubmitting ? '提交中...' : '提交申请' }}
 			</button>
@@ -44,16 +56,30 @@
 					role: '',
 					reason: ''
 				},
-				isSubmitting: false
+				isSubmitting: false,
+				isAgree: false
 			}
 		},
 		methods: {
 			onRoleChange(e) {
 				this.formData.role = this.roles[e.detail.value];
 			},
+			onAgreementChange(e) {
+				this.isAgree = e.detail.value.length > 0;
+			},
+			goAgreement(type) {
+				uni.navigateTo({
+					url: `/pages/agreement/${type}`
+				});
+			},
 			submitApply() {
 				if (!this.formData.name || !this.formData.mobile || !this.formData.role || !this.formData.reason) {
 					uni.showToast({ title: '请填写完整信息', icon: 'none' });
+					return;
+				}
+				
+				if (!this.isAgree) {
+					uni.showToast({ title: '请先阅读并同意用户协议及隐私政策', icon: 'none' });
 					return;
 				}
 				
@@ -137,9 +163,32 @@
 		}
 	}
 	
+	.agreement-box {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		font-size: 13px;
+		margin-top: 10px;
+		margin-bottom: 20px;
+		color: #666;
+	}
+	
+	.agreement-label {
+		display: flex;
+		align-items: center;
+	}
+	
+	.agreement-text {
+		color: #666;
+	}
+	
+	.link {
+		color: #007aff;
+	}
+	
 	.btn-submit {
 		background-color: #007aff;
 		color: #fff;
-		margin-top: 30px;
+		margin-top: 10px;
 	}
 </style>
