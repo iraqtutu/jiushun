@@ -72,6 +72,13 @@
 			}
 		},
 		{
+			"path": "pages/admin/user-list",
+			"style": {
+				"navigationBarTitleText": "用户管理",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
 			"path": "pages/agreement/user-agreement",
 			"style": {
 				"navigationBarTitleText": "用户服务协议"

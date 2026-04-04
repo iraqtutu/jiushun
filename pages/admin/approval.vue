@@ -116,13 +116,26 @@
 				return '';
 			},
 			handleApprove(item) {
-				uni.showModal({
-					title: '确认通过',
-					content: `确认将用户 ${item.name} 设为 ${item.role} 吗？`,
+				const roles = ['玖顺员工', '经销商人员', '服务人员'];
+				const currentIndex = roles.indexOf(item.role);
+				
+				uni.showActionSheet({
+					itemList: roles,
 					success: (res) => {
-						if (res.confirm) {
-							this.audit(item._id, 1);
-						}
+						const newRole = roles[res.tapIndex];
+						const confirmMsg = newRole !== item.role 
+							? `确认将用户 ${item.name} 的角色由 "${item.role}" 修改为 "${newRole}" 并通过吗？`
+							: `确认将用户 ${item.name} 设为 ${newRole} 吗？`;
+						
+						uni.showModal({
+							title: '确认通过',
+							content: confirmMsg,
+							success: (m) => {
+								if (m.confirm) {
+									this.audit(item._id, 1, '', newRole);
+								}
+							}
+						});
 					}
 				});
 			},
@@ -138,20 +151,20 @@
 					}
 				});
 			},
-			audit(id, status, reason = '') {
+			audit(id, status, reason = '', newRole = null) {
 				uni.showLoading({ title: '处理中' });
 				uniCloud.callFunction({
 					name: 'user-center',
 					data: {
 						action: 'auditApplication',
-						params: { id, status, rejectReason: reason },
+						params: { id, status, rejectReason: reason, role: newRole },
 						uniIdToken: uni.getStorageSync('uni_id_token')
 					},
 					success: (res) => {
 						uni.hideLoading();
 						if (res.result.code === 0) {
 							uni.showToast({ title: '操作成功' });
-							this.loadData(); // Refresh
+							this.loadData();
 						} else {
 							uni.showToast({ title: res.result.msg, icon: 'none' });
 						}

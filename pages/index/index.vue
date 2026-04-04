@@ -71,6 +71,19 @@
 						<text class="arrow">›</text>
 					</view>
 				</view>
+
+				<view v-if="isAdmin" class="action-item" @click="navTo('/pages/admin/user-list')" hover-class="hover-effect">
+					<view class="item-left">
+						<view class="action-icon user-icon">👥</view>
+						<view class="item-text">
+							<text class="item-title">用户管理</text>
+							<text class="item-desc">查看并调整所有用户角色</text>
+						</view>
+					</view>
+					<view class="item-right">
+						<text class="arrow">›</text>
+					</view>
+				</view>
 				
 				<view class="action-item" @click="navTo('/pages/feedback/list')" hover-class="hover-effect">
 					<view class="item-left">
@@ -350,6 +363,7 @@
 				&.admin-icon { background: #fff7e8; }
 				&.dealer-icon { background: #e6fcf5; }
 				&.feedback-icon { background: #e8f3ff; }
+				&.user-icon { background: #f0f5ff; }
 			}
 			
 			.item-text {

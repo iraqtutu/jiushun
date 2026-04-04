@@ -205,18 +205,21 @@ exports.main = async (event, context) => {
 			return { code: 403, msg: '无权操作' }
 		}
 		
-		const { id, status, rejectReason } = params
+		const { id, status, rejectReason, role: newRole } = params
 		
 		// Get Application
 		const appRes = await db.collection('jiushun-account-applications').doc(id).get()
 		if (appRes.data.length === 0) return { code: 404, msg: '申请不存在' }
 		const application = appRes.data[0]
 		
+		// Determine final role (use newRole if provided, otherwise use application role)
+		const finalRole = newRole || application.role
+		
 		// If Approved (status === 1), Update User Role FIRST
 		if (status === 1) {
 			try {
 				await db.collection('uni-id-users').doc(application.create_uid).update({
-					role: [application.role], // Overwrite role
+					role: [finalRole], // Overwrite role
 					mobile: application.mobile,
 					nickname: application.name,
 					mobile_confirmed: 1 // Mark mobile as trusted since admin approved it
@@ -240,6 +243,66 @@ exports.main = async (event, context) => {
 		})
 		
 		return { code: 0, msg: '操作成功' }
+	}
+
+	// 5. Get All Users (Admin Only)
+	if (action === 'getUsers') {
+		const payload = await uniIdIns.checkToken(event.uniIdToken)
+		if (payload.code !== 0) return payload
+
+		// Check Admin Role
+		const userRes = await db.collection('uni-id-users').doc(payload.uid).get()
+		const roles = userRes.data[0].role || []
+		if (!roles.includes('admin') && !roles.includes('玖顺员工')) {
+			return { code: 403, msg: '无权访问' }
+		}
+
+		// Get all users with relevant fields only (privacy)
+		// Filter out users without nickname (auto-generated guests from WeChat login)
+		const usersRes = await db.collection('uni-id-users')
+			.where({
+				nickname: dbCmd.exists(true)
+			})
+			.field({
+				nickname: true,
+				mobile: true,
+				role: true,
+				register_date: true,
+				create_date: true
+			})
+			.orderBy('register_date', 'desc')
+			.get()
+
+		return { code: 0, data: usersRes.data }
+	}
+
+	// 6. Update User Role (Admin Only)
+	if (action === 'updateUserRole') {
+		const payload = await uniIdIns.checkToken(event.uniIdToken)
+		if (payload.code !== 0) return payload
+
+		// Check Admin Role
+		const adminUserRes = await db.collection('uni-id-users').doc(payload.uid).get()
+		const adminRoles = adminUserRes.data[0].role || []
+		if (!adminRoles.includes('admin') && !adminRoles.includes('玖顺员工')) {
+			return { code: 403, msg: '无权操作' }
+		}
+
+		const { uid, roles } = params
+		if (!uid) return { code: 400, msg: '用户ID必填' }
+		if (!Array.isArray(roles)) return { code: 400, msg: '角色必须是数组' }
+		if (roles.length === 0) return { code: 400, msg: '至少需要保留一个角色' }
+
+		// Prevent removing own admin role
+		if (uid === payload.uid && !roles.includes('admin') && !roles.includes('玖顺员工')) {
+			return { code: 400, msg: '不能移除自己的管理员角色' }
+		}
+
+		await db.collection('uni-id-users').doc(uid).update({
+			role: roles
+		})
+
+		return { code: 0, msg: '角色更新成功' }
 	}
 
 	return {
