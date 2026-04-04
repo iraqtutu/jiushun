@@ -27,7 +27,7 @@ exports.main = async (event, context) => {
 		username: 'admin',
 		mobile: adminMobile,
 		password: adminPassword,
-		role: ['admin', '玖顺员工'],
+		role: ['admin'],
 		nickname: '超级管理员'
 	})
 	

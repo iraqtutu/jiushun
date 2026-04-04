@@ -3,17 +3,21 @@ const uniID = require('uni-id-common')
 const db = uniCloud.database()
 const dbCmd = db.command
 
+// ========== 角色定义 ==========
+const ADMIN_ROLES = ['admin']
+const DATA_ANALYST_ROLES = ['数据分析员']
+
 exports.main = async (event, context) => {
 	const { action, params } = event
 	const uniIdIns = uniID.createInstance({ context })
-	
+
 	// Check Token for all actions
 	const payload = await uniIdIns.checkToken(event.uniIdToken)
 	if (payload.code !== 0) {
 		return payload
 	}
 	const uid = payload.uid
-	
+
 	// Action: Create Work Order
 	if (action === 'create') {
 		const orderData = {
@@ -21,37 +25,44 @@ exports.main = async (event, context) => {
 			creator_uid: uid,
 			create_date: Date.now()
 		}
-		
+
 		const res = await db.collection('jiushun-work-orders').add(orderData)
-		
+
 		return {
 			code: 0,
 			msg: '提交成功',
 			id: res.id
 		}
 	}
-	
+
+	// Helper: Check if user has any of the target roles
+	const hasRole = (userRoles, targetRoles) => {
+		return (userRoles || []).some(r => targetRoles.includes(r))
+	}
+
 	// Action: List Work Orders (My Orders or Query)
 	if (action === 'list') {
 		const userRes = await db.collection('uni-id-users').doc(uid).get()
 		const roles = userRes.data[0].role || []
-		const isAdmin = roles.includes('admin')
-		
+		const isAdmin = hasRole(roles, ADMIN_ROLES)
+		const isDataAnalyst = hasRole(roles, DATA_ANALYST_ROLES)
+
 		let match = {}
-		const { 
+		const {
 			page = 1,
 			pageSize = 10,
-			startDate, 
-			endDate, 
-			customerName, 
-			customerPhone, 
-			reporterName, 
-			productModel 
+			startDate,
+			endDate,
+			customerName,
+			customerPhone,
+			reporterName,
+			productModel
 		} = params
 
 		// 1. Permission Setup
-		if (!isAdmin) {
-			// Non-admin can ONLY view their own
+		// Admin and Data Analyst can view all orders
+		if (!isAdmin && !isDataAnalyst) {
+			// Non-privileged users can ONLY view their own
 			match.creator_uid = uid
 		}
 
@@ -67,8 +78,8 @@ exports.main = async (event, context) => {
 			}
 		}
 
-		// Advanced Filters (ADMIN ONLY)
-		if (isAdmin) {
+		// Advanced Filters (Admin and Data Analyst ONLY)
+		if (isAdmin || isDataAnalyst) {
 			if (customerName) match['customer.name'] = new RegExp(customerName, 'i')
 			if (customerPhone) match['customer.phone'] = new RegExp(customerPhone, 'i')
 			if (productModel) match['product.model'] = new RegExp(productModel, 'i')
@@ -82,7 +93,7 @@ exports.main = async (event, context) => {
 					]))
 					.field({ _id: 1 })
 					.get()
-				
+
 				const reporterIds = reporterRes.data.map(u => u._id)
 				if (reporterIds.length > 0) {
 					match.creator_uid = dbCmd.in(reporterIds)
@@ -130,15 +141,16 @@ exports.main = async (event, context) => {
 	if (action === 'get') {
 		const { id } = params
 		if (!id) return { code: 400, msg: 'ID required' }
-		
+
 		// Permission Check for Detail
 		const userRes = await db.collection('uni-id-users').doc(uid).get()
 		const roles = userRes.data[0].role || []
-		const isAdmin = roles.includes('admin')
-		
+		const isAdmin = hasRole(roles, ADMIN_ROLES)
+		const isDataAnalyst = hasRole(roles, DATA_ANALYST_ROLES)
+
 		let match = { _id: id }
-		if (!isAdmin) {
-			// Non-admin can ONLY view their own detail
+		if (!isAdmin && !isDataAnalyst) {
+			// Non-privileged users can ONLY view their own detail
 			match.creator_uid = uid
 		}
 		
@@ -177,7 +189,7 @@ exports.main = async (event, context) => {
 		// Permission Check
 		const userRes = await db.collection('uni-id-users').doc(uid).get()
 		const roles = userRes.data[0].role || []
-		if (!roles.includes('admin')) {
+		if (!hasRole(roles, ADMIN_ROLES)) {
 			return { code: 403, msg: '无权修改' }
 		}
 		
@@ -202,15 +214,196 @@ exports.main = async (event, context) => {
 		// Permission Check
 		const userRes = await db.collection('uni-id-users').doc(uid).get()
 		const roles = userRes.data[0].role || []
-		if (!roles.includes('admin')) {
+		if (!hasRole(roles, ADMIN_ROLES)) {
 			return { code: 403, msg: '无权删除' }
 		}
 		
 		await db.collection('jiushun-work-orders').doc(id).remove()
-		
+
 		return {
 			code: 0,
 			msg: '删除成功'
+		}
+	}
+
+	// Action: Export Work Orders (Admin and Data Analyst Only)
+	if (action === 'export') {
+		const userRes = await db.collection('uni-id-users').doc(uid).get()
+		const roles = userRes.data[0].role || []
+		const isAdmin = hasRole(roles, ADMIN_ROLES)
+		const isDataAnalyst = hasRole(roles, DATA_ANALYST_ROLES)
+
+		if (!isAdmin && !isDataAnalyst) {
+			return { code: 403, msg: '无权导出' }
+		}
+
+		const {
+			startDate,
+			endDate,
+			customerName,
+			customerPhone,
+			reporterName,
+			productModel
+		} = params
+
+		let match = {}
+
+		// Date Range Filter
+		if (startDate || endDate) {
+			if (startDate && endDate) {
+				match.create_date = dbCmd.gte(startDate).and(dbCmd.lte(endDate))
+			} else if (startDate) {
+				match.create_date = dbCmd.gte(startDate)
+			} else if (endDate) {
+				match.create_date = dbCmd.lte(endDate)
+			}
+		}
+
+		// Advanced Filters
+		if (customerName) match['customer.name'] = new RegExp(customerName, 'i')
+		if (customerPhone) match['customer.phone'] = new RegExp(customerPhone, 'i')
+		if (productModel) match['product.model'] = new RegExp(productModel, 'i')
+
+		if (reporterName) {
+			const reporterRes = await db.collection('uni-id-users')
+				.where(dbCmd.or([
+					{ nickname: new RegExp(reporterName, 'i') },
+					{ username: new RegExp(reporterName, 'i') },
+					{ mobile: new RegExp(reporterName, 'i') }
+				]))
+				.field({ _id: 1 })
+				.get()
+
+			const reporterIds = reporterRes.data.map(u => u._id)
+			if (reporterIds.length > 0) {
+				match.creator_uid = dbCmd.in(reporterIds)
+			} else {
+				return { code: 0, data: [], total: 0 }
+			}
+		}
+
+		// Get all matching records (no pagination for export)
+		const res = await db.collection('jiushun-work-orders')
+			.aggregate()
+			.match(match)
+			.sort({ create_date: -1 })
+			.lookup({
+				from: 'uni-id-users',
+				localField: 'creator_uid',
+				foreignField: '_id',
+				as: 'userInfo'
+			})
+			.end()
+
+		// Transform data for export (same as frontend loadData transformation)
+		const data = res.data.map(item => {
+			const c = item.customer || {};
+			const p = item.product || {};
+			const s = item.service || {};
+			const faultItems = s.faultItems || [];
+
+			// 1. Aggregate Fault Categories, Descs, and Handles
+			const categories = faultItems.map(f => f.category).filter(v => v).join('\n');
+			const descs = faultItems.map(f => `【${f.category}】${f.faultDesc}`).filter(v => v).join('\n');
+			const handles = faultItems.map(f => `【${f.category}】${f.handleDesc}`).filter(v => v).join('\n');
+
+			// 2. Aggregate Parts Info
+			let allParts = [];
+			let partsTotal = 0;
+			faultItems.forEach(f => {
+				(f.parts || []).forEach(pt => {
+					let str = `[${f.category}] ${pt.name}(${pt.code})x${pt.count} 旧件:${pt.oldPartAction || '带回'} 来源:${pt.source || '自带'}`;
+					if (pt.sourceRemark) str += `(${pt.sourceRemark})`;
+					if (s.isChargeable === '收费') {
+						const price = Number(pt.price) || 0;
+						const count = Number(pt.count) || 0;
+						const subtotal = Number(pt.total) || (price * count);
+						str += ` 单价:${price} 小计:${subtotal.toFixed(1)}`;
+						partsTotal += subtotal;
+					} else {
+						partsTotal += (Number(pt.total) || 0);
+					}
+					allParts.push(str);
+				});
+			});
+			const partsStr = allParts.join('\n');
+
+			// 3. Aggregate Site Photos
+			let sitePhotos = [];
+			faultItems.forEach(f => {
+				if (f.sitePhotos && f.sitePhotos.length > 0) {
+					sitePhotos = sitePhotos.concat(f.sitePhotos);
+				}
+			});
+
+			const af = item.additionalFees || {};
+			const isChargeable = s.isChargeable || '免费';
+			const travelFeeTotal = af.travelFee?.total || 0;
+			const laborFeeTotal = af.laborFee?.total || 0;
+			const grandTotal = af.totalAmount ? (Number(af.totalAmount) + partsTotal) : partsTotal;
+
+			// 4. Reporter name from lookup
+			const reporter = (item.userInfo && item.userInfo.length > 0)
+				? (item.userInfo[0].nickname || item.userInfo[0].username || item.userInfo[0].mobile)
+				: '未知';
+
+			delete item.userInfo;
+
+			return {
+				id: item._id,
+				orderNo: item.orderNo,
+				reporterName: reporter,
+				create_date: item.create_date,
+
+				// Customer
+				distributorName: c.distributorName || '-',
+				customerName: c.name || '未知',
+				customerPhone: c.phone || '-',
+				customerAddress: c.address || '-',
+				usageType: c.usageType || '-',
+				reportTime: c.reportTime,
+
+				// Product
+				productModel: p.model || '-',
+				machineNo: p.machineNo || '-',
+				engineNo: p.engineNo || '-',
+				productionDate: p.productionDate,
+
+				// Service
+				serviceType: s.type || '未知',
+				isChargeable: isChargeable,
+				paymentMethod: s.paymentMethod || '-',
+				partsTotal: partsTotal.toFixed(1),
+				travelFeeTotal: Number(travelFeeTotal).toFixed(1),
+				laborFeeTotal: Number(laborFeeTotal).toFixed(1),
+				grandTotal: grandTotal.toFixed(1),
+				faultCategory: categories || '-',
+				faultDesc: descs || '-',
+				handleDesc: handles || '-',
+				partsInfo: partsStr || '无',
+				finishTime: s.finishTime,
+
+				// Additional fields for export
+				travelDistance: af.travelFee?.distance || 0,
+				repairDuration: af.laborFee?.repairDuration || 0,
+
+				// Image IDs
+				platePhoto: p.platePhoto,
+				sitePhotos: sitePhotos,
+				machineUserPhoto: item.customerConfirm?.machineUserPhoto
+			}
+		})
+
+		// Summary statistics
+		const summary = {
+			totalCount: data.length,
+			// 可以根据需要添加更多汇总字段
+		}
+
+		return {
+			code: 0,
+			data: data,
+			summary: summary
 		}
 	}
 

@@ -3,10 +3,10 @@
 		<!-- Search/Filter Header -->
 		<view class="filter-header">
 			<view class="filter-toggle" @click="showFilter = !showFilter">
-				<text>🔍 {{ isAdmin ? '高级查询' : '日期筛选' }}</text>
+				<text>🔍 {{ (isAdmin || isDataAnalyst) ? '高级查询' : '日期筛选' }}</text>
 				<text>{{ showFilter ? '▲' : '▼' }}</text>
 			</view>
-			
+
 			<view v-if="showFilter" class="filter-panel">
 				<view class="filter-row">
 					<text class="label">日期范围:</text>
@@ -20,11 +20,11 @@
 						</picker>
 					</view>
 				</view>
-				<view class="filter-row" v-if="isAdmin">
+				<view class="filter-row" v-if="isAdmin || isDataAnalyst">
 					<input class="input" v-model="filter.customerName" placeholder="客户姓名" />
 					<input class="input" v-model="filter.customerPhone" placeholder="客户手机号" />
 				</view>
-				<view class="filter-row" v-if="isAdmin">
+				<view class="filter-row" v-if="isAdmin || isDataAnalyst">
 					<input class="input" v-model="filter.reporterName" placeholder="报单人姓名" />
 					<input class="input" v-model="filter.productModel" placeholder="产品型号" />
 				</view>
@@ -34,7 +34,7 @@
 				</view>
 			</view>
 		</view>
-		
+
 		<view class="order-list">
 			<view class="order-item" v-for="(item, index) in list" :key="index" @click="goToDetail(item)">
 				<view class="order-header">
@@ -46,11 +46,11 @@
 					<view class="row"><text class="label">服务类型：</text>{{ item.serviceType }}</view>
 					<view class="row"><text class="label">机器编号：</text>{{ item.machineNo }}</view>
 					<view class="row"><text class="label">提交时间：</text>{{ item.submitTime }}</view>
-					<view class="row" v-if="isAdmin && item.reporterName"><text class="label">报单人：</text>{{ item.reporterName }}</view>
+					<view class="row" v-if="(isAdmin || isDataAnalyst) && item.reporterName"><text class="label">报单人：</text>{{ item.reporterName }}</view>
 				</view>
 			</view>
 		</view>
-		
+
 		<!-- Loading Status -->
 		<view class="load-status" v-if="list.length > 0">
 			<text v-if="isLoadingMore">正在加载...</text>
@@ -61,9 +61,9 @@
 		<view v-if="list.length === 0 && !isLoading" class="empty-state">
 			<text>暂无工单记录</text>
 		</view>
-		
+
 		<!-- Floating Export Button -->
-		<view class="fab-export" v-if="isAdmin && list.length > 0" @click.stop="exportData">
+		<view class="fab-export" v-if="(isAdmin || isDataAnalyst) && list.length > 0" @click.stop="exportData">
 			<text class="icon">📥</text>
 			<text class="text">导出汇总</text>
 		</view>
@@ -79,6 +79,7 @@
 				isLoadingMore: false,
 				showFilter: false,
 				isAdmin: false,
+				isDataAnalyst: false,
 				page: 1,
 				pageSize: 10,
 				total: 0,
@@ -113,12 +114,14 @@
 				const userInfo = uni.getStorageSync('userInfo');
 				if (userInfo && userInfo.role) {
 					this.isAdmin = userInfo.role.includes('admin');
+					this.isDataAnalyst = userInfo.role.includes('数据分析员');
 				} else {
 					this.isAdmin = false;
+					this.isDataAnalyst = false;
 				}
-				
+
 				uni.setNavigationBarTitle({
-					title: this.isAdmin ? '工单查询' : '我的工单'
+					title: (this.isAdmin || this.isDataAnalyst) ? '工单查询' : '我的工单'
 				});
 			},
 			bindStartDateChange(e) {
@@ -131,7 +134,7 @@
 				const end = new Date();
 				const start = new Date();
 				start.setMonth(start.getMonth() - 1);
-				
+
 				this.filter = {
 					startDate: this.formatDateSimple(start),
 					endDate: this.formatDateSimple(end),
@@ -151,7 +154,7 @@
 			loadData(isAppend = false) {
 				if (isAppend) this.isLoadingMore = true;
 				else this.isLoading = true;
-				
+
 				// Prepare params
 				const params = {
 					page: this.page,
@@ -163,15 +166,15 @@
 				if (this.filter.endDate) {
 					params.endDate = new Date(this.filter.endDate + 'T23:59:59').getTime();
 				}
-				
-				// Only add advanced filters if Admin
-				if (this.isAdmin) {
+
+				// Only add advanced filters if Admin or Data Analyst
+				if (this.isAdmin || this.isDataAnalyst) {
 					if (this.filter.customerName) params.customerName = this.filter.customerName;
 					if (this.filter.customerPhone) params.customerPhone = this.filter.customerPhone;
 					if (this.filter.reporterName) params.reporterName = this.filter.reporterName;
 					if (this.filter.productModel) params.productModel = this.filter.productModel;
 				}
-				
+
 				uniCloud.callFunction({
 					name: 'work-order-manager',
 					data: {
@@ -182,19 +185,19 @@
 					success: (res) => {
 						if (res.result.code === 0) {
 							this.total = res.result.total || 0;
-							
+
 							// Transform data for display and export
 							const newList = res.result.data.map(item => {
 								const c = item.customer || {};
 								const p = item.product || {};
 								const s = item.service || {};
 								const faultItems = s.faultItems || [];
-								
+
 								// 1. Aggregate Fault Categories, Descs, and Handles
 								const categories = faultItems.map(f => f.category).filter(v => v).join('\n');
 								const descs = faultItems.map(f => `【${f.category}】${f.faultDesc}`).filter(v => v).join('\n');
 								const handles = faultItems.map(f => `【${f.category}】${f.handleDesc}`).filter(v => v).join('\n');
-								
+
 								// 2. Aggregate Parts Info
 								let allParts = [];
 								let partsTotal = 0;
@@ -215,7 +218,7 @@
 									});
 								});
 								const partsStr = allParts.join('\n');
-								
+
 								// 3. Aggregate Site Photos
 								let sitePhotos = [];
 								faultItems.forEach(f => {
@@ -223,19 +226,19 @@
 										sitePhotos = sitePhotos.concat(f.sitePhotos);
 									}
 								});
-								
+
 								const af = item.additionalFees || {};
 								const isChargeable = s.isChargeable || '免费';
 								const travelFeeTotal = af.travelFee?.total || 0;
 								const laborFeeTotal = af.laborFee?.total || 0;
 								const grandTotal = af.totalAmount ? (Number(af.totalAmount) + partsTotal) : partsTotal;
-								
+
 								return {
 									id: item._id,
 									orderNo: item.orderNo,
 									reporterName: item.reporterName || '未知',
 									submitTime: this.formatDate(item.create_date),
-									
+
 									// Customer
 									distributorName: c.distributorName || '-',
 									customerName: c.name || '未知',
@@ -243,13 +246,13 @@
 									customerAddress: c.address || '-',
 									usageType: c.usageType || '-',
 									reportTime: this.formatDate(c.reportTime),
-									
+
 									// Product
 									productModel: p.model || '-',
 									machineNo: p.machineNo || '-',
 									engineNo: p.engineNo || '-',
 									productionDate: this.formatDateSimple(new Date(p.productionDate)),
-									
+
 									// Service
 									serviceType: s.type || '未知',
 									isChargeable: isChargeable,
@@ -263,24 +266,24 @@
 									handleDesc: handles || '-',
 									partsInfo: partsStr || '无',
 									finishTime: this.formatDate(s.finishTime),
-									
+
 									// New fields for complete export
 									travelDistance: af.travelFee?.distance || 0,
 									repairDuration: af.laborFee?.repairDuration || 0,
-									
+
 									// Image IDs for export
 									platePhoto: p.platePhoto,
 									sitePhotos: sitePhotos,
 									machineUserPhoto: item.customerConfirm?.machineUserPhoto
 								};
 							});
-							
+
 							if (isAppend) {
 								this.list = this.list.concat(newList);
 							} else {
 								this.list = newList;
 							}
-							
+
 							this.hasMore = this.list.length < this.total;
 						} else {
 							uni.showToast({ title: '加载失败', icon: 'none' });
@@ -298,43 +301,45 @@
 			},
 			async exportData() {
 				if (this.list.length === 0) return;
-				
-				uni.showLoading({ title: '正在获取图片链接...' });
-				
-				// 1. Collect all image IDs
-				let allFileIds = [];
-				this.list.forEach(item => {
-					if (item.platePhoto) allFileIds.push(item.platePhoto);
-					if (item.machineUserPhoto) allFileIds.push(item.machineUserPhoto);
-					if (item.sitePhotos && item.sitePhotos.length > 0) {
-						allFileIds = allFileIds.concat(item.sitePhotos);
+				await this.exportViaCloudFunction();
+			},
+			async exportViaCloudFunction() {
+				uni.showLoading({ title: '正在导出...' });
+
+				try {
+					const res = await uniCloud.callFunction({
+						name: 'work-order-manager',
+						data: {
+							action: 'export',
+							params: {
+								startDate: this.filter.startDate ? new Date(this.filter.startDate).getTime() : null,
+								endDate: this.filter.endDate ? new Date(this.filter.endDate).getTime() + 86400000 - 1 : null,
+								customerName: this.filter.customerName,
+								customerPhone: this.filter.customerPhone,
+								reporterName: this.filter.reporterName,
+								productModel: this.filter.productModel
+							},
+							uniIdToken: uni.getStorageSync('uni_id_token')
+						}
+					});
+
+					if (res.result.code !== 0) {
+						uni.hideLoading();
+						uni.showToast({ title: res.result.msg || '导出失败', icon: 'none' });
+						return;
 					}
-				});
-				
-				// 2. Convert Cloud IDs to HTTP URLs
-				let urlMap = {};
-				if (allFileIds.length > 0) {
-					try {
-						const res = await uniCloud.getTempFileURL({
-							fileList: allFileIds
-						});
-						// Debug log
-						console.log('getTempFileURL result:', res);
-						
-						res.fileList.forEach(file => {
-							// Check if tempFileURL exists (Aliyun/Tencent compatibility)
-							if (file.tempFileURL) {
-								urlMap[file.fileID] = file.tempFileURL;
-							}
-						});
-					} catch (e) {
-						console.error('获取链接失败', e);
-						uni.showToast({ title: '图片链接获取失败', icon: 'none' });
-					}
+
+					// Generate Excel from cloud data
+					await this.generateExcelFromData(res.result.data);
+
+					uni.hideLoading();
+				} catch (e) {
+					uni.hideLoading();
+					uni.showToast({ title: '导出失败', icon: 'none' });
+					console.error('Export error:', e);
 				}
-				
-				uni.showLoading({ title: '正在生成表格...' });
-				
+			},
+			async generateExcelFromData(data, urlMap = {}) {
 				// Helper to escape XML special characters
 				const escapeXml = (str) => {
 					if (!str) return '';
@@ -345,7 +350,14 @@
 						.replace(/"/g, '&quot;')
 						.replace(/'/g, '&apos;');
 				};
-				
+
+				// Helper to format date
+				const formatDate = (ts) => {
+					if (!ts) return '-';
+					const d = new Date(ts);
+					return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+				};
+
 				// Excel 2003 XML Template Header
 				let xmlContent = `<?xml version="1.0"?>
 <?mso-application progid="Excel.Sheet"?>
@@ -388,9 +400,9 @@
     <Cell><Data ss:Type="String">现场照片链接</Data></Cell>
     <Cell><Data ss:Type="String">人机合影链接</Data></Cell>
    </Row>`;
-				
+
 				// Rows
-				this.list.forEach(item => {
+				data.forEach(item => {
 					const plateUrl = urlMap[item.platePhoto] || '-';
 					const confirmUrl = urlMap[item.machineUserPhoto] || '-';
 					const siteUrls = (item.sitePhotos || []).map(fid => urlMap[fid]).filter(u => u).join(' ; ');
@@ -399,14 +411,14 @@
    <Row>
     <Cell><Data ss:Type="String">${escapeXml(item.orderNo)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.reporterName)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.submitTime)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(formatDate(item.create_date))}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.distributorName)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.customerName)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.customerPhone)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.customerAddress)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.customer ? item.customer.name : item.customerName)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.customer ? item.customer.phone : item.customerPhone)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.customer ? item.customer.address : item.customerAddress)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.usageType)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.reportTime)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.productModel)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.product ? item.product.model : item.productModel)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.machineNo)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.engineNo)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.productionDate)}</Data></Cell>
@@ -429,40 +441,37 @@
     <Cell><Data ss:Type="String">${escapeXml(confirmUrl)}</Data></Cell>
    </Row>`;
 				});
-				
+
 				// Footer
 				xmlContent += `
   </Table>
  </Worksheet>
 </Workbook>`;
-				
+
 				// Use FileSystemManager to save file
 				const fs = uni.getFileSystemManager();
-				// Use .xls extension for compatibility with wx.openDocument
 				const fileName = `工单汇总_${this.formatDateSimple(new Date())}.xls`;
 				const filePath = `${wx.env.USER_DATA_PATH}/${fileName}`;
-				
+
 				fs.writeFile({
 					filePath: filePath,
 					data: xmlContent,
 					encoding: 'utf8',
 					success: () => {
-						uni.hideLoading();
 						uni.openDocument({
 							filePath: filePath,
-							fileType: 'xls', // Explicitly set fileType
+							fileType: 'xls',
 							showMenu: true,
 							success: function () {
 								console.log('打开文档成功');
 							},
-							fail: function(e) {
+							fail: function (e) {
 								console.error(e);
 								uni.showToast({ title: '打开文档失败', icon: 'none' });
 							}
 						});
 					},
 					fail: (err) => {
-						uni.hideLoading();
 						console.error(err);
 						uni.showToast({ title: '导出失败', icon: 'none' });
 					}
@@ -500,7 +509,7 @@
 		min-height: 100vh;
 		padding-bottom: 80px; /* Space for FAB */
 	}
-	
+
 	.fab-export {
 		position: fixed;
 		bottom: 30px;
@@ -513,30 +522,30 @@
 		align-items: center;
 		box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 		z-index: 100;
-		
+
 		.icon {
 			margin-right: 5px;
 			font-size: 18px;
 		}
-		
+
 		.text {
 			font-size: 14px;
 			font-weight: bold;
 		}
-		
+
 		&:active {
 			opacity: 0.9;
 			transform: scale(0.98);
 		}
 	}
-	
+
 	.filter-header {
 		background: #fff;
 		border-radius: 8px;
 		padding: 10px;
 		margin-bottom: 15px;
 		box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-		
+
 		.filter-toggle {
 			display: flex;
 			justify-content: space-between;
@@ -544,24 +553,24 @@
 			font-weight: bold;
 			color: #333;
 		}
-		
+
 		.filter-panel {
 			margin-top: 15px;
 			border-top: 1px solid #eee;
 			padding-top: 10px;
-			
+
 			.filter-row {
 				display: flex;
 				align-items: center;
 				margin-bottom: 10px;
 				gap: 10px;
-				
+
 				.label {
 					font-size: 14px;
 					color: #666;
 					width: 70px;
 				}
-				
+
 				.input {
 					flex: 1;
 					border: 1px solid #ddd;
@@ -569,12 +578,12 @@
 					padding: 6px 10px;
 					font-size: 14px;
 				}
-				
+
 				.date-picker-group {
 					flex: 1;
 					display: flex;
 					align-items: center;
-					
+
 					.picker-input {
 						border: 1px solid #ddd;
 						border-radius: 4px;
@@ -583,27 +592,27 @@
 						min-width: 90px;
 						text-align: center;
 					}
-					
+
 					.separator {
 						margin: 0 5px;
 						color: #999;
 					}
 				}
 			}
-			
+
 			.filter-actions {
 				display: flex;
 				justify-content: flex-end;
 				gap: 10px;
 				margin-top: 10px;
-				
+
 				.btn {
 					margin: 0;
 				}
 			}
 		}
 	}
-	
+
 	.order-list {
 		display: flex;
 		flex-direction: column;
@@ -615,19 +624,19 @@
 		border-radius: 8px;
 		padding: 15px;
 		box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-		
+
 		.order-header {
 			display: flex;
 			justify-content: space-between;
 			border-bottom: 1px solid #eee;
 			padding-bottom: 10px;
 			margin-bottom: 10px;
-			
+
 			.order-no {
 				font-weight: bold;
 				color: #333;
 			}
-			
+
 			.status-tag {
 				font-size: 12px;
 				color: #4caf50;
@@ -636,13 +645,13 @@
 				border-radius: 4px;
 			}
 		}
-		
+
 		.order-content {
 			.row {
 				font-size: 14px;
 				color: #666;
 				margin-bottom: 5px;
-				
+
 				.label {
 					color: #999;
 					margin-right: 5px;
@@ -650,7 +659,7 @@
 			}
 		}
 	}
-	
+
 	.load-status {
 		padding: 20px 0;
 		text-align: center;

@@ -4,6 +4,17 @@ const createConfig = require('uni-config-center')
 const db = uniCloud.database()
 const dbCmd = db.command
 
+// ========== 角色定义（统一管理）==========
+
+// 可选角色列表
+const ALL_ROLES = ['admin', '玖顺员工', '经销商人员', '服务人员', '数据分析员']
+
+// 已授权角色（可登录系统）
+const AUTHORIZED_ROLES = ['玖顺员工', '经销商人员', '服务人员', 'admin', '数据分析员']
+
+// 管理员角色（可访问管理功能）
+const ADMIN_ROLES = ['admin']
+
 exports.main = async (event, context) => {
 	const { action, params } = event
 	const uniIdIns = uniID.createInstance({ context })
@@ -13,7 +24,12 @@ exports.main = async (event, context) => {
 		const uniIdConfig = createConfig({ pluginId: 'uni-id' }).config()
 		return uniIdConfig['mp-weixin'].oauth.weixin
 	}
-	
+
+	// 0. Get All Roles (Public)
+	if (action === 'getRoles') {
+		return { code: 0, data: ALL_ROLES }
+	}
+
 	// 1. Login with WeChat
 	if (action === 'login') {
 		const { code } = params
@@ -52,9 +68,8 @@ exports.main = async (event, context) => {
 				mobile: user.mobile
 			}
 			
-			const authorizedRoles = ['玖顺员工', '经销商人员', '服务人员', 'admin']
-			isAuthorized = (user.role || []).some(r => authorizedRoles.includes(r))
-			isAdmin = (user.role || []).includes('admin') || (user.role || []).includes('玖顺员工')
+			isAuthorized = (user.role || []).some(r => AUTHORIZED_ROLES.includes(r))
+			isAdmin = (user.role || []).includes('admin')
 		} else {
 			// User Does Not Exist - Create Guest
 			const registerRes = await db.collection('uni-id-users').add({
@@ -253,7 +268,7 @@ exports.main = async (event, context) => {
 		// Check Admin Role
 		const userRes = await db.collection('uni-id-users').doc(payload.uid).get()
 		const roles = userRes.data[0].role || []
-		if (!roles.includes('admin') && !roles.includes('玖顺员工')) {
+		if (!roles.includes('admin')) {
 			return { code: 403, msg: '无权访问' }
 		}
 
@@ -284,7 +299,7 @@ exports.main = async (event, context) => {
 		// Check Admin Role
 		const adminUserRes = await db.collection('uni-id-users').doc(payload.uid).get()
 		const adminRoles = adminUserRes.data[0].role || []
-		if (!adminRoles.includes('admin') && !adminRoles.includes('玖顺员工')) {
+		if (!adminRoles.includes('admin')) {
 			return { code: 403, msg: '无权操作' }
 		}
 
@@ -294,7 +309,7 @@ exports.main = async (event, context) => {
 		if (roles.length === 0) return { code: 400, msg: '至少需要保留一个角色' }
 
 		// Prevent removing own admin role
-		if (uid === payload.uid && !roles.includes('admin') && !roles.includes('玖顺员工')) {
+		if (uid === payload.uid && !roles.includes('admin')) {
 			return { code: 400, msg: '不能移除自己的管理员角色' }
 		}
 
