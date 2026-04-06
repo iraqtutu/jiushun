@@ -534,7 +534,7 @@
 					},
 					confirm: { machineUserPhoto: '' }
 				},
-				sectionsCollapsed: { customer: false, product: true, service: false, fees: false, confirm: true },
+				sectionsCollapsed: { customer: false, product: true, service: true, fees: true, confirm: true },
 				allowSave: false,
 				isEditMode: false,
 				editId: '',
