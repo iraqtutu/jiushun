@@ -291,8 +291,8 @@ exports.main = async (event, context) => {
 		return { code: 0, data: usersRes.data }
 	}
 
-	// 6. Update User Role (Admin Only)
-	if (action === 'updateUserRole') {
+	// 6. Update User Info (Admin Only)
+	if (action === 'updateUser') {
 		const payload = await uniIdIns.checkToken(event.uniIdToken)
 		if (payload.code !== 0) return payload
 
@@ -303,21 +303,96 @@ exports.main = async (event, context) => {
 			return { code: 403, msg: '无权操作' }
 		}
 
-		const { uid, roles } = params
+		const { uid, nickname, mobile, roles } = params
 		if (!uid) return { code: 400, msg: '用户ID必填' }
-		if (!Array.isArray(roles)) return { code: 400, msg: '角色必须是数组' }
-		if (roles.length === 0) return { code: 400, msg: '至少需要保留一个角色' }
 
-		// Prevent removing own admin role
-		if (uid === payload.uid && !roles.includes('admin')) {
-			return { code: 400, msg: '不能移除自己的管理员角色' }
+		// Build update object dynamically
+		const updateData = {}
+
+		// Nickname (allow empty string to clear it)
+		if (nickname !== undefined) {
+			updateData.nickname = nickname
 		}
 
-		await db.collection('uni-id-users').doc(uid).update({
-			role: roles
-		})
+		// Mobile
+		if (mobile !== undefined) {
+			if (mobile && !/^1\d{10}$/.test(mobile)) {
+				return { code: 400, msg: '手机号格式不正确' }
+			}
+			updateData.mobile = mobile
+		}
 
-		return { code: 0, msg: '角色更新成功' }
+		// Roles (optional, if provided must be non-empty array)
+		if (roles !== undefined) {
+			if (!Array.isArray(roles)) return { code: 400, msg: '角色必须是数组' }
+			if (roles.length === 0) return { code: 400, msg: '至少需要保留一个角色' }
+
+			// Prevent removing own admin role
+			if (uid === payload.uid && !roles.includes('admin')) {
+				return { code: 400, msg: '不能移除自己的管理员角色' }
+			}
+			updateData.role = roles
+		}
+
+		// Check if there's anything to update
+		if (Object.keys(updateData).length === 0) {
+			return { code: 400, msg: '没有需要更新的字段' }
+		}
+
+		try {
+			await db.collection('uni-id-users').doc(uid).update(updateData)
+		} catch (e) {
+			console.error('Update User Fail:', e)
+			if (e.code === 11000 || e.message.includes('duplicate')) {
+				return { code: 500, msg: '操作失败：该手机号已被其他账号绑定' }
+			}
+			return { code: 500, msg: '更新失败: ' + e.message }
+		}
+
+		return { code: 0, msg: '用户信息已更新' }
+	}
+
+	// Backward compatibility alias
+	if (action === 'updateUserRole') {
+		event.action = 'updateUser'
+		return exports.main(event, context)
+	}
+
+	// 7. Delete User (Admin Only)
+	if (action === 'deleteUser') {
+		const payload = await uniIdIns.checkToken(event.uniIdToken)
+		if (payload.code !== 0) return payload
+
+		// Check Admin Role
+		const adminUserRes = await db.collection('uni-id-users').doc(payload.uid).get()
+		const adminRoles = adminUserRes.data[0].role || []
+		if (!adminRoles.includes('admin')) {
+			return { code: 403, msg: '无权操作' }
+		}
+
+		const { uid } = params
+		if (!uid) return { code: 400, msg: '用户ID必填' }
+
+		// Prevent deleting yourself
+		if (uid === payload.uid) {
+			return { code: 400, msg: '不能删除当前登录账号' }
+		}
+
+		// Check if user has created any service orders
+		const ordersRes = await db.collection('jiushun-work-orders')
+			.where({ creator_uid: uid })
+			.count()
+		if (ordersRes.total > 0) {
+			return { code: 400, msg: `该用户已创建 ${ordersRes.total} 条服务单，无法删除。如需删除，请先删除其服务单。` }
+		}
+
+		// Delete user account
+		await db.collection('uni-id-users').doc(uid).remove()
+
+		// Delete user's application record
+		await db.collection('jiushun-account-applications').where({ create_uid: uid }).remove()
+
+		return { code: 0, msg: '用户已删除' }
 	}
 
 	return {

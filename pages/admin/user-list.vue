@@ -7,23 +7,28 @@
 
 		<!-- 用户列表 -->
 		<view class="list">
-			<view class="item" v-for="(item, index) in list" :key="item._id" @click="handleEdit(item)">
-				<view class="info-row">
-					<text class="name">{{ item.nickname }}</text>
-					<view class="role-badges">
-						<text class="role-badge" v-for="(role, idx) in (item.role || [])" :key="idx">{{ role }}</text>
-						<text v-if="!item.role || item.role.length === 0" class="role-badge empty">无角色</text>
+			<view class="item" v-for="(item, index) in list" :key="item._id">
+				<view class="item-content" @click="handleEdit(item)">
+					<view class="info-row">
+						<text class="name">{{ item.nickname }}</text>
+						<view class="role-badges">
+							<text class="role-badge" v-for="(role, idx) in (item.role || [])" :key="idx">{{ role }}</text>
+							<text v-if="!item.role || item.role.length === 0" class="role-badge empty">无角色</text>
+						</view>
+					</view>
+					<view class="detail-row">
+						<text class="label">📱 手机号：</text>
+						<text class="value">{{ item.mobile || '未绑定' }}</text>
+					</view>
+					<view class="detail-row">
+						<text class="label">📅 注册时间：</text>
+						<text class="value">{{ formatDate(item.register_date || item.create_date) }}</text>
 					</view>
 				</view>
-				<view class="detail-row">
-					<text class="label">📱 手机号：</text>
-					<text class="value">{{ item.mobile || '未绑定' }}</text>
+				<view class="item-actions">
+					<view class="action-btn edit" @click="handleEdit(item)">✏️ 编辑</view>
+					<view class="action-btn delete" @click="handleDelete(item)">🗑️ 删除</view>
 				</view>
-				<view class="detail-row">
-					<text class="label">📅 注册时间：</text>
-					<text class="value">{{ formatDate(item.register_date || item.create_date) }}</text>
-				</view>
-				<view class="edit-btn">✏️ 编辑角色</view>
 			</view>
 		</view>
 
@@ -36,17 +41,28 @@
 			<text>加载中...</text>
 		</view>
 
-		<!-- 自定义弹窗 - 角色编辑 -->
+		<!-- 自定义弹窗 - 用户信息编辑 -->
 		<view v-show="showPopup" class="custom-overlay">
 			<view class="mask" @click="closePopup"></view>
 			<view class="popup-panel" @click.stop>
-				<view class="popup-title">✏️ 编辑用户角色</view>
-				<view class="popup-subtitle">{{ currentUser.nickname || '未设置昵称' }} ({{ currentUser.mobile || '未绑定手机' }})</view>
+				<view class="popup-title">✏️ 编辑用户信息</view>
 
+				<view class="edit-form">
+					<view class="form-item">
+						<view class="form-label">姓名</view>
+						<input class="form-input" v-model="editForm.nickname" placeholder="请输入姓名" />
+					</view>
+					<view class="form-item">
+						<view class="form-label">手机号</view>
+						<input class="form-input" type="number" v-model="editForm.mobile" placeholder="请输入手机号" maxlength="11" />
+					</view>
+				</view>
+
+				<view class="form-section-title">角色设置</view>
 				<view class="role-list">
 					<view class="role-item" v-for="role in allRoles" :key="role" @click="toggleRole(role)">
-						<view class="checkbox" :class="{ checked: selectedRoles.includes(role) }">
-							<text v-if="selectedRoles.includes(role)" class="check-icon">✓</text>
+						<view class="checkbox" :class="{ checked: editForm.roles.includes(role) }">
+							<text v-if="editForm.roles.includes(role)" class="check-icon">✓</text>
 						</view>
 						<text class="role-icon">{{ getRoleIcon(role) }}</text>
 						<text class="role-name">{{ role }}</text>
@@ -55,7 +71,7 @@
 
 				<view class="popup-actions">
 					<button class="btn cancel" @click="closePopup">取消</button>
-					<button class="btn confirm" @click="submitRoles">确认</button>
+					<button class="btn confirm" @click="submitUserInfo">确认</button>
 				</view>
 			</view>
 		</view>
@@ -70,7 +86,11 @@
 				isLoading: false,
 				showPopup: false,
 				currentUser: {},
-				selectedRoles: [],
+				editForm: {
+					nickname: '',
+					mobile: '',
+					roles: []
+				},
 				allRoles: [],
 				searchKey: ''
 			}
@@ -148,18 +168,22 @@
 			},
 			handleEdit(item) {
 				this.currentUser = item;
-				this.selectedRoles = [...(item.role || [])];
+				this.editForm = {
+					nickname: item.nickname || '',
+					mobile: item.mobile || '',
+					roles: [...(item.role || [])]
+				};
 				this.showPopup = true;
 			},
 			closePopup() {
 				this.showPopup = false;
 			},
 			toggleRole(role) {
-				const index = this.selectedRoles.indexOf(role);
+				const index = this.editForm.roles.indexOf(role);
 				if (index === -1) {
-					this.selectedRoles.push(role);
+					this.editForm.roles.push(role);
 				} else {
-					this.selectedRoles.splice(index, 1);
+					this.editForm.roles.splice(index, 1);
 				}
 			},
 			getRoleIcon(role) {
@@ -172,8 +196,8 @@
 				};
 				return icons[role] || '👤';
 			},
-			submitRoles() {
-				if (this.selectedRoles.length === 0) {
+			submitUserInfo() {
+				if (this.editForm.roles.length === 0) {
 					uni.showToast({ title: '请至少选择一个角色', icon: 'none' });
 					return;
 				}
@@ -182,21 +206,59 @@
 				uniCloud.callFunction({
 					name: 'user-center',
 					data: {
-						action: 'updateUserRole',
+						action: 'updateUser',
 						params: {
 							uid: this.currentUser._id,
-							roles: this.selectedRoles
+							nickname: this.editForm.nickname,
+							mobile: this.editForm.mobile,
+							roles: this.editForm.roles
 						},
 						uniIdToken: uni.getStorageSync('uni_id_token')
 					},
 					success: (res) => {
 						uni.hideLoading();
 						if (res.result.code === 0) {
-							uni.showToast({ title: '角色已更新' });
+							uni.showToast({ title: '用户信息已更新' });
 							this.closePopup();
 							this.loadData();
 						} else {
 							uni.showToast({ title: res.result.msg || '更新失败', icon: 'none' });
+						}
+					},
+					fail: () => {
+						uni.hideLoading();
+						uni.showToast({ title: '网络错误', icon: 'none' });
+					}
+				});
+			},
+			handleDelete(item) {
+				uni.showModal({
+					title: '确认删除',
+					content: `确定要删除用户「${item.nickname}」吗？删除后将无法恢复，且该用户的申请记录也会一并删除。`,
+					confirmColor: '#f53f3f',
+					success: (res) => {
+						if (res.confirm) {
+							this.executeDelete(item._id);
+						}
+					}
+				});
+			},
+			executeDelete(uid) {
+				uni.showLoading({ title: '删除中...' });
+				uniCloud.callFunction({
+					name: 'user-center',
+					data: {
+						action: 'deleteUser',
+						params: { uid },
+						uniIdToken: uni.getStorageSync('uni_id_token')
+					},
+					success: (res) => {
+						uni.hideLoading();
+						if (res.result.code === 0) {
+							uni.showToast({ title: '删除成功' });
+							this.loadData();
+						} else {
+							uni.showToast({ title: res.result.msg || '删除失败', icon: 'none' });
 						}
 					},
 					fail: () => {
@@ -233,7 +295,10 @@
 		padding: 16px;
 		margin-bottom: 12px;
 		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-		position: relative;
+
+		.item-content {
+			margin-bottom: 12px;
+		}
 
 		.info-row {
 			display: flex;
@@ -280,15 +345,28 @@
 			.value { color: #323233; }
 		}
 
-		.edit-btn {
-			position: absolute;
-			right: 16px;
-			bottom: 16px;
+		.item-actions {
+			display: flex;
+			justify-content: flex-end;
+			gap: 8px;
+			padding-top: 12px;
+			border-top: 1px solid #f2f3f5;
+		}
+
+		.action-btn {
 			font-size: 12px;
-			color: #1989fa;
-			background: #ecf9ff;
-			padding: 4px 12px;
+			padding: 6px 14px;
 			border-radius: 100px;
+
+			&.edit {
+				color: #1989fa;
+				background: #ecf9ff;
+			}
+
+			&.delete {
+				color: #f53f3f;
+				background: #fff1f0;
+			}
 		}
 	}
 
@@ -353,6 +431,49 @@
 				text-align: center;
 				margin-top: 6px;
 				margin-bottom: 20px;
+			}
+
+			.edit-form {
+				background: #f7f8fa;
+				border-radius: 8px;
+				padding: 16px;
+				margin-bottom: 16px;
+			}
+
+			.form-item {
+				display: flex;
+				align-items: center;
+				margin-bottom: 12px;
+
+				&:last-child {
+					margin-bottom: 0;
+				}
+			}
+
+			.form-label {
+				font-size: 14px;
+				color: #646566;
+				width: 60px;
+				flex-shrink: 0;
+			}
+
+			.form-input {
+				flex: 1;
+				height: 36px;
+				background: #fff;
+				border: 1px solid #dcdee0;
+				border-radius: 4px;
+				padding: 0 12px;
+				font-size: 14px;
+			}
+
+			.form-section-title {
+				font-size: 14px;
+				font-weight: 600;
+				color: #323233;
+				margin-bottom: 12px;
+				padding-bottom: 8px;
+				border-bottom: 1px solid #f2f3f5;
 			}
 
 			.role-list {
