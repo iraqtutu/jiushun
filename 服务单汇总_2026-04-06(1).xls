@@ -1,0 +1,579 @@
+<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <Worksheet ss:Name="服务单汇总">
+  <Table>
+   <Row>
+    <Cell><Data ss:Type="String">服务单号</Data></Cell>
+    <Cell><Data ss:Type="String">报单人</Data></Cell>
+    <Cell><Data ss:Type="String">提交时间</Data></Cell>
+    <Cell><Data ss:Type="String">经销商名称</Data></Cell>
+    <Cell><Data ss:Type="String">客户姓名</Data></Cell>
+    <Cell><Data ss:Type="String">客户电话</Data></Cell>
+    <Cell><Data ss:Type="String">客户地址</Data></Cell>
+    <Cell><Data ss:Type="String">农机用途</Data></Cell>
+    <Cell><Data ss:Type="String">报修时间</Data></Cell>
+    <Cell><Data ss:Type="String">产品型号</Data></Cell>
+    <Cell><Data ss:Type="String">机器编号</Data></Cell>
+    <Cell><Data ss:Type="String">发动机号</Data></Cell>
+    <Cell><Data ss:Type="String">生产日期</Data></Cell>
+    <Cell><Data ss:Type="String">工作时长(小时)</Data></Cell>
+    <Cell><Data ss:Type="String">服务类型</Data></Cell>
+    <Cell><Data ss:Type="String">是否收费</Data></Cell>
+    <Cell><Data ss:Type="String">故障分类</Data></Cell>
+    <Cell><Data ss:Type="String">故障现象</Data></Cell>
+    <Cell><Data ss:Type="String">处理方法</Data></Cell>
+    <Cell><Data ss:Type="String">更换零件</Data></Cell>
+    <Cell><Data ss:Type="String">里程(km)</Data></Cell>
+    <Cell><Data ss:Type="String">维修用时(min)</Data></Cell>
+    <Cell><Data ss:Type="String">维修完成时间</Data></Cell>
+    <Cell><Data ss:Type="String">零件费</Data></Cell>
+    <Cell><Data ss:Type="String">路程费</Data></Cell>
+    <Cell><Data ss:Type="String">工时费</Data></Cell>
+    <Cell><Data ss:Type="String">总应收(元)</Data></Cell>
+    <Cell><Data ss:Type="String">支付方式</Data></Cell>
+    <Cell><Data ss:Type="String">铭牌照片</Data></Cell>
+    <Cell><Data ss:Type="String">现场照片</Data></Cell>
+    <Cell><Data ss:Type="String">人机合影</Data></Cell>
+   </Row>
+   <Row>
+    <Cell><Data ss:Type="String">JS20260406189</Data></Cell>
+    <Cell><Data ss:Type="String">赵永军</Data></Cell>
+    <Cell><Data ss:Type="String">2026-04-06 10:55</Data></Cell>
+    <Cell><Data ss:Type="String">道县岚青农机设备有限公司</Data></Cell>
+    <Cell><Data ss:Type="String">赵新华</Data></Cell>
+    <Cell><Data ss:Type="String">18307494998</Data></Cell>
+    <Cell><Data ss:Type="String">道昙538国道</Data></Cell>
+    <Cell><Data ss:Type="String">自用</Data></Cell>
+    <Cell><Data ss:Type="String">1775404800000</Data></Cell>
+    <Cell><Data ss:Type="String">825D2</Data></Cell>
+    <Cell><Data ss:Type="String">JS825DE0279</Data></Cell>
+    <Cell><Data ss:Type="String">Q250190541V</Data></Cell>
+    <Cell><Data ss:Type="String">1770220800000</Data></Cell>
+    <Cell><Data ss:Type="String">-</Data></Cell>
+    <Cell><Data ss:Type="String">三包</Data></Cell>
+    <Cell><Data ss:Type="String">免费</Data></Cell>
+    <Cell><Data ss:Type="String">液压系统-HST</Data></Cell>
+    <Cell><Data ss:Type="String">【液压系统-HST】带负荷行走无力。</Data></Cell>
+    <Cell><Data ss:Type="String">【液压系统-HST】更换HST，发动机皮带，O行圈 添加液力传动油4升</Data></Cell>
+    <Cell><Data ss:Type="String">[液压系统-HST] HST(2ZG6-WF8110-0)x1 旧件:带回 来源:自带
+[液压系统-HST] 皮带（SC1272LD）(2ZG6-811-600-0)x1 旧件:带回 来源:自带
+[液压系统-HST] O型定密封圈(08411-10750)x1 旧件:带回 来源:自带</Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String">1775442300000</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">微信支付</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/ebebf1f9-4c38-4112-bb5f-134538e9efb2.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/7320922d-5f77-45fc-a0ec-6cd272cfc5a2.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;-&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+   </Row>
+   <Row>
+    <Cell><Data ss:Type="String">JS20260405918</Data></Cell>
+    <Cell><Data ss:Type="String">曹程</Data></Cell>
+    <Cell><Data ss:Type="String">2026-04-05 17:32</Data></Cell>
+    <Cell><Data ss:Type="String">湘潭欣田农机有限公司</Data></Cell>
+    <Cell><Data ss:Type="String">黄忠</Data></Cell>
+    <Cell><Data ss:Type="String">13974936990</Data></Cell>
+    <Cell><Data ss:Type="String">长沙县</Data></Cell>
+    <Cell><Data ss:Type="String">自用</Data></Cell>
+    <Cell><Data ss:Type="String">1775318400000</Data></Cell>
+    <Cell><Data ss:Type="String">-</Data></Cell>
+    <Cell><Data ss:Type="String">js825D2E0250</Data></Cell>
+    <Cell><Data ss:Type="String">Q250190571V</Data></Cell>
+    <Cell><Data ss:Type="String">1775318400000</Data></Cell>
+    <Cell><Data ss:Type="String">22</Data></Cell>
+    <Cell><Data ss:Type="String">维修</Data></Cell>
+    <Cell><Data ss:Type="String">免费</Data></Cell>
+    <Cell><Data ss:Type="String">行走、传动系统-主变速</Data></Cell>
+    <Cell><Data ss:Type="String">【行走、传动系统-主变速】用户反应插秧机田间作业行走无力。</Data></Cell>
+    <Cell><Data ss:Type="String">【行走、传动系统-主变速】行走无力，行走皮带不良导致。(用户购买配件试机正常)</Data></Cell>
+    <Cell><Data ss:Type="String">无</Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String">1775381280000</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">微信支付</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/aa91be54-8bb1-46af-ae92-9d82630d2720.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/4bfc8a9f-be8a-4182-bb67-639852683703.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;-&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+   </Row>
+   <Row>
+    <Cell><Data ss:Type="String">JS20260405658</Data></Cell>
+    <Cell><Data ss:Type="String">曹程</Data></Cell>
+    <Cell><Data ss:Type="String">2026-04-05 14:50</Data></Cell>
+    <Cell><Data ss:Type="String">湘潭欣田农机有限公司</Data></Cell>
+    <Cell><Data ss:Type="String">杨明星</Data></Cell>
+    <Cell><Data ss:Type="String">18900703889</Data></Cell>
+    <Cell><Data ss:Type="String">浏阳市</Data></Cell>
+    <Cell><Data ss:Type="String">自用</Data></Cell>
+    <Cell><Data ss:Type="String">1775318400000</Data></Cell>
+    <Cell><Data ss:Type="String">插秧机</Data></Cell>
+    <Cell><Data ss:Type="String">js825Dc2522</Data></Cell>
+    <Cell><Data ss:Type="String">Z65691</Data></Cell>
+    <Cell><Data ss:Type="String">1770566400000</Data></Cell>
+    <Cell><Data ss:Type="String">-</Data></Cell>
+    <Cell><Data ss:Type="String">三包</Data></Cell>
+    <Cell><Data ss:Type="String">免费</Data></Cell>
+    <Cell><Data ss:Type="String">电气系统-启动开关</Data></Cell>
+    <Cell><Data ss:Type="String">【电气系统-启动开关】用户反应插秧机田间作业无法启动。</Data></Cell>
+    <Cell><Data ss:Type="String">【电气系统-启动开关】服务人员前往检查发现继电器不良导致。</Data></Cell>
+    <Cell><Data ss:Type="String">[电气系统-启动开关] 继电器(A0740N0311)x1 旧件:带回 来源:自带</Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String">1775371500000</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">微信支付</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/2a6f856c-ea1d-46c8-830c-3f6440d53775.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/adc567ba-baad-434c-9d49-eacaa7f80dba.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;-&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+   </Row>
+   <Row>
+    <Cell><Data ss:Type="String">JS20260404061</Data></Cell>
+    <Cell><Data ss:Type="String">陈雨佳</Data></Cell>
+    <Cell><Data ss:Type="String">2026-04-04 12:35</Data></Cell>
+    <Cell><Data ss:Type="String">湘潭欣田农机有限公司</Data></Cell>
+    <Cell><Data ss:Type="String">高华远</Data></Cell>
+    <Cell><Data ss:Type="String">18570503836</Data></Cell>
+    <Cell><Data ss:Type="String">屈原营田振</Data></Cell>
+    <Cell><Data ss:Type="String">自用</Data></Cell>
+    <Cell><Data ss:Type="String">1775232000000</Data></Cell>
+    <Cell><Data ss:Type="String">插秧机</Data></Cell>
+    <Cell><Data ss:Type="String">JS825DE0194</Data></Cell>
+    <Cell><Data ss:Type="String">Z79922</Data></Cell>
+    <Cell><Data ss:Type="String">1772640000000</Data></Cell>
+    <Cell><Data ss:Type="String">-</Data></Cell>
+    <Cell><Data ss:Type="String">三包</Data></Cell>
+    <Cell><Data ss:Type="String">免费</Data></Cell>
+    <Cell><Data ss:Type="String">电气系统-启动开关</Data></Cell>
+    <Cell><Data ss:Type="String">【电气系统-启动开关】用户反映车辆行驶中异常熄火</Data></Cell>
+    <Cell><Data ss:Type="String">【电气系统-启动开关】启动开关线路接触不良导致突然熄火，更换钥匙开关</Data></Cell>
+    <Cell><Data ss:Type="String">[电气系统-启动开关] 钥匙开关总成(2ZG6-JK405-001-0 )x1 旧件:带回 来源:自带</Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String">1775275920000</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">微信支付</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/9642dc18-94a7-437e-99f8-239bf3adb4da.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/201783ed-528d-4fa9-bb06-05e484193688.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;-&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+   </Row>
+   <Row>
+    <Cell><Data ss:Type="String">JS20260404070</Data></Cell>
+    <Cell><Data ss:Type="String">马世民</Data></Cell>
+    <Cell><Data ss:Type="String">2026-04-04 10:54</Data></Cell>
+    <Cell><Data ss:Type="String">宁远县海超农机销售有限公司</Data></Cell>
+    <Cell><Data ss:Type="String">李正辉</Data></Cell>
+    <Cell><Data ss:Type="String">13787626139</Data></Cell>
+    <Cell><Data ss:Type="String">宁远县水上洞村第一村民小组</Data></Cell>
+    <Cell><Data ss:Type="String">自用</Data></Cell>
+    <Cell><Data ss:Type="String">1775232000000</Data></Cell>
+    <Cell><Data ss:Type="String">825D</Data></Cell>
+    <Cell><Data ss:Type="String">JS825DD4157</Data></Cell>
+    <Cell><Data ss:Type="String">Z69432</Data></Cell>
+    <Cell><Data ss:Type="String">1740672000000</Data></Cell>
+    <Cell><Data ss:Type="String">-</Data></Cell>
+    <Cell><Data ss:Type="String">三包</Data></Cell>
+    <Cell><Data ss:Type="String">免费</Data></Cell>
+    <Cell><Data ss:Type="String">插植系统-旋转箱</Data></Cell>
+    <Cell><Data ss:Type="String">【插植系统-旋转箱】左一左二旋转箱不工作</Data></Cell>
+    <Cell><Data ss:Type="String">【插植系统-旋转箱】左一旋转箱卡死，更换旋转箱</Data></Cell>
+    <Cell><Data ss:Type="String">[插植系统-旋转箱] 回转箱L部装(2ZG825A-BZ5112-0)x1 旧件:带回 来源:自带</Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String">1775270820000</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">微信支付</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/868a5b55-744f-4eef-b8a3-b8e8f74aef7f.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/1a932a9d-6b43-4880-8f72-6e5cb8bc6e39.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;-&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+   </Row>
+   <Row>
+    <Cell><Data ss:Type="String">JS20260403024</Data></Cell>
+    <Cell><Data ss:Type="String">马世民</Data></Cell>
+    <Cell><Data ss:Type="String">2026-04-03 17:00</Data></Cell>
+    <Cell><Data ss:Type="String">道县岚青农机设备有限公司</Data></Cell>
+    <Cell><Data ss:Type="String">赵新华</Data></Cell>
+    <Cell><Data ss:Type="String">18307494998</Data></Cell>
+    <Cell><Data ss:Type="String">道县 538国道</Data></Cell>
+    <Cell><Data ss:Type="String">自用</Data></Cell>
+    <Cell><Data ss:Type="String">1775145600000</Data></Cell>
+    <Cell><Data ss:Type="String">825D2</Data></Cell>
+    <Cell><Data ss:Type="String">JS825D2E0346</Data></Cell>
+    <Cell><Data ss:Type="String">Q250396727V</Data></Cell>
+    <Cell><Data ss:Type="String">1768579200000</Data></Cell>
+    <Cell><Data ss:Type="String">-</Data></Cell>
+    <Cell><Data ss:Type="String">三包</Data></Cell>
+    <Cell><Data ss:Type="String">免费</Data></Cell>
+    <Cell><Data ss:Type="String">插植系统-感应拉线</Data></Cell>
+    <Cell><Data ss:Type="String">【插植系统-感应拉线】插植部不下降</Data></Cell>
+    <Cell><Data ss:Type="String">【插植系统-感应拉线】传感拉线折弯，更换传感拉线，使用配件箱拉线</Data></Cell>
+    <Cell><Data ss:Type="String">无</Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String">1775206560000</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">微信支付</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/2166df31-ca45-4f2e-85a8-ebd6e5fafa7d.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/743ba988-4373-42b4-b152-a782fb711ff1.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;-&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+   </Row>
+   <Row>
+    <Cell><Data ss:Type="String">JS20260403595</Data></Cell>
+    <Cell><Data ss:Type="String">马世民</Data></Cell>
+    <Cell><Data ss:Type="String">2026-04-03 16:56</Data></Cell>
+    <Cell><Data ss:Type="String">道县岚青农机设备有限公司</Data></Cell>
+    <Cell><Data ss:Type="String">赵新华  </Data></Cell>
+    <Cell><Data ss:Type="String">18307494998</Data></Cell>
+    <Cell><Data ss:Type="String">道县 538国道</Data></Cell>
+    <Cell><Data ss:Type="String">自用</Data></Cell>
+    <Cell><Data ss:Type="String">1775145600000</Data></Cell>
+    <Cell><Data ss:Type="String">825D2</Data></Cell>
+    <Cell><Data ss:Type="String">JS825D2E0279</Data></Cell>
+    <Cell><Data ss:Type="String">Q250190541V</Data></Cell>
+    <Cell><Data ss:Type="String">1770220800000</Data></Cell>
+    <Cell><Data ss:Type="String">-</Data></Cell>
+    <Cell><Data ss:Type="String">三包</Data></Cell>
+    <Cell><Data ss:Type="String">免费</Data></Cell>
+    <Cell><Data ss:Type="String">液压系统-HST</Data></Cell>
+    <Cell><Data ss:Type="String">【液压系统-HST】HST带负荷行走无力</Data></Cell>
+    <Cell><Data ss:Type="String">【液压系统-HST】协调配件，与用户沟通后天早上安装</Data></Cell>
+    <Cell><Data ss:Type="String">无</Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String">1775206260000</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">微信支付</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/46b5e843-43fb-4328-b782-a28ec84a7f38.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/d7763f24-fd67-48c3-8f50-98640ae64409.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;-&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+   </Row>
+   <Row>
+    <Cell><Data ss:Type="String">JS20260403652</Data></Cell>
+    <Cell><Data ss:Type="String">曹程</Data></Cell>
+    <Cell><Data ss:Type="String">2026-04-03 14:04</Data></Cell>
+    <Cell><Data ss:Type="String">湘潭欣田农机有限公司</Data></Cell>
+    <Cell><Data ss:Type="String">殷建伏</Data></Cell>
+    <Cell><Data ss:Type="String">15874950118</Data></Cell>
+    <Cell><Data ss:Type="String">长沙县</Data></Cell>
+    <Cell><Data ss:Type="String">自用</Data></Cell>
+    <Cell><Data ss:Type="String">1775059200000</Data></Cell>
+    <Cell><Data ss:Type="String">全柴插秧机</Data></Cell>
+    <Cell><Data ss:Type="String">Js825D2E8207</Data></Cell>
+    <Cell><Data ss:Type="String">Q250190536V</Data></Cell>
+    <Cell><Data ss:Type="String">1767542400000</Data></Cell>
+    <Cell><Data ss:Type="String">-</Data></Cell>
+    <Cell><Data ss:Type="String">三包</Data></Cell>
+    <Cell><Data ss:Type="String">免费</Data></Cell>
+    <Cell><Data ss:Type="String">液压系统-HST</Data></Cell>
+    <Cell><Data ss:Type="String">【液压系统-HST】用户反应插秧机田间作业无法移动与漏液压油</Data></Cell>
+    <Cell><Data ss:Type="String">【液压系统-HST】由于变速箱壳体损坏导致HST处密封不良漏液压油。导致机器无法移动
+（更换机器添加一桶液压油开回公司）</Data></Cell>
+    <Cell><Data ss:Type="String">无</Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String">1775195940000</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">微信支付</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/916b21d8-7ae0-45d0-8d99-d726089612ed.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/7e32ad20-5d73-4473-b765-12616075555d.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;-&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+   </Row>
+   <Row>
+    <Cell><Data ss:Type="String">JS20260403569</Data></Cell>
+    <Cell><Data ss:Type="String">曹程</Data></Cell>
+    <Cell><Data ss:Type="String">2026-04-03 12:47</Data></Cell>
+    <Cell><Data ss:Type="String">湘潭欣田农机有限公司</Data></Cell>
+    <Cell><Data ss:Type="String">殷建伏</Data></Cell>
+    <Cell><Data ss:Type="String">15874950118</Data></Cell>
+    <Cell><Data ss:Type="String">长沙县</Data></Cell>
+    <Cell><Data ss:Type="String">自用</Data></Cell>
+    <Cell><Data ss:Type="String">1775145600000</Data></Cell>
+    <Cell><Data ss:Type="String">插秧机</Data></Cell>
+    <Cell><Data ss:Type="String">Js825D2E8207</Data></Cell>
+    <Cell><Data ss:Type="String">Q250190536v</Data></Cell>
+    <Cell><Data ss:Type="String">1767628800000</Data></Cell>
+    <Cell><Data ss:Type="String">-</Data></Cell>
+    <Cell><Data ss:Type="String">三包</Data></Cell>
+    <Cell><Data ss:Type="String">免费</Data></Cell>
+    <Cell><Data ss:Type="String">液压系统-HST</Data></Cell>
+    <Cell><Data ss:Type="String">【液压系统-HST】用户反应HST无力漏油。</Data></Cell>
+    <Cell><Data ss:Type="String">【液压系统-HST】变速箱壳体损坏导致HST处密封不良.液压油缺少无法移动</Data></Cell>
+    <Cell><Data ss:Type="String">无</Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String">1775190240000</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">微信支付</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/f07db728-9db6-40a3-a0a0-5c337c145540.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/b260afe2-9881-4a0d-8b94-4b8a5f24a89e.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;-&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+   </Row>
+   <Row>
+    <Cell><Data ss:Type="String">JS20260403520</Data></Cell>
+    <Cell><Data ss:Type="String">曹程</Data></Cell>
+    <Cell><Data ss:Type="String">2026-04-03 10:59</Data></Cell>
+    <Cell><Data ss:Type="String">湘潭欣田农机有限公司</Data></Cell>
+    <Cell><Data ss:Type="String">易录</Data></Cell>
+    <Cell><Data ss:Type="String">15343309881</Data></Cell>
+    <Cell><Data ss:Type="String">湘阴县</Data></Cell>
+    <Cell><Data ss:Type="String">自用</Data></Cell>
+    <Cell><Data ss:Type="String">1775145600000</Data></Cell>
+    <Cell><Data ss:Type="String">久顺插秧机</Data></Cell>
+    <Cell><Data ss:Type="String">Js825DE0195</Data></Cell>
+    <Cell><Data ss:Type="String">Z79920</Data></Cell>
+    <Cell><Data ss:Type="String">1735056000000</Data></Cell>
+    <Cell><Data ss:Type="String">-</Data></Cell>
+    <Cell><Data ss:Type="String">三包</Data></Cell>
+    <Cell><Data ss:Type="String">免费</Data></Cell>
+    <Cell><Data ss:Type="String">液压系统-齿轮泵</Data></Cell>
+    <Cell><Data ss:Type="String">【液压系统-齿轮泵】无法移动全车无液压</Data></Cell>
+    <Cell><Data ss:Type="String">【液压系统-齿轮泵】更换齿轮泵</Data></Cell>
+    <Cell><Data ss:Type="String">无</Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String">1775182020000</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">微信支付</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/08a3f231-6d32-46e1-ad01-9ff7b1d16eb3.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/0b10e101-09d4-47c6-82c1-ca20b4d12182.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;-&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+   </Row>
+   <Row>
+    <Cell><Data ss:Type="String">JS20260401466</Data></Cell>
+    <Cell><Data ss:Type="String">马世民</Data></Cell>
+    <Cell><Data ss:Type="String">2026-04-01 20:44</Data></Cell>
+    <Cell><Data ss:Type="String">湘潭欣田农机有限公司</Data></Cell>
+    <Cell><Data ss:Type="String">黄海剑</Data></Cell>
+    <Cell><Data ss:Type="String">18944958230</Data></Cell>
+    <Cell><Data ss:Type="String">江永县325省道</Data></Cell>
+    <Cell><Data ss:Type="String">自用</Data></Cell>
+    <Cell><Data ss:Type="String">1774972800000</Data></Cell>
+    <Cell><Data ss:Type="String">825D</Data></Cell>
+    <Cell><Data ss:Type="String">JS825DD4154</Data></Cell>
+    <Cell><Data ss:Type="String">Z69293</Data></Cell>
+    <Cell><Data ss:Type="String">1706544000000</Data></Cell>
+    <Cell><Data ss:Type="String">-</Data></Cell>
+    <Cell><Data ss:Type="String">三包</Data></Cell>
+    <Cell><Data ss:Type="String">免费</Data></Cell>
+    <Cell><Data ss:Type="String">行走、传动系统-车轮</Data></Cell>
+    <Cell><Data ss:Type="String">【行走、传动系统-车轮】右前轮坏</Data></Cell>
+    <Cell><Data ss:Type="String">【行走、传动系统-车轮】更换右前轮</Data></Cell>
+    <Cell><Data ss:Type="String">[行走、传动系统-车轮] 右侧前轮(PR151-2302-6)x1 旧件:带回 来源:自带</Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String">1775047020000</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">微信支付</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/5b10fa19-995c-4ffd-83a1-4a9c3d3b01f6.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/ec7dd065-a1e4-4af0-89fe-50bda47b579f.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;-&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+   </Row>
+   <Row>
+    <Cell><Data ss:Type="String">JS20260401550</Data></Cell>
+    <Cell><Data ss:Type="String">马世民</Data></Cell>
+    <Cell><Data ss:Type="String">2026-04-01 20:37</Data></Cell>
+    <Cell><Data ss:Type="String">湘潭欣田农机有限公司</Data></Cell>
+    <Cell><Data ss:Type="String">黄海剑18944958230</Data></Cell>
+    <Cell><Data ss:Type="String">18944958230</Data></Cell>
+    <Cell><Data ss:Type="String">江永县夏层铺加油站</Data></Cell>
+    <Cell><Data ss:Type="String">自用</Data></Cell>
+    <Cell><Data ss:Type="String">1774972800000</Data></Cell>
+    <Cell><Data ss:Type="String">825D</Data></Cell>
+    <Cell><Data ss:Type="String">JS825DE0287</Data></Cell>
+    <Cell><Data ss:Type="String">Z79957</Data></Cell>
+    <Cell><Data ss:Type="String">1742572800000</Data></Cell>
+    <Cell><Data ss:Type="String">-</Data></Cell>
+    <Cell><Data ss:Type="String">三包</Data></Cell>
+    <Cell><Data ss:Type="String">免费</Data></Cell>
+    <Cell><Data ss:Type="String">其他类-以上内容以外的所有项目</Data></Cell>
+    <Cell><Data ss:Type="String">【其他类-以上内容以外的所有项目】插植部左侧缓冲垫碎</Data></Cell>
+    <Cell><Data ss:Type="String">【其他类-以上内容以外的所有项目】更换缓冲垫</Data></Cell>
+    <Cell><Data ss:Type="String">[其他类-以上内容以外的所有项目] 缓冲垫(PR651-4117-0)x1 旧件:丢弃 来源:自带</Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String">1775046840000</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">微信支付</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/bbb62678-5fcd-48f4-8893-bae10695a78c.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/62170366-6e65-4246-bf4d-0840402dc7b6.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;-&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+   </Row>
+   <Row>
+    <Cell><Data ss:Type="String">JS20260401827</Data></Cell>
+    <Cell><Data ss:Type="String">马世民</Data></Cell>
+    <Cell><Data ss:Type="String">2026-04-01 20:34</Data></Cell>
+    <Cell><Data ss:Type="String">湘潭欣田农机有限公司</Data></Cell>
+    <Cell><Data ss:Type="String">黄海剑18944958230</Data></Cell>
+    <Cell><Data ss:Type="String">18944958230</Data></Cell>
+    <Cell><Data ss:Type="String">江永县土坝桥</Data></Cell>
+    <Cell><Data ss:Type="String">自用</Data></Cell>
+    <Cell><Data ss:Type="String">1774972800000</Data></Cell>
+    <Cell><Data ss:Type="String">825D</Data></Cell>
+    <Cell><Data ss:Type="String">JS825DD4025</Data></Cell>
+    <Cell><Data ss:Type="String">Z66875</Data></Cell>
+    <Cell><Data ss:Type="String">1704988800000</Data></Cell>
+    <Cell><Data ss:Type="String">-</Data></Cell>
+    <Cell><Data ss:Type="String">三包</Data></Cell>
+    <Cell><Data ss:Type="String">免费</Data></Cell>
+    <Cell><Data ss:Type="String">插植系统-感应拉线</Data></Cell>
+    <Cell><Data ss:Type="String">【插植系统-感应拉线】1、传感拉线坏
+2、插植手柄在中立位置苗箱下降</Data></Cell>
+    <Cell><Data ss:Type="String">【插植系统-感应拉线】1、更换拉线，拉线用户自己提供
+2、调整中立
+机器用户2024年4月8日购买,三包处理</Data></Cell>
+    <Cell><Data ss:Type="String">无</Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String">1775046480000</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">微信支付</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/aef0d113-8356-4c00-9308-ad0cd0d2934d.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/1130e9f5-cb49-4a71-9fff-765ce6c1027d.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;-&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+   </Row>
+   <Row>
+    <Cell><Data ss:Type="String">JS20260401071</Data></Cell>
+    <Cell><Data ss:Type="String">马世民</Data></Cell>
+    <Cell><Data ss:Type="String">2026-04-01 20:28</Data></Cell>
+    <Cell><Data ss:Type="String">湘潭欣田农机有限公司</Data></Cell>
+    <Cell><Data ss:Type="String">黄海剑</Data></Cell>
+    <Cell><Data ss:Type="String">18944958230</Data></Cell>
+    <Cell><Data ss:Type="String">江永县西溪</Data></Cell>
+    <Cell><Data ss:Type="String">自用</Data></Cell>
+    <Cell><Data ss:Type="String">1774972800000</Data></Cell>
+    <Cell><Data ss:Type="String">852D</Data></Cell>
+    <Cell><Data ss:Type="String">JS825DD4120</Data></Cell>
+    <Cell><Data ss:Type="String">Z6921</Data></Cell>
+    <Cell><Data ss:Type="String">1706198400000</Data></Cell>
+    <Cell><Data ss:Type="String">-</Data></Cell>
+    <Cell><Data ss:Type="String">维修</Data></Cell>
+    <Cell><Data ss:Type="String">免费</Data></Cell>
+    <Cell><Data ss:Type="String">插植系统-感应拉线</Data></Cell>
+    <Cell><Data ss:Type="String">【插植系统-感应拉线】苗箱不下降</Data></Cell>
+    <Cell><Data ss:Type="String">【插植系统-感应拉线】感应拉线折弯，重新梳理拉线走向，机器总是是24年4月8日购买，三包处理</Data></Cell>
+    <Cell><Data ss:Type="String">无</Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String">1775046120000</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">微信支付</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/4b625261-543c-4cf1-a3fd-433aaa198fee.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/dd9bb2f5-f8a7-4501-98d8-4ec6aca6f38a.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;-&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+   </Row>
+   <Row>
+    <Cell><Data ss:Type="String">JS20260331095</Data></Cell>
+    <Cell><Data ss:Type="String">马世民</Data></Cell>
+    <Cell><Data ss:Type="String">2026-03-31 20:53</Data></Cell>
+    <Cell><Data ss:Type="String">湘潭欣田农机有限公司</Data></Cell>
+    <Cell><Data ss:Type="String">张放军</Data></Cell>
+    <Cell><Data ss:Type="String">18973298264</Data></Cell>
+    <Cell><Data ss:Type="String">湘潭县深塘冲</Data></Cell>
+    <Cell><Data ss:Type="String">自用</Data></Cell>
+    <Cell><Data ss:Type="String">1774886400000</Data></Cell>
+    <Cell><Data ss:Type="String">825D</Data></Cell>
+    <Cell><Data ss:Type="String">JS825DD4233</Data></Cell>
+    <Cell><Data ss:Type="String">Z68275</Data></Cell>
+    <Cell><Data ss:Type="String">1741017600000</Data></Cell>
+    <Cell><Data ss:Type="String">-</Data></Cell>
+    <Cell><Data ss:Type="String">保养</Data></Cell>
+    <Cell><Data ss:Type="String">免费</Data></Cell>
+    <Cell><Data ss:Type="String">其他类-以上内容以外的所有项目</Data></Cell>
+    <Cell><Data ss:Type="String">【其他类-以上内容以外的所有项目】右侧减震垫坏</Data></Cell>
+    <Cell><Data ss:Type="String">【其他类-以上内容以外的所有项目】更换缓冲垫，整车检查，更换全车油品</Data></Cell>
+    <Cell><Data ss:Type="String">[其他类-以上内容以外的所有项目]  缓冲垫(PR651-4117-0)x1 旧件:丢弃 来源:自带</Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String">1774961280000</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">微信支付</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/c2f84586-d440-4569-8d9e-8b05b713f0b7.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/e9473e6d-80b3-4b87-8559-ce63f358b7fd.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;-&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+   </Row>
+   <Row>
+    <Cell><Data ss:Type="String">JS20260331158</Data></Cell>
+    <Cell><Data ss:Type="String">马世民</Data></Cell>
+    <Cell><Data ss:Type="String">2026-03-31 18:16</Data></Cell>
+    <Cell><Data ss:Type="String">湘潭欣田农机有限公司</Data></Cell>
+    <Cell><Data ss:Type="String">罗国明18153778863</Data></Cell>
+    <Cell><Data ss:Type="String">18153778863</Data></Cell>
+    <Cell><Data ss:Type="String">茶陵县322国道</Data></Cell>
+    <Cell><Data ss:Type="String">自用</Data></Cell>
+    <Cell><Data ss:Type="String">1774886400000</Data></Cell>
+    <Cell><Data ss:Type="String">825D2</Data></Cell>
+    <Cell><Data ss:Type="String">JS825D2E0251</Data></Cell>
+    <Cell><Data ss:Type="String">Q250190559V</Data></Cell>
+    <Cell><Data ss:Type="String">1740412800000</Data></Cell>
+    <Cell><Data ss:Type="String">-</Data></Cell>
+    <Cell><Data ss:Type="String">保养</Data></Cell>
+    <Cell><Data ss:Type="String">免费</Data></Cell>
+    <Cell><Data ss:Type="String">其他类-以上内容以外的所有项目</Data></Cell>
+    <Cell><Data ss:Type="String">【其他类-以上内容以外的所有项目】右侧缓冲垫碎</Data></Cell>
+    <Cell><Data ss:Type="String">【其他类-以上内容以外的所有项目】更换缓冲，更换整车油品，整车运转检查</Data></Cell>
+    <Cell><Data ss:Type="String">[其他类-以上内容以外的所有项目]  缓冲垫(PR651-4117-0)x1 旧件:丢弃 来源:自带</Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String"></Data></Cell>
+    <Cell><Data ss:Type="String">1774951500000</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">0.0</Data></Cell>
+    <Cell><Data ss:Type="String">微信支付</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/1336cca4-511e-4fc4-b14c-ca4e9ab4d3a6.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;https://mp-2079723c-21b6-475a-b2c5-2799f2b90659.cdn.bspapp.com/cloudstorage/865a4045-7ab6-461f-9f82-bea2fda9a8cd.jpg&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;-&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+   </Row>
+  </Table>
+ </Worksheet>
+</Workbook>

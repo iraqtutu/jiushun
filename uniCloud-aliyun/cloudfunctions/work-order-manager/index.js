@@ -295,6 +295,48 @@ exports.main = async (event, context) => {
 			})
 			.end()
 
+		// Collect all file IDs for URL conversion
+		const fileIds = new Set();
+		res.data.forEach(item => {
+			const p = item.product || {};
+			if (p.platePhoto) fileIds.add(p.platePhoto);
+			if (item.customerConfirm?.machineUserPhoto) fileIds.add(item.customerConfirm.machineUserPhoto);
+			const faultItems = (item.service || {}).faultItems || [];
+			faultItems.forEach(f => {
+				if (f.sitePhotos) {
+					f.sitePhotos.forEach(photo => {
+						if (photo) fileIds.add(photo);
+					});
+				}
+			});
+		});
+
+		// Convert file IDs to HTTP URLs
+		const fileIdToUrl = {};
+		if (fileIds.size > 0) {
+			try {
+				const urlRes = await uniCloud.getTempFileURL({
+					fileList: Array.from(fileIds)
+				});
+				if (urlRes.fileList) {
+					urlRes.fileList.forEach(f => {
+						if (f.fileID && f.tempFileURL) {
+							fileIdToUrl[f.fileID] = f.tempFileURL;
+						}
+					});
+				}
+			} catch (e) {
+				console.error('批量转换文件URL失败:', e);
+			}
+		}
+
+		// Helper to get HTTP URL from file ID
+		const getUrl = (fileId) => {
+			if (!fileId) return '';
+			if (fileId.startsWith('http')) return fileId;
+			return fileIdToUrl[fileId] || fileId;
+		};
+
 		// Transform data for export (same as frontend loadData transformation)
 		const data = res.data.map(item => {
 			const c = item.customer || {};
@@ -388,10 +430,10 @@ exports.main = async (event, context) => {
 				travelDistance: af.travelFee?.distance || 0,
 				repairDuration: af.laborFee?.repairDuration || 0,
 
-				// Image IDs
-				platePhoto: p.platePhoto,
-				sitePhotos: sitePhotos,
-				machineUserPhoto: item.customerConfirm?.machineUserPhoto
+				// Image URLs (converted from cloud:// IDs)
+				platePhoto: getUrl(p.platePhoto),
+				sitePhotos: sitePhotos.map(photo => getUrl(photo)),
+				machineUserPhoto: getUrl(item.customerConfirm?.machineUserPhoto)
 			}
 		})
 
@@ -406,6 +448,27 @@ exports.main = async (event, context) => {
 			data: data,
 			summary: summary
 		}
+	}
+
+	// Helper function to convert cloud file IDs to HTTP URLs
+	async function getHttpUrl(fileId) {
+		if (!fileId) return '';
+		// If already HTTP URL, return as is
+		if (fileId.startsWith('http')) return fileId;
+		// If cloud path, convert to HTTP URL
+		if (fileId.startsWith('cloud://')) {
+			try {
+				const urlRes = await uniCloud.getTempFileURL({
+					fileList: [fileId]
+				});
+				if (urlRes.fileList && urlRes.fileList[0] && urlRes.fileList[0].tempFileURL) {
+					return urlRes.fileList[0].tempFileURL;
+				}
+			} catch (e) {
+				console.error('转换文件URL失败:', e);
+			}
+		}
+		return fileId;
 	}
 
 	// Action: Get Customer History (for auto-fill)

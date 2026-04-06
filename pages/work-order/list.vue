@@ -330,8 +330,10 @@
 						return;
 					}
 
+					const data = res.result.data || [];
+
 					// Generate Excel from cloud data
-					await this.generateExcelFromData(res.result.data);
+					await this.generateExcelFromData(data);
 
 					uni.hideLoading();
 				} catch (e) {
@@ -398,16 +400,17 @@
     <Cell><Data ss:Type="String">工时费</Data></Cell>
     <Cell><Data ss:Type="String">总应收(元)</Data></Cell>
     <Cell><Data ss:Type="String">支付方式</Data></Cell>
-    <Cell><Data ss:Type="String">铭牌照片链接</Data></Cell>
-    <Cell><Data ss:Type="String">现场照片链接</Data></Cell>
-    <Cell><Data ss:Type="String">人机合影链接</Data></Cell>
+    <Cell><Data ss:Type="String">铭牌照片</Data></Cell>
+    <Cell><Data ss:Type="String">现场照片</Data></Cell>
+    <Cell><Data ss:Type="String">人机合影</Data></Cell>
    </Row>`;
 
 				// Rows
 				data.forEach(item => {
-					const plateUrl = urlMap[item.platePhoto] || '-';
-					const confirmUrl = urlMap[item.machineUserPhoto] || '-';
-					const siteUrls = (item.sitePhotos || []).map(fid => urlMap[fid]).filter(u => u).join(' ; ');
+					// 直接使用后端返回的HTTP图片地址
+					const plateUrl = item.platePhoto || '-';
+					const confirmUrl = item.machineUserPhoto || '-';
+					const siteUrls = (item.sitePhotos || []).filter(u => u).join(' ; ');
 
 					xmlContent += `
    <Row>
@@ -439,9 +442,9 @@
     <Cell><Data ss:Type="String">${escapeXml(item.laborFeeTotal)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.grandTotal)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.paymentMethod)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(plateUrl)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(siteUrls)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(confirmUrl)}</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;${plateUrl}&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;${siteUrls ? siteUrls.split(' ; ')[0] : ''}&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ss:Formula="=IMAGE(&quot;${confirmUrl}&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
    </Row>`;
 				});
 
