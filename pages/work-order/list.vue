@@ -408,8 +408,8 @@
 				// Rows
 				data.forEach(item => {
 					// 直接使用后端返回的HTTP图片地址
-					const plateUrl = item.platePhoto || '-';
-					const confirmUrl = item.machineUserPhoto || '-';
+					const plateUrl = item.platePhoto || '';
+					const confirmUrl = item.machineUserPhoto || '';
 					const siteUrls = (item.sitePhotos || []).filter(u => u).join(' ; ');
 
 					xmlContent += `
@@ -442,9 +442,9 @@
     <Cell><Data ss:Type="String">${escapeXml(item.laborFeeTotal)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.grandTotal)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.paymentMethod)}</Data></Cell>
-    <Cell ss:Formula="=IMAGE(&quot;${plateUrl}&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
-    <Cell ss:Formula="=IMAGE(&quot;${siteUrls ? siteUrls.split(' ; ')[0] : ''}&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
-    <Cell ss:Formula="=IMAGE(&quot;${confirmUrl}&quot;)"><Data ss:Type="Error">#VALUE!</Data></Cell>
+    <Cell ${plateUrl ? 'ss:Formula="=IMAGE(&quot;' + plateUrl + '&quot;)"' : ''}><Data ${plateUrl ? 'ss:Type="Error"' : 'ss:Type="String"'}>${plateUrl ? '#VALUE!' : '-'}</Data></Cell>
+    <Cell ${siteUrls ? 'ss:Formula="=IMAGE(&quot;' + siteUrls.split(' ; ')[0] + '&quot;)"' : ''}><Data ${siteUrls ? 'ss:Type="Error"' : 'ss:Type="String"'}>${siteUrls ? '#VALUE!' : '-'}</Data></Cell>
+    <Cell ${confirmUrl ? 'ss:Formula="=IMAGE(&quot;' + confirmUrl + '&quot;)"' : ''}><Data ${confirmUrl ? 'ss:Type="Error"' : 'ss:Type="String"'}>${confirmUrl ? '#VALUE!' : '-'}</Data></Cell>
    </Row>`;
 				});
 
