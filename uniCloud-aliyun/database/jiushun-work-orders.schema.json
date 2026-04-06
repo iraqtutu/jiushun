@@ -13,7 +13,7 @@
 			"bsonType": "string"
 		},
 		"orderNo": {
-			"description": "派工单号",
+			"description": "服务单号",
 			"bsonType": "string"
 		},
 		"creator_uid": {

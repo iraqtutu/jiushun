@@ -358,7 +358,7 @@
 				</view>
 				<view class="btn-group">
 					<button v-if="!isEditMode && isAdmin" class="btn-mock-fill" @click="fillMockData">一键填写(测试)</button>
-					<button class="btn-primary-main" @click="submitOrder">{{ isEditMode ? '确认修改工单' : '正式提交服务单' }}</button>
+					<button class="btn-primary-main" @click="submitOrder">{{ isEditMode ? '确认修改服务单' : '正式提交服务单' }}</button>
 				</view>
 			</view>
 		</view>
@@ -620,7 +620,7 @@
 				this.isEditMode = true;
 				this.editId = options.id;
 				this.loadDetailForEdit(options.id);
-				uni.setNavigationBarTitle({ title: '编辑工单' });
+				uni.setNavigationBarTitle({ title: '编辑服务单' });
 			} else {
 				// 默认初始化数据
 				const now = new Date();
@@ -649,7 +649,7 @@
 					if (res.result.code === 0) {
 						const data = res.result.data;
 						if (!data) {
-							uni.showToast({ title: '未找到工单数据', icon: 'none' });
+							uni.showToast({ title: '未找到服务单数据', icon: 'none' });
 							return;
 						}
 						
@@ -696,7 +696,7 @@
 						});
 					}
 				} catch (e) {
-					console.error('加载工单详情失败:', e);
+					console.error('加载服务单详情失败:', e);
 					uni.showModal({
 						title: '程序异常',
 						content: e.message || '未知错误',
@@ -749,7 +749,7 @@
 				if (draft) {
 					uni.showModal({
 						title: '草稿提示',
-						content: '发现未完成的工单，是否继续编辑？',
+						content: '发现未完成的服务单，是否继续编辑？',
 						cancelText: '重新开始',
 						confirmText: '恢复草稿',
 						success: (res) => {

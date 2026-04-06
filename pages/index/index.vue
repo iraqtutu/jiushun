@@ -25,16 +25,16 @@
 				<view class="service-card primary" @click="navTo('/pages/work-order/create')">
 					<view class="icon-circle"><text class="icon">➕</text></view>
 					<view class="card-info">
-						<text class="title">新建派工单</text>
-						<text class="desc">填写新工单</text>
+						<text class="title">新建服务单</text>
+						<text class="desc">填写新服务单</text>
 					</view>
 				</view>
 				
 				<view class="service-card secondary" @click="navTo('/pages/work-order/list')">
 					<view class="icon-circle"><text class="icon">📄</text></view>
 					<view class="card-info">
-						<text class="title">{{ isAdmin ? '工单管理' : '我的工单' }}</text>
-						<text class="desc">{{ isAdmin ? '统筹所有工单' : '历史提交记录' }}</text>
+						<text class="title">{{ isAdmin ? '服务单管理' : '我的服务单' }}</text>
+						<text class="desc">{{ isAdmin ? '统筹所有服务单' : '历史提交记录' }}</text>
 					</view>
 				</view>
 			</view>

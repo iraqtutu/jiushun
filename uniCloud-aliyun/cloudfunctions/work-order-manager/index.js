@@ -165,7 +165,7 @@ exports.main = async (event, context) => {
 			})
 			.end()
 		
-		if (res.data.length === 0) return { code: 404, msg: '工单不存在' }
+		if (res.data.length === 0) return { code: 404, msg: '服务单不存在' }
 		
 		const order = res.data[0]
 		// Flatten userInfo for easier frontend access

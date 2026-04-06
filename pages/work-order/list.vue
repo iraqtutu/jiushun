@@ -54,12 +54,12 @@
 		<!-- Loading Status -->
 		<view class="load-status" v-if="list.length > 0">
 			<text v-if="isLoadingMore">正在加载...</text>
-			<text v-else-if="!hasMore">—— 已展示全部工单 ——</text>
+			<text v-else-if="!hasMore">—— 已展示全部服务单 ——</text>
 			<text v-else>上滑加载更多</text>
 		</view>
 
 		<view v-if="list.length === 0 && !isLoading" class="empty-state">
-			<text>暂无工单记录</text>
+			<text>暂无服务单记录</text>
 		</view>
 
 		<!-- Floating Export Button -->
@@ -121,7 +121,7 @@
 				}
 
 				uni.setNavigationBarTitle({
-					title: (this.isAdmin || this.isDataAnalyst) ? '工单查询' : '我的工单'
+					title: (this.isAdmin || this.isDataAnalyst) ? '服务单查询' : '我的服务单'
 				});
 			},
 			bindStartDateChange(e) {
@@ -366,10 +366,10 @@
  xmlns:x="urn:schemas-microsoft-com:office:excel"
  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
  xmlns:html="http://www.w3.org/TR/REC-html40">
- <Worksheet ss:Name="工单汇总">
+ <Worksheet ss:Name="服务单汇总">
   <Table>
    <Row>
-    <Cell><Data ss:Type="String">派工单号</Data></Cell>
+    <Cell><Data ss:Type="String">服务单号</Data></Cell>
     <Cell><Data ss:Type="String">报单人</Data></Cell>
     <Cell><Data ss:Type="String">提交时间</Data></Cell>
     <Cell><Data ss:Type="String">经销商名称</Data></Cell>
@@ -450,7 +450,7 @@
 
 				// Use FileSystemManager to save file
 				const fs = uni.getFileSystemManager();
-				const fileName = `工单汇总_${this.formatDateSimple(new Date())}.xls`;
+				const fileName = `服务单汇总_${this.formatDateSimple(new Date())}.xls`;
 				const filePath = `${wx.env.USER_DATA_PATH}/${fileName}`;
 
 				fs.writeFile({

@@ -4,7 +4,7 @@
 		<view class="header-card">
 			<view class="header-main">
 				<view class="order-no-box">
-					<text class="label">派工单号</text>
+					<text class="label">服务单号</text>
 					<text class="order-no">{{ order.orderNo || '-' }}</text>
 				</view>
 				<view class="status-box">
@@ -199,7 +199,7 @@
 					<text class="s-value">{{ order.service.paymentMethod }}</text>
 				</view>
 				<view class="s-row grand-total-row">
-					<text class="s-label-large">工单应收合计</text>
+					<text class="s-label-large">服务单应收合计</text>
 					<view class="s-total-box">
 						<text class="s-currency">￥</text>
 						<text class="s-grand-total">{{ grandTotal }}</text>
@@ -286,7 +286,7 @@
 			handleDelete() {
 				uni.showModal({
 					title: '确认删除',
-					content: '工单删除后将无法恢复，确定要删除吗？',
+					content: '服务单删除后将无法恢复，确定要删除吗？',
 					confirmColor: '#f53f3f',
 					success: (res) => {
 						if (res.confirm) {
