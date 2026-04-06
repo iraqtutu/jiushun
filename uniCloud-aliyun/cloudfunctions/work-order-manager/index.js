@@ -507,6 +507,32 @@ exports.main = async (event, context) => {
 		}
 	}
 
+	// Action: Get Distributors (with permission control)
+	if (action === 'getDistributors') {
+		const userRes = await db.collection('uni-id-users').doc(uid).get()
+		const roles = userRes.data[0].role || []
+		const isAdmin = hasRole(roles, ADMIN_ROLES)
+		const isJiushunEmployee = hasRole(roles, ['玖顺员工'])
+
+		let match = {}
+
+		// Only admin and 玖顺员工 can see all distributors
+		// Other users can only see distributors with selfWarranty === true
+		if (!isAdmin && !isJiushunEmployee) {
+			match.selfWarranty = true
+		}
+
+		const res = await db.collection('jiushun-distributors')
+			.where(match)
+			.limit(500)
+			.get()
+
+		return {
+			code: 0,
+			data: res.data
+		}
+	}
+
 	return {
 		code: 404,
 		msg: 'Unknown Action'

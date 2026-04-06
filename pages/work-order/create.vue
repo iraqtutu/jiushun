@@ -608,8 +608,8 @@
 			filteredDistributors() {
 				if (!this.distributorSearchKey) return this.distributors;
 				const key = this.distributorSearchKey.toLowerCase();
-				return this.distributors.filter(item => 
-					(item.name && item.name.toLowerCase().indexOf(key) !== -1) || 
+				return this.distributors.filter(item =>
+					(item.name && item.name.toLowerCase().indexOf(key) !== -1) ||
 					(item.salesman && item.salesman.toLowerCase().indexOf(key) !== -1)
 				);
 			},
@@ -767,9 +767,14 @@
 			},
 			async loadDistributors() {
 				try {
-					const db = uniCloud.database();
-					const res = await db.collection('jiushun-distributors').limit(500).get();
-					if (res.result.data) {
+					const res = await uniCloud.callFunction({
+						name: 'work-order-manager',
+						data: {
+							action: 'getDistributors',
+							uniIdToken: uni.getStorageSync('uni_id_token')
+						}
+					});
+					if (res.result.code === 0 && res.result.data) {
 						this.distributors = res.result.data;
 					}
 				} catch (e) {

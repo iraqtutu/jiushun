@@ -25,6 +25,11 @@
 			"bsonType": "string",
 			"description": "地区"
 		},
+		"selfWarranty": {
+			"bsonType": "bool",
+			"description": "自行三包：开启后，非管理员角色的用户可以查看并选择该经销商",
+			"defaultValue": false
+		},
 		"creator_uid": {
 			"bsonType": "string",
 			"description": "创建者ID",

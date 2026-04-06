@@ -6,28 +6,32 @@
 		</view>
 
 		<!-- 2. 数据列表 -->
-		<unicloud-db ref="udb" v-slot:default="{data, loading, error, options}" collection="jiushun-distributors"
-			:where="where" orderby="create_date desc">
-			<view v-if="error" class="error-text">{{error.message}}</view>
-			<view v-else-if="loading" class="loading-text">加载中...</view>
-			<view v-else class="list">
-				<view class="item" v-for="(item, index) in data" :key="item._id" @click="handleEdit(item)">
-					<view class="info-row">
-						<text class="name">{{ item.name }}</text>
-						<text class="region-badge">{{ item.region || '未设地区' }}</text>
-					</view>
-					<view class="detail-row">
-						<text class="label">业务员：</text>
-						<text class="value">{{ item.salesman || '未指定' }}</text>
-					</view>
-					<view class="edit-btn">编辑</view>
+		<view class="list">
+			<view class="item" v-for="(item, index) in list" :key="item._id" @click="handleEdit(item)">
+				<view class="info-row">
+					<text class="name">{{ item.name }}</text>
+					<text class="region-badge">{{ item.region || '未设地区' }}</text>
+					<text v-if="item.selfWarranty" class="self-warranty-badge">自行三包</text>
 				</view>
-				
-				<view v-if="data && data.length === 0" class="empty">
-					<text>暂无经销商数据</text>
+				<view class="detail-row">
+					<text class="label">业务员：</text>
+					<text class="value">{{ item.salesman || '未指定' }}</text>
 				</view>
+				<view class="edit-btn">编辑</view>
 			</view>
-		</unicloud-db>
+
+			<view v-if="list.length === 0 && !isLoading" class="empty">
+				<text>暂无经销商数据</text>
+			</view>
+		</view>
+
+		<view class="load-status" v-if="list.length > 0">
+			<text v-if="isLoadingMore">正在加载...</text>
+			<text v-else-if="!hasMore">—— 已展示全部经销商 ——</text>
+			<text v-else>上滑加载更多</text>
+		</view>
+
+		<view v-if="isLoading && list.length === 0" class="loading-text">加载中...</view>
 
 		<!-- 3. 悬浮新增按钮 -->
 		<view class="fab" @click="handleAdd">
@@ -39,22 +43,27 @@
 			<view class="mask" @click="closePopup"></view>
 			<view class="popup-panel" @click.stop>
 				<view class="popup-title">{{ formData._id ? '修改经销商' : '新增经销商' }}</view>
-				
+
 				<view class="form-item" @click.stop>
 					<text class="label">客户名称 <text class="required">*</text></text>
 					<input class="input" v-model="formData.name" placeholder="请输入客户名称" @focus="onInputFocus" @click.stop adjust-position="false" />
 				</view>
-				
+
 				<view class="form-item" @click.stop>
 					<text class="label">业务员</text>
 					<input class="input" v-model="formData.salesman" placeholder="请输入业务员姓名" @focus="onInputFocus" @click.stop adjust-position="false" />
 				</view>
-				
+
 				<view class="form-item" @click.stop>
 					<text class="label">地区</text>
 					<input class="input" v-model="formData.region" placeholder="请输入省市区" @focus="onInputFocus" @click.stop adjust-position="false" />
 				</view>
-				
+
+				<view class="form-item switch-item" @click.stop>
+					<text class="label">自行三包</text>
+					<switch class="self-switch" :checked="formData.selfWarranty === true" @change="onSelfWarrantyChange" color="#1989fa" />
+				</view>
+
 				<view class="popup-actions">
 					<button class="btn cancel" @click="closePopup">取消</button>
 					<button v-if="formData._id" class="btn delete" @click="handleDelete">删除</button>
@@ -69,43 +78,110 @@
 	export default {
 		data() {
 			return {
-				where: '',
-				showPopup: false, // 严格控制显示逻辑
+				list: [],
+				page: 1,
+				pageSize: 15,
+				total: 0,
+				hasMore: true,
+				isLoading: false,
+				isLoadingMore: false,
+				showPopup: false,
 				formData: {
 					_id: '',
 					name: '',
 					salesman: '',
-					region: ''
+					region: '',
+					selfWarranty: false
 				}
 			}
 		},
 		onShow() {
-			// 每次进入页面强制关闭弹窗，防止缓存导致自动打开
 			this.showPopup = false;
+		},
+		onLoad() {
+			this.loadData();
+		},
+		onReachBottom() {
+			if (this.hasMore && !this.isLoadingMore) {
+				this.page++;
+				this.loadData(true);
+			}
 		},
 		methods: {
 			search(res) {
-				this.updateWhere(res.value);
+				this.page = 1;
+				this.list = [];
+				this.hasMore = true;
+				this.searchKey = res.value;
+				this.loadData();
 			},
 			cancelSearch() {
-				this.updateWhere('');
+				this.searchKey = '';
+				this.page = 1;
+				this.list = [];
+				this.hasMore = true;
+				this.loadData();
 			},
 			clearSearch() {
-				this.updateWhere('');
+				this.searchKey = '';
+				this.page = 1;
+				this.list = [];
+				this.hasMore = true;
+				this.loadData();
 			},
-			updateWhere(val) {
-				if (val) {
-					this.where = `/${val}/.test(name) || /${val}/.test(salesman)`;
+			loadData(isAppend = false) {
+				if (this.isLoading) return;
+
+				if (isAppend) {
+					this.isLoadingMore = true;
 				} else {
-					this.where = '';
+					this.isLoading = true;
 				}
+
+				const db = uniCloud.database();
+				let whereObj = {};
+
+				if (this.searchKey) {
+					whereObj = db.command.or([
+						{ name: new RegExp(this.searchKey, 'i') },
+						{ salesman: new RegExp(this.searchKey, 'i') }
+					]);
+				}
+
+				db.collection('jiushun-distributors')
+					.where(whereObj)
+					.orderBy('create_date', 'desc')
+					.skip((this.page - 1) * this.pageSize)
+					.limit(this.pageSize)
+					.get()
+					.then(res => {
+						if (res.result.data) {
+							if (isAppend) {
+								this.list = this.list.concat(res.result.data);
+							} else {
+								this.list = res.result.data;
+							}
+							this.hasMore = res.result.data.length >= this.pageSize;
+						} else {
+							this.hasMore = false;
+						}
+					})
+					.catch(err => {
+						console.error('加载失败:', err);
+						uni.showToast({ title: '加载失败', icon: 'none' });
+					})
+					.finally(() => {
+						this.isLoading = false;
+						this.isLoadingMore = false;
+					});
 			},
 			handleAdd() {
 				this.formData = {
 					_id: '',
 					name: '',
 					salesman: '',
-					region: ''
+					region: '',
+					selfWarranty: false
 				};
 				this.showPopup = true;
 			},
@@ -115,6 +191,9 @@
 			},
 			onInputFocus() {
 				// 阻止输入框聚焦时意外关闭弹窗
+			},
+			onSelfWarrantyChange(e) {
+				this.formData.selfWarranty = e.detail.value;
 			},
 			closePopup() {
 				this.showPopup = false;
@@ -126,11 +205,11 @@
 				}
 
 				uni.showLoading({ title: '正在提交...', mask: true });
-				
+
 				try {
 					const db = uniCloud.database();
 					const collection = db.collection('jiushun-distributors');
-					
+
 					if (this.formData._id) {
 						const { _id, ...updateData } = this.formData;
 						await collection.doc(_id).update(updateData);
@@ -141,9 +220,10 @@
 					uni.hideLoading();
 					uni.showToast({ title: '已保存' });
 					this.closePopup();
-					if (this.$refs.udb) {
-						this.$refs.udb.refresh();
-					}
+					this.page = 1;
+					this.list = [];
+					this.hasMore = true;
+					this.loadData();
 				} catch (err) {
 					uni.hideLoading();
 					uni.showToast({ title: err.message || '操作失败', icon: 'none' });
@@ -162,7 +242,10 @@
 								uni.hideLoading();
 								uni.showToast({ title: '已删除' });
 								this.closePopup();
-								this.$refs.udb.refresh();
+								this.page = 1;
+								this.list = [];
+								this.hasMore = true;
+								this.loadData();
 							} catch (e) {
 								uni.hideLoading();
 								uni.showToast({ title: '删除失败', icon: 'none' });
@@ -200,12 +283,14 @@
 		margin-bottom: 12px;
 		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 		position: relative;
-		
+
 		.info-row {
 			display: flex;
 			justify-content: space-between;
 			align-items: flex-start;
 			margin-bottom: 10px;
+			flex-wrap: wrap;
+			gap: 8px;
 
 			.name {
 				font-size: 16px;
@@ -222,6 +307,15 @@
 				padding: 2px 6px;
 				border-radius: 4px;
 			}
+
+			.self-warranty-badge {
+				font-size: 11px;
+				color: #52c41a;
+				background: #f6ffed;
+				padding: 2px 6px;
+				border-radius: 4px;
+				border: 1px solid #b7eb8f;
+			}
 		}
 
 		.detail-row {
@@ -229,7 +323,7 @@
 			color: #646566;
 			.label { color: #969799; }
 		}
-		
+
 		.edit-btn {
 			position: absolute;
 			right: 16px;
@@ -274,7 +368,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		
+
 		.mask {
 			position: absolute;
 			top: 0;
@@ -283,7 +377,7 @@
 			bottom: 0;
 			background-color: rgba(0, 0, 0, 0.6);
 		}
-		
+
 		.popup-panel {
 			position: relative;
 			z-index: 1000;
@@ -321,6 +415,20 @@
 				}
 			}
 
+			.switch-item {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+
+				.label {
+					margin-bottom: 0;
+				}
+
+				.self-switch {
+					transform: scale(0.8);
+				}
+			}
+
 			.popup-actions {
 				display: flex;
 				gap: 12px;
@@ -334,7 +442,7 @@
 					border-radius: 4px;
 					margin: 0;
 					padding: 0;
-					
+
 					&::after { border: none; }
 
 					&.cancel { background: #f2f3f5; color: #646566; }
@@ -355,5 +463,12 @@
 		padding: 60px 0;
 		color: #969799;
 		font-size: 14px;
+	}
+
+	.load-status {
+		text-align: center;
+		padding: 20px 0;
+		color: #969799;
+		font-size: 13px;
 	}
 </style>
