@@ -8,7 +8,7 @@
 		<!-- 用户列表 -->
 		<view class="list">
 			<view class="item" v-for="(item, index) in list" :key="item._id">
-				<view class="item-content" @click="handleEdit(item)">
+				<view class="item-main" @click="handleEdit(item)">
 					<view class="info-row">
 						<text class="name">{{ item.nickname }}</text>
 						<view class="role-badges">
@@ -16,18 +16,14 @@
 							<text v-if="!item.role || item.role.length === 0" class="role-badge empty">无角色</text>
 						</view>
 					</view>
-					<view class="detail-row">
-						<text class="label">📱 手机号：</text>
-						<text class="value">{{ item.mobile || '未绑定' }}</text>
-					</view>
-					<view class="detail-row">
-						<text class="label">📅 注册时间：</text>
-						<text class="value">{{ formatDate(item.register_date || item.create_date) }}</text>
+					<view class="info-row secondary">
+						<text class="info-text">📱 {{ item.mobile || '未绑定' }}</text>
+						<text class="info-text">📅 {{ formatDate(item.register_date || item.create_date) }}</text>
 					</view>
 				</view>
 				<view class="item-actions">
-					<view class="action-btn edit" @click="handleEdit(item)">✏️ 编辑</view>
-					<view class="action-btn delete" @click="handleDelete(item)">🗑️ 删除</view>
+					<view class="action-btn edit" @click="handleEdit(item)">✏️</view>
+					<view class="action-btn delete" @click="handleDelete(item)">🗑️</view>
 				</view>
 			</view>
 		</view>
@@ -292,26 +288,41 @@
 	.item {
 		background: #fff;
 		border-radius: 12px;
-		padding: 16px;
-		margin-bottom: 12px;
+		padding: 12px 16px;
+		margin-bottom: 8px;
 		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+		display: flex;
+		align-items: center;
 
-		.item-content {
-			margin-bottom: 12px;
+		.item-main {
+			flex: 1;
+			min-width: 0;
 		}
 
 		.info-row {
 			display: flex;
 			justify-content: space-between;
-			align-items: flex-start;
-			margin-bottom: 8px;
+			align-items: center;
+			margin-bottom: 4px;
+
+			&.secondary {
+				margin-bottom: 0;
+			}
 
 			.name {
-				font-size: 16px;
+				font-size: 15px;
 				font-weight: 600;
 				color: #323233;
 				flex: 1;
 				margin-right: 8px;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+
+			.info-text {
+				font-size: 12px;
+				color: #969799;
 			}
 
 			.role-badges {
@@ -319,14 +330,13 @@
 				flex-wrap: wrap;
 				gap: 4px;
 				justify-content: flex-end;
-				max-width: 50%;
 			}
 
 			.role-badge {
-				font-size: 11px;
+				font-size: 10px;
 				color: #1989fa;
 				background: #ecf9ff;
-				padding: 2px 6px;
+				padding: 1px 5px;
 				border-radius: 4px;
 
 				&.empty {
@@ -336,27 +346,21 @@
 			}
 		}
 
-		.detail-row {
-			font-size: 13px;
-			color: #646566;
-			margin-bottom: 4px;
-
-			.label { color: #969799; }
-			.value { color: #323233; }
-		}
-
 		.item-actions {
 			display: flex;
-			justify-content: flex-end;
-			gap: 8px;
-			padding-top: 12px;
-			border-top: 1px solid #f2f3f5;
+			gap: 6px;
+			margin-left: 12px;
+			flex-shrink: 0;
 		}
 
 		.action-btn {
-			font-size: 12px;
-			padding: 6px 14px;
-			border-radius: 100px;
+			width: 28px;
+			height: 28px;
+			border-radius: 6px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 14px;
 
 			&.edit {
 				color: #1989fa;
