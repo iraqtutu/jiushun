@@ -68,6 +68,9 @@
 						</view>
 					</view>
 					<view class="item-right">
+						<view class="badge-wrapper" v-if="pendingApprovalCount > 0">
+							<text class="badge">{{ pendingApprovalCount > 99 ? '99+' : pendingApprovalCount }}</text>
+						</view>
 						<text class="arrow">›</text>
 					</view>
 				</view>
@@ -94,6 +97,9 @@
 						</view>
 					</view>
 					<view class="item-right">
+						<view class="badge-wrapper" v-if="isAdmin && unreadFeedbackCount > 0">
+							<text class="badge danger">{{ unreadFeedbackCount > 99 ? '99+' : unreadFeedbackCount }}</text>
+						</view>
 						<text class="arrow">›</text>
 					</view>
 				</view>
@@ -108,7 +114,9 @@
 			return {
 				userName: '用户',
 				userRoles: '',
-				isAdmin: false
+				isAdmin: false,
+				pendingApprovalCount: 0,
+				unreadFeedbackCount: 0
 			}
 		},
 		computed: {
@@ -119,6 +127,9 @@
 		onShow() {
 			this.updateLocalInfo();
 			this.refreshUserInfo();
+			if (this.isAdmin) {
+				this.loadBadgeCounts();
+			}
 		},
 		methods: {
 			updateLocalInfo() {
@@ -165,6 +176,38 @@
 								}
 							}
 						});
+					}
+				});
+			},
+			loadBadgeCounts() {
+				// 获取待审批数量
+				uniCloud.callFunction({
+					name: 'user-center',
+					data: {
+						action: 'getApplications',
+						params: { type: 'pending' },
+						uniIdToken: uni.getStorageSync('uni_id_token')
+					},
+					success: (res) => {
+						if (res.result.code === 0) {
+							this.pendingApprovalCount = res.result.data ? res.result.data.length : 0;
+						}
+					}
+				});
+
+				// 获取未处理反馈数量（status !== 1 表示未回复）
+				uniCloud.callFunction({
+					name: 'feedback-manager',
+					data: {
+						action: 'list',
+						params: { page: 1, pageSize: 100 },
+						uniIdToken: uni.getStorageSync('uni_id_token')
+					},
+					success: (res) => {
+						if (res.result.code === 0) {
+							const unreadList = (res.result.data || []).filter(item => item.status !== 1);
+							this.unreadFeedbackCount = unreadList.length;
+						}
 					}
 				});
 			},
@@ -377,6 +420,9 @@
 		}
 		
 		.item-right {
+			display: flex;
+			align-items: center;
+			gap: 8px;
 			.arrow {
 				font-size: 24px;
 				color: #c9cdd4;
@@ -384,7 +430,33 @@
 			}
 		}
 	}
-	
+
+	.badge-wrapper {
+		position: relative;
+		.badge {
+			position: absolute;
+			top: -6px;
+			right: -6px;
+			min-width: 18px;
+			height: 18px;
+			background: #ff4d4f;
+			color: #fff;
+			font-size: 10px;
+			font-weight: 600;
+			border-radius: 9px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 0 5px;
+			box-shadow: 0 2px 4px rgba(255, 77, 79, 0.3);
+
+			&.danger {
+				background: #ff7d00;
+				box-shadow: 0 2px 4px rgba(255, 125, 0, 0.3);
+			}
+		}
+	}
+
 	.hover-effect {
 		background-color: rgba(0, 0, 0, 0.02);
 	}
