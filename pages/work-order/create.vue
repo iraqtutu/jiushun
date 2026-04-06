@@ -586,7 +586,11 @@
 			},
 			isServiceComplete() {
 				const s = this.formData.service;
-				if (!s || !s.type || !s.faultItems || s.faultItems.length === 0) return false;
+				// 如果没有选择服务类型，必须返回 false
+				if (!s || !s.type) return false;
+				// 如果没有故障分类，允许提交（故障分类为可选）
+				if (!s.faultItems || s.faultItems.length === 0) return true;
+				// 有故障分类时，必须完整填写每个卡片的内容
 				for (const item of s.faultItems) {
 					if (!item.faultDesc || !item.handleDesc || !item.sitePhotos || item.sitePhotos.length === 0) return false;
 					for (const part of (item.parts || [])) {
@@ -1007,12 +1011,61 @@
 				uni.showToast({ title: '表单已按新流程模拟填充', icon: 'success' });
 			},
 			async submitOrder() {
-				if (!this.formData.customer.name || !this.formData.product.machineNo || !this.formData.customer.distributorName) { 
-					uni.showToast({ title: '信息不全(姓名/机号/经销商)', icon: 'none' }); 
-					return; 
+				// 验证客户资料
+				if (!this.formData.customer.name) {
+					uni.showToast({ title: '请填写客户姓名', icon: 'none' });
+					return;
+				}
+				if (!this.formData.customer.phone) {
+					uni.showToast({ title: '请填写客户电话', icon: 'none' });
+					return;
+				}
+				if (!this.formData.customer.address) {
+					uni.showToast({ title: '请填写客户地址', icon: 'none' });
+					return;
+				}
+				if (!this.formData.customer.distributorName) {
+					uni.showToast({ title: '请选择经销商', icon: 'none' });
+					return;
+				}
+
+				// 验证产品信息
+				if (!this.formData.product.machineNo) {
+					uni.showToast({ title: '请填写机器编号', icon: 'none' });
+					return;
+				}
+				if (!this.formData.product.engineNo) {
+					uni.showToast({ title: '请填写发动机号', icon: 'none' });
+					return;
+				}
+				if (!this.formData.product.productionDate) {
+					uni.showToast({ title: '请选择生产日期', icon: 'none' });
+					return;
+				}
+				if (!this.formData.product.workHours) {
+					uni.showToast({ title: '请填写工作时长', icon: 'none' });
+					return;
+				}
+				if (!this.formData.product.platePhoto) {
+					uni.showToast({ title: '请上传铭牌照片', icon: 'none' });
+					return;
+				}
+				if (!this.formData.product.model) {
+					uni.showToast({ title: '请填写产品型号', icon: 'none' });
+					return;
+				}
+
+				// 验证服务信息
+				if (!this.formData.service.type) {
+					uni.showToast({ title: '请选择服务类型', icon: 'none' });
+					return;
 				}
 				if (!this.isServiceComplete) {
-					uni.showToast({ title: '请完整填写每个故障卡片的内容及照片', icon: 'none' });
+					uni.showToast({ title: '请完整填写故障信息及现场照片', icon: 'none' });
+					return;
+				}
+				if (!this.formData.confirm.machineUserPhoto) {
+					uni.showToast({ title: '请上传人机合影', icon: 'none' });
 					return;
 				}
 				
