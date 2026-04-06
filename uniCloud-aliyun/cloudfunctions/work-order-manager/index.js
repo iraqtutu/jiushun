@@ -368,6 +368,7 @@ exports.main = async (event, context) => {
 				machineNo: p.machineNo || '-',
 				engineNo: p.engineNo || '-',
 				productionDate: p.productionDate,
+				workHours: p.workHours || '',
 
 				// Service
 				serviceType: s.type || '未知',
@@ -404,6 +405,42 @@ exports.main = async (event, context) => {
 			code: 0,
 			data: data,
 			summary: summary
+		}
+	}
+
+	// Action: Get Customer History (for auto-fill)
+	if (action === 'getCustomerHistory') {
+		// This action doesn't require auth token - it's called during form editing
+		const { customerName } = params
+		if (!customerName || customerName.length < 2) {
+			return { code: 0, data: null }
+		}
+
+		// Find the most recent order for this customer (exact match only)
+		const res = await db.collection('jiushun-work-orders')
+			.where({
+				'customer.name': customerName
+			})
+			.orderBy('create_date', 'desc')
+			.limit(1)
+			.field({
+				customer: true
+			})
+			.get()
+
+		if (res.data.length === 0) {
+			return { code: 0, data: null }
+		}
+
+		const customer = res.data[0].customer || {}
+		return {
+			code: 0,
+			data: {
+				phone: customer.phone || '',
+				address: customer.address || '',
+				distributorName: customer.distributorName || '',
+				usageType: customer.usageType || '自用'
+			}
 		}
 	}
 

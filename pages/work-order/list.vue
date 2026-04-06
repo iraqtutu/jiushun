@@ -252,6 +252,7 @@
 									machineNo: p.machineNo || '-',
 									engineNo: p.engineNo || '-',
 									productionDate: this.formatDateSimple(new Date(p.productionDate)),
+									workHours: p.workHours || '',
 
 									// Service
 									serviceType: s.type || '未知',
@@ -382,6 +383,7 @@
     <Cell><Data ss:Type="String">机器编号</Data></Cell>
     <Cell><Data ss:Type="String">发动机号</Data></Cell>
     <Cell><Data ss:Type="String">生产日期</Data></Cell>
+    <Cell><Data ss:Type="String">工作时长(小时)</Data></Cell>
     <Cell><Data ss:Type="String">服务类型</Data></Cell>
     <Cell><Data ss:Type="String">是否收费</Data></Cell>
     <Cell><Data ss:Type="String">故障分类</Data></Cell>
@@ -422,6 +424,7 @@
     <Cell><Data ss:Type="String">${escapeXml(item.machineNo)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.engineNo)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.productionDate)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.product ? item.product.workHours : (item.workHours || '-'))}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.serviceType)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.isChargeable)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.faultCategory)}</Data></Cell>

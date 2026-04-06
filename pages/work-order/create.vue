@@ -13,7 +13,7 @@
 				<view class="card-body" v-show="!sectionsCollapsed.customer">
 					<view class="ui-field">
 						<text class="field-label required">姓名</text>
-						<input class="field-input" v-model="formData.customer.name" placeholder="输入客户姓名" placeholder-class="ph" />
+						<input class="field-input" v-model="formData.customer.name" @blur="onCustomerNameBlur" placeholder="输入客户姓名" placeholder-class="ph" />
 					</view>
 					<view class="ui-field">
 						<text class="field-label required">电话</text>
@@ -69,7 +69,14 @@
 							<view class="picker-text">{{ formData.product.productionDate || '选择日期' }}</view>
 						</picker>
 					</view>
-					
+					<view class="ui-field">
+						<text class="field-label required">工作时长</text>
+						<view class="input-with-unit">
+							<input class="field-input" type="number" v-model="formData.product.workHours" placeholder="输入工作时长" placeholder-class="ph" />
+							<text class="unit">小时</text>
+						</view>
+					</view>
+
 					<view class="ui-field column">
 						<text class="field-label required">铭牌照片</text>
 						<view class="photo-uploader" @click="chooseImage('plate')">
@@ -507,7 +514,7 @@
 				formData: {
 					orderNo: '',
 					customer: { name: '', phone: '', address: '', usageType: '自用', distributorName: '', reportTime: '' },
-					product: { machineNo: '', engineNo: '', productionDate: '', platePhoto: '', model: '' },
+					product: { machineNo: '', engineNo: '', productionDate: '', workHours: '', platePhoto: '', model: '' },
 					service: { 
 						type: '', 
 						isChargeable: '免费', 
@@ -573,9 +580,9 @@
 				const c = this.formData.customer; 
 				return !!(c && c.name && c.phone && c.address); 
 			},
-			isProductComplete() { 
-				const p = this.formData.product; 
-				return !!(p && p.machineNo && p.platePhoto); 
+			isProductComplete() {
+				const p = this.formData.product;
+				return !!(p && p.machineNo && p.platePhoto && p.workHours);
 			},
 			isServiceComplete() {
 				const s = this.formData.service;
@@ -638,6 +645,46 @@
 			this.loadDistributors();
 		},
 		methods: {
+			onCustomerNameBlur() {
+				// 客户名输入结束时触发自动填充
+				const name = this.formData.customer.name;
+				if (name && name.length >= 2 && !this.isEditMode) {
+					this.autoFillCustomerInfo(name);
+				}
+			},
+			async autoFillCustomerInfo(customerName) {
+				// 自动填充历史客户信息（仅填充空字段）
+				try {
+					const res = await uniCloud.callFunction({
+						name: 'work-order-manager',
+						data: {
+							action: 'getCustomerHistory',
+							params: { customerName }
+						}
+					});
+
+					if (res.result.code === 0 && res.result.data) {
+						const info = res.result.data;
+						const customer = this.formData.customer;
+
+						// 只在目标字段为空时填充
+						if (!customer.phone && info.phone) {
+							customer.phone = info.phone;
+						}
+						if (!customer.address && info.address) {
+							customer.address = info.address;
+						}
+						if (!customer.distributorName && info.distributorName) {
+							customer.distributorName = info.distributorName;
+						}
+						if (!customer.usageType && info.usageType) {
+							customer.usageType = info.usageType;
+						}
+					}
+				} catch (e) {
+					console.error('自动填充客户信息失败:', e);
+				}
+			},
 			async loadDetailForEdit(id) {
 				uni.showLoading({ title: '加载中' });
 				try {
@@ -1185,16 +1232,35 @@
 		
 		.field-label { width: 85px; font-size: 13px; font-weight: 500; color: $text-secondary; &.required::after { content: '*'; color: $danger; margin-left: 3px; } }
 		.hmandmachine { width: 185px;}
-		.field-input, .picker-text, .field-picker-box { 
-			flex: 1; 
-			height: 34px; 
-			line-height: 34px; 
+		.field-input, .picker-text, .field-picker-box {
+			flex: 1;
+			height: 34px;
+			line-height: 34px;
 			background: #ffffff; // 改为白色
 			border: 1px solid #e5e6eb; // 增加边框
-			border-radius: 6px; 
-			padding: 0 10px; 
-			font-size: 13px; 
-			color: $text-primary; 
+			border-radius: 6px;
+			padding: 0 10px;
+			font-size: 13px;
+			color: $text-primary;
+		}
+		.input-with-unit {
+			flex: 1;
+			display: flex;
+			align-items: center;
+			.field-input {
+				border-radius: 6px 0 0 6px;
+			}
+			.unit {
+				height: 34px;
+				line-height: 34px;
+				background: #f0f2f5;
+				border: 1px solid #e5e6eb;
+				border-left: none;
+				border-radius: 0 6px 6px 0;
+				padding: 0 12px;
+				font-size: 13px;
+				color: $text-secondary;
+			}
 		}
 		.field-textarea { 
 			width: 100%; 

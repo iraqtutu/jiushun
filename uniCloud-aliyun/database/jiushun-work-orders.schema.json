@@ -47,7 +47,8 @@
 				"engineNo": { "bsonType": "string", "description": "发动机号" },
 				"platePhoto": { "bsonType": "file", "description": "铭牌照片FileID" },
 				"productionDate": { "bsonType": "timestamp", "description": "生产日期" },
-				"model": { "bsonType": "string", "description": "产品型号" }
+				"model": { "bsonType": "string", "description": "产品型号" },
+				"workHours": { "bsonType": "string", "description": "工作时长(小时)" }
 			}
 		},
 		"service": {

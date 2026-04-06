@@ -69,11 +69,15 @@
 				<text class="label">产品型号</text>
 				<text class="value">{{ order.product.model || '-' }}</text>
 			</view>
-			<view class="detail-item m-0">
+			<view class="detail-item">
 				<text class="label">生产日期</text>
 				<text class="value">{{ formatDate(order.product.productionDate, 'date') }}</text>
 			</view>
-			
+			<view class="detail-item m-0">
+				<text class="label">工作时长</text>
+				<text class="value">{{ order.product.workHours ? order.product.workHours + ' 小时' : '-' }}</text>
+			</view>
+
 			<!-- 铭牌照片 -->
 			<view class="detail-block mt-4">
 				<text class="label">铭牌照片</text>
