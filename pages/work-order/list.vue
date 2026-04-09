@@ -194,8 +194,7 @@
 								const faultItems = s.faultItems || [];
 
 								// 1. Aggregate Fault Categories, Descs, and Handles
-								const categories = faultItems.map(f => f.category).filter(v => v).join('\n');
-								const descs = faultItems.map(f => `【${f.category}】${f.faultDesc}`).filter(v => v).join('\n');
+								const descs = faultItems.map(f => f.faultDesc).filter(v => v).join('\n');
 								const handles = faultItems.map(f => `【${f.category}】${f.handleDesc}`).filter(v => v).join('\n');
 
 								// 2. Aggregate Parts Info
@@ -262,7 +261,6 @@
 									travelFeeTotal: travelFeeTotal.toFixed(1),
 									laborFeeTotal: laborFeeTotal.toFixed(1),
 									grandTotal: grandTotal.toFixed(1),
-									faultCategory: categories || '-',
 									faultDesc: descs || '-',
 									handleDesc: handles || '-',
 									partsInfo: partsStr || '无',
@@ -388,7 +386,6 @@
     <Cell><Data ss:Type="String">工作时长(小时)</Data></Cell>
     <Cell><Data ss:Type="String">服务类型</Data></Cell>
     <Cell><Data ss:Type="String">是否收费</Data></Cell>
-    <Cell><Data ss:Type="String">故障分类</Data></Cell>
     <Cell><Data ss:Type="String">故障现象</Data></Cell>
     <Cell><Data ss:Type="String">处理方法</Data></Cell>
     <Cell><Data ss:Type="String">更换零件</Data></Cell>
@@ -430,7 +427,6 @@
     <Cell><Data ss:Type="String">${escapeXml(item.product ? item.product.workHours : (item.workHours || '-'))}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.serviceType)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.isChargeable)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.faultCategory)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.faultDesc)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.handleDesc)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.partsInfo)}</Data></Cell>

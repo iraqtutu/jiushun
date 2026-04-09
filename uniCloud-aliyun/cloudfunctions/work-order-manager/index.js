@@ -420,11 +420,10 @@ exports.main = async (event, context) => {
 				travelFeeTotal: Number(travelFeeTotal).toFixed(1),
 				laborFeeTotal: Number(laborFeeTotal).toFixed(1),
 				grandTotal: grandTotal.toFixed(1),
-				faultCategory: categories || '-',
 				faultDesc: descs || '-',
 				handleDesc: handles || '-',
 				partsInfo: partsStr || '无',
-				finishTime: s.finishTime,
+				finishTime: s.finishTime instanceof Date ? s.finishTime.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }) : (s.finishTime ? new Date(s.finishTime).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }) : '-'),
 
 				// Additional fields for export
 				travelDistance: af.travelFee?.distance || 0,
