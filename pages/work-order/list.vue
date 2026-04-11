@@ -463,7 +463,7 @@
  </Worksheet>
 </Workbook>`;
 
-				// Use FileSystemManager to save file
+				// Save file
 				const fs = uni.getFileSystemManager();
 				const fileName = `服务单汇总_${this.formatDateSimple(new Date())}.xls`;
 				const filePath = `${wx.env.USER_DATA_PATH}/${fileName}`;
@@ -477,10 +477,8 @@
 							filePath: filePath,
 							fileType: 'xls',
 							showMenu: true,
-							success: function () {
-								console.log('打开文档成功');
-							},
-							fail: function (e) {
+							success: () => console.log('打开文档成功'),
+							fail: (e) => {
 								console.error(e);
 								uni.showToast({ title: '打开文档失败', icon: 'none' });
 							}
