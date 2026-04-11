@@ -444,10 +444,10 @@ exports.main = async (event, context) => {
 			workbook.created = new Date();
 			const sheet = workbook.addWorksheet('服务单汇总');
 
-			// 设置列宽（第28-30列 = R/S/T）
-			sheet.getColumn(28).width = 15;
+			// 设置列宽（第29-31列 = 铭牌照片/现场照片/人机合影）
 			sheet.getColumn(29).width = 15;
 			sheet.getColumn(30).width = 15;
+			sheet.getColumn(31).width = 15;
 
 			// 表头行
 			const headers = [
@@ -489,7 +489,7 @@ exports.main = async (event, context) => {
 						extension: 'jpeg'
 					});
 					sheet.addImage(plateImg, {
-						tl: { col: 27, row: rowNum - 1 },
+						tl: { col: 28, row: rowNum - 1 },
 						ext: { width: 120, height: 90 }
 					});
 				}
@@ -499,7 +499,7 @@ exports.main = async (event, context) => {
 						extension: 'jpeg'
 					});
 					sheet.addImage(siteImg, {
-						tl: { col: 28, row: rowNum - 1 },
+						tl: { col: 29, row: rowNum - 1 },
 						ext: { width: 120, height: 90 }
 					});
 				}
@@ -509,7 +509,7 @@ exports.main = async (event, context) => {
 						extension: 'jpeg'
 					});
 					sheet.addImage(confirmImg, {
-						tl: { col: 29, row: rowNum - 1 },
+						tl: { col: 30, row: rowNum - 1 },
 						ext: { width: 120, height: 90 }
 					});
 				}
