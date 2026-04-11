@@ -1,11 +1,21 @@
 'use strict';
 const uniID = require('uni-id-common')
+const ExcelJS = require('exceljs');
+const axios = require('axios');
 const db = uniCloud.database()
 const dbCmd = db.command
 
 // ========== 角色定义 ==========
 const ADMIN_ROLES = ['admin']
 const DATA_ANALYST_ROLES = ['数据分析员']
+
+// ========== 工具函数 ==========
+const formatDateSimple = (date) => {
+    const y = date.getFullYear();
+    const m = (date.getMonth() + 1).toString().padStart(2, '0');
+    const d = date.getDate().toString().padStart(2, '0');
+    return `${y}-${m}-${d}`;
+};
 
 exports.main = async (event, context) => {
 	const { action, params } = event
@@ -243,7 +253,8 @@ exports.main = async (event, context) => {
 			customerName,
 			customerPhone,
 			reporterName,
-			productModel
+			productModel,
+			format
 		} = params
 
 		let match = {}
@@ -402,6 +413,120 @@ exports.main = async (event, context) => {
 				accompanyingPerson: item.customerConfirm?.accompanyingPerson || '-'
 			}
 		})
+
+		// ========== xlsx 格式导出 ==========
+		if (format === 'xlsx') {
+			// 下载图片并转 base64
+			const downloadImage = async (url) => {
+				if (!url) return null;
+				try {
+					const response = await axios.get(url, { responseType: 'arraybuffer', timeout: 5000 });
+					return Buffer.from(response.data, 'binary').toString('base64');
+				} catch (e) {
+					console.warn('图片下载失败:', url, e.message);
+					return null;
+				}
+			};
+
+			// 下载所有图片
+			const itemsWithImages = await Promise.all(data.map(async (item) => {
+				const plateBase64 = await downloadImage(item.platePhoto);
+				const siteBase64 = item.sitePhotos && item.sitePhotos.length > 0
+					? await downloadImage(item.sitePhotos[0])
+					: null;
+				const confirmBase64 = await downloadImage(item.machineUserPhoto);
+				return { ...item, plateBase64, siteBase64, confirmBase64 };
+			}));
+
+			// 创建 xlsx
+			const workbook = new ExcelJS.Workbook();
+			workbook.creator = 'jiushun';
+			workbook.created = new Date();
+			const sheet = workbook.addWorksheet('服务单汇总');
+
+			// 设置列宽（第28-30列 = R/S/T）
+			sheet.getColumn(28).width = 15;
+			sheet.getColumn(29).width = 15;
+			sheet.getColumn(30).width = 15;
+
+			// 表头行
+			const headers = [
+				'服务单号','报单人','提交时间','经销商名称','客户姓名','客户电话',
+				'客户地址','农机用途','报修时间','产品型号','机器编号','发动机号',
+				'生产日期','工作时长(小时)','服务类型','是否收费',
+				'故障现象','故障原因','处理方法','更换零件',
+				'里程(km)','维修用时(min)','维修完成时间',
+				'零件费','路程费','工时费','总应收(元)','支付方式',
+				'铭牌照片','现场照片','人机合影','同行人员'
+			];
+			sheet.addRow(headers);
+
+			// 数据行
+			for (const item of itemsWithImages) {
+				const row = [
+					item.orderNo, item.reporterName, formatDateSimple(new Date(item.create_date)),
+					item.distributorName,
+					item.customer ? item.customer.name : item.customerName,
+					item.customer ? item.customer.phone : item.customerPhone,
+					item.customer ? item.customer.address : item.customerAddress,
+					item.usageType, item.reportTime,
+					item.product ? item.product.model : item.productModel,
+					item.machineNo, item.engineNo, item.productionDate,
+					item.product ? item.product.workHours : (item.workHours || '-'),
+					item.serviceType, item.isChargeable,
+					item.faultDesc, item.faultReason, item.handleDesc, item.partsInfo,
+					item.travelDistance, item.repairDuration, item.finishTime,
+					item.partsTotal, item.travelFeeTotal, item.laborFeeTotal, item.grandTotal,
+					item.paymentMethod, null, null, null, item.accompanyingPerson
+				];
+				const dataRow = sheet.addRow(row);
+
+				const rowNum = dataRow.number;
+
+				if (item.plateBase64) {
+					const plateImg = workbook.addImage({
+						base64: item.plateBase64,
+						extension: 'jpeg'
+					});
+					sheet.addImage(plateImg, {
+						tl: { col: 27, row: rowNum - 1 },
+						ext: { width: 120, height: 90 }
+					});
+				}
+				if (item.siteBase64) {
+					const siteImg = workbook.addImage({
+						base64: item.siteBase64,
+						extension: 'jpeg'
+					});
+					sheet.addImage(siteImg, {
+						tl: { col: 28, row: rowNum - 1 },
+						ext: { width: 120, height: 90 }
+					});
+				}
+				if (item.confirmBase64) {
+					const confirmImg = workbook.addImage({
+						base64: item.confirmBase64,
+						extension: 'jpeg'
+					});
+					sheet.addImage(confirmImg, {
+						tl: { col: 29, row: rowNum - 1 },
+						ext: { width: 120, height: 90 }
+					});
+				}
+			}
+
+			// 生成 buffer 并转 base64
+			const buffer = await workbook.xlsx.writeBuffer();
+			const base64 = buffer.toString('base64');
+			const fileName = `服务单汇总_${formatDateSimple(new Date())}.xlsx`;
+
+			return {
+				code: 0,
+				fileName,
+				data: base64
+			};
+		}
+		// ========== xlsx 分支结束 ==========
 
 		// Summary statistics
 		const summary = {
