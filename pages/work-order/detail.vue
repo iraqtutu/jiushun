@@ -18,6 +18,8 @@
 			<view class="header-sub">
 				<text class="label">填单人:</text>
 				<text class="value">{{ order.creator || '-' }}</text>
+				<text v-if="order.accompanyingPerson" class="label ml-20">同行人:</text>
+				<text v-if="order.accompanyingPerson" class="value">{{ order.accompanyingPerson }}</text>
 			</view>
 		</view>
 		
@@ -111,7 +113,12 @@
 				<text class="label">故障现象</text>
 				<text class="block-value">{{ item.faultDesc || '无描述' }}</text>
 			</view>
-			
+
+			<view class="detail-block mt-3" v-if="item.faultReason">
+				<text class="label">故障原因</text>
+				<text class="block-value">{{ item.faultReason }}</text>
+			</view>
+
 			<view class="detail-block mt-3">
 				<text class="label">处理方法</text>
 				<text class="block-value">{{ item.handleDesc || '无描述' }}</text>
@@ -386,6 +393,7 @@
 								orderNo: data.orderNo,
 								creator: data.userInfo ? (data.userInfo.nickname || data.userInfo.name || '未知') : '未知',
 								status: data.status,
+								accompanyingPerson: data.customerConfirm?.accompanyingPerson || '',
 								customer: data.customer || {},
 								product: {
 									...(data.product || {}),
@@ -396,7 +404,8 @@
 									faultItems: processedFaultItems
 								},
 								confirm: {
-									machineUserPhoto: urlMap[confirmIdRaw] || confirmIdRaw
+									machineUserPhoto: urlMap[confirmIdRaw] || confirmIdRaw,
+									accompanyingPerson: data.customerConfirm?.accompanyingPerson || ''
 								},
 								additionalFees: data.additionalFees || null
 							};
@@ -816,4 +825,5 @@
 	}
 	
 	.mb-safe { margin-bottom: env(safe-area-inset-bottom); }
+	.ml-20 { margin-left: 20px; }
 </style>

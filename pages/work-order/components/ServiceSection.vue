@@ -39,6 +39,10 @@
 <textarea class="field-textarea" :value="service.faultDesc" @input="onField('faultDesc', $event.detail.value)" placeholder="简述故障表现..." placeholder-class="ph" />
 </view>
 <view class="ui-field column">
+<text class="field-label">故障原因</text>
+<textarea class="field-textarea" :value="service.faultReason" @input="onField('faultReason', $event.detail.value)" placeholder="简述故障原因（非必填）..." placeholder-class="ph" />
+</view>
+<view class="ui-field column">
 <text class="field-label required">处理方法</text>
 <textarea class="field-textarea" :value="service.handleDesc" @input="onField('handleDesc', $event.detail.value)" placeholder="简述维修过程..." placeholder-class="ph" />
 </view>

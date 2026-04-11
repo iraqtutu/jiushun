@@ -72,6 +72,7 @@
 						"properties": {
 							"category": { "bsonType": "string", "description": "分类名称" },
 							"faultDesc": { "bsonType": "string", "description": "现象" },
+							"faultReason": { "bsonType": "string", "description": "故障原因" },
 							"handleDesc": { "bsonType": "string", "description": "处理方法" },
 							"parts": {
 								"bsonType": "array",
@@ -106,7 +107,8 @@
 			"description": "客户确认",
 			"required": ["machineUserPhoto"],
 			"properties": {
-				"machineUserPhoto": { "bsonType": "file", "description": "人机合影" }
+				"machineUserPhoto": { "bsonType": "file", "description": "人机合影" },
+				"accompanyingPerson": { "bsonType": "string", "description": "同行人员" }
 			}
 		},
 		"additionalFees": {

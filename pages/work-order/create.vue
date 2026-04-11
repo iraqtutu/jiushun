@@ -155,7 +155,12 @@
 						<text class="field-label required">故障现象</text>
 						<textarea class="field-textarea" v-model="item.faultDesc" placeholder="请详细描述故障表现..." placeholder-class="ph" />
 					</view>
-					
+
+					<view class="ui-field column">
+						<text class="field-label">故障原因</text>
+						<textarea class="field-textarea" v-model="item.faultReason" placeholder="简述故障原因（非必填）..." placeholder-class="ph" />
+					</view>
+
 					<view class="ui-field column">
 						<text class="field-label required">处理方法</text>
 						<textarea class="field-textarea" v-model="item.handleDesc" placeholder="请详细描述处理过程..." placeholder-class="ph" />
@@ -298,6 +303,11 @@
 							<picker mode="date" @change="onFinishDateChange" class="tp"><view>{{ formData.service.finishDate }}</view></picker>
 							<picker mode="time" @change="onFinishTimeChange" class="tp ml-5"><view>{{ formData.service.finishTime || '00:00' }}</view></picker>
 						</view>
+					</view>
+
+					<view class="ui-field">
+						<text class="field-label">同行人员</text>
+						<input class="field-input" v-model="formData.confirm.accompanyingPerson" placeholder="请输入同行人员（非必填）" placeholder-class="ph" />
 					</view>
 				</view>
 			</view>
@@ -532,7 +542,7 @@
 							total: 0 
 						}
 					},
-					confirm: { machineUserPhoto: '' }
+					confirm: { machineUserPhoto: '', accompanyingPerson: '' }
 				},
 				sectionsCollapsed: { customer: false, product: true, service: true, fees: true, confirm: true },
 				allowSave: false,
@@ -878,6 +888,7 @@
 					this.formData.service.faultItems.push({
 						category: categoryName,
 						faultDesc: '',
+						faultReason: '',
 						handleDesc: '',
 						parts: [],
 						sitePhotos: []
@@ -1135,7 +1146,7 @@
 							},
 							totalAmount: Number(this.additionalTotal)
 						},
-						customerConfirm: { machineUserPhoto: confirmId } // 明确使用上传后的 ID
+						customerConfirm: { machineUserPhoto: confirmId, accompanyingPerson: this.formData.confirm.accompanyingPerson || '' } // 明确使用上传后的 ID
 					};
 
 					const actionType = this.isEditMode ? 'update' : 'create';

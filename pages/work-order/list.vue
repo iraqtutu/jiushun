@@ -194,8 +194,9 @@
 								const faultItems = s.faultItems || [];
 
 								// 1. Aggregate Fault Categories, Descs, and Handles
-								const descs = faultItems.map(f => f.faultDesc).filter(v => v).join('\n');
-								const handles = faultItems.map(f => `【${f.category}】${f.handleDesc}`).filter(v => v).join('\n');
+								const descs = faultItems.map((f, idx) => `${idx + 1}. ${f.faultDesc}`).filter(v => v).join('\n');
+								const handles = faultItems.map((f, idx) => `${idx + 1}. 【${f.category}】${f.handleDesc}`).filter(v => v).join('\n');
+								const faultReasons = faultItems.map((f, idx) => `${idx + 1}. 【${f.category}】${f.faultReason || ''}`).filter(v => v.trim()).join('\n');
 
 								// 2. Aggregate Parts Info
 								let allParts = [];
@@ -263,6 +264,7 @@
 									grandTotal: grandTotal.toFixed(1),
 									faultDesc: descs || '-',
 									handleDesc: handles || '-',
+									faultReason: faultReasons || '-',
 									partsInfo: partsStr || '无',
 									finishTime: this.formatDate(s.finishTime),
 
@@ -273,7 +275,8 @@
 									// Image IDs for export
 									platePhoto: p.platePhoto,
 									sitePhotos: sitePhotos,
-									machineUserPhoto: item.customerConfirm?.machineUserPhoto
+									machineUserPhoto: item.customerConfirm?.machineUserPhoto,
+									accompanyingPerson: item.customerConfirm?.accompanyingPerson || '-'
 								};
 							});
 
@@ -349,7 +352,8 @@
 						.replace(/</g, '&lt;')
 						.replace(/>/g, '&gt;')
 						.replace(/"/g, '&quot;')
-						.replace(/'/g, '&apos;');
+						.replace(/'/g, '&apos;')
+						.replace(/\n/g, '&#10;');
 				};
 
 				// Helper to format date
@@ -367,6 +371,11 @@
  xmlns:x="urn:schemas-microsoft-com:office:excel"
  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
  xmlns:html="http://www.w3.org/TR/REC-html40">
+ <Styles>
+  <Style ss:ID="wrapText">
+   <Alignment ss:WrapText="1"/>
+  </Style>
+ </Styles>
  <Worksheet ss:Name="服务单汇总">
   <Table>
    <Row>
@@ -386,8 +395,9 @@
     <Cell><Data ss:Type="String">工作时长(小时)</Data></Cell>
     <Cell><Data ss:Type="String">服务类型</Data></Cell>
     <Cell><Data ss:Type="String">是否收费</Data></Cell>
-    <Cell><Data ss:Type="String">故障现象</Data></Cell>
-    <Cell><Data ss:Type="String">处理方法</Data></Cell>
+    <Cell ss:StyleID="wrapText"><Data ss:Type="String">故障现象</Data></Cell>
+    <Cell ss:StyleID="wrapText"><Data ss:Type="String">故障原因</Data></Cell>
+    <Cell ss:StyleID="wrapText"><Data ss:Type="String">处理方法</Data></Cell>
     <Cell><Data ss:Type="String">更换零件</Data></Cell>
     <Cell><Data ss:Type="String">里程(km)</Data></Cell>
     <Cell><Data ss:Type="String">维修用时(min)</Data></Cell>
@@ -400,6 +410,7 @@
     <Cell><Data ss:Type="String">铭牌照片</Data></Cell>
     <Cell><Data ss:Type="String">现场照片</Data></Cell>
     <Cell><Data ss:Type="String">人机合影</Data></Cell>
+    <Cell><Data ss:Type="String">同行人员</Data></Cell>
    </Row>`;
 
 				// Rows
@@ -427,8 +438,9 @@
     <Cell><Data ss:Type="String">${escapeXml(item.product ? item.product.workHours : (item.workHours || '-'))}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.serviceType)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.isChargeable)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.faultDesc)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.handleDesc)}</Data></Cell>
+    <Cell ss:StyleID="wrapText"><Data ss:Type="String">${escapeXml(item.faultDesc)}</Data></Cell>
+    <Cell ss:StyleID="wrapText"><Data ss:Type="String">${escapeXml(item.faultReason)}</Data></Cell>
+    <Cell ss:StyleID="wrapText"><Data ss:Type="String">${escapeXml(item.handleDesc)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.partsInfo)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.travelDistance)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(item.repairDuration)}</Data></Cell>
@@ -441,6 +453,7 @@
     <Cell ${plateUrl ? 'ss:Formula="=IMAGE(&quot;' + plateUrl + '&quot;)"' : ''}><Data ${plateUrl ? 'ss:Type="Error"' : 'ss:Type="String"'}>${plateUrl ? '#VALUE!' : '-'}</Data></Cell>
     <Cell ${siteUrls ? 'ss:Formula="=IMAGE(&quot;' + siteUrls.split(' ; ')[0] + '&quot;)"' : ''}><Data ${siteUrls ? 'ss:Type="Error"' : 'ss:Type="String"'}>${siteUrls ? '#VALUE!' : '-'}</Data></Cell>
     <Cell ${confirmUrl ? 'ss:Formula="=IMAGE(&quot;' + confirmUrl + '&quot;)"' : ''}><Data ${confirmUrl ? 'ss:Type="Error"' : 'ss:Type="String"'}>${confirmUrl ? '#VALUE!' : '-'}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(item.accompanyingPerson)}</Data></Cell>
    </Row>`;
 				});
 

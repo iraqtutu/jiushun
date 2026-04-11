@@ -295,46 +295,10 @@ exports.main = async (event, context) => {
 			})
 			.end()
 
-		// Collect all file IDs for URL conversion
-		const fileIds = new Set();
-		res.data.forEach(item => {
-			const p = item.product || {};
-			if (p.platePhoto) fileIds.add(p.platePhoto);
-			if (item.customerConfirm?.machineUserPhoto) fileIds.add(item.customerConfirm.machineUserPhoto);
-			const faultItems = (item.service || {}).faultItems || [];
-			faultItems.forEach(f => {
-				if (f.sitePhotos) {
-					f.sitePhotos.forEach(photo => {
-						if (photo) fileIds.add(photo);
-					});
-				}
-			});
-		});
-
-		// Convert file IDs to HTTP URLs
-		const fileIdToUrl = {};
-		if (fileIds.size > 0) {
-			try {
-				const urlRes = await uniCloud.getTempFileURL({
-					fileList: Array.from(fileIds)
-				});
-				if (urlRes.fileList) {
-					urlRes.fileList.forEach(f => {
-						if (f.fileID && f.tempFileURL) {
-							fileIdToUrl[f.fileID] = f.tempFileURL;
-						}
-					});
-				}
-			} catch (e) {
-				console.error('批量转换文件URL失败:', e);
-			}
-		}
-
-		// Helper to get HTTP URL from file ID
-		const getUrl = (fileId) => {
-			if (!fileId) return '';
-			if (fileId.startsWith('http')) return fileId;
-			return fileIdToUrl[fileId] || fileId;
+		// Helper to get URL (database stores accessible URLs directly)
+		const getUrl = (url) => {
+			if (!url) return '';
+			return url;
 		};
 
 		// Transform data for export (same as frontend loadData transformation)
@@ -345,9 +309,10 @@ exports.main = async (event, context) => {
 			const faultItems = s.faultItems || [];
 
 			// 1. Aggregate Fault Categories, Descs, and Handles
-			const categories = faultItems.map(f => f.category).filter(v => v).join('\n');
-			const descs = faultItems.map(f => `【${f.category}】${f.faultDesc}`).filter(v => v).join('\n');
-			const handles = faultItems.map(f => `【${f.category}】${f.handleDesc}`).filter(v => v).join('\n');
+			const categories = faultItems.map((f, idx) => f.category).filter(v => v).join('\n');
+			const descs = faultItems.map((f, idx) => `${idx + 1}. 【${f.category}】${f.faultDesc}`).filter(v => v).join('\n');
+			const handles = faultItems.map((f, idx) => `${idx + 1}. 【${f.category}】${f.handleDesc}`).filter(v => v).join('\n');
+			const faultReasons = faultItems.map((f, idx) => `${idx + 1}. 【${f.category}】${f.faultReason || ''}`).filter(v => v.trim()).join('\n');
 
 			// 2. Aggregate Parts Info
 			let allParts = [];
@@ -421,6 +386,7 @@ exports.main = async (event, context) => {
 				laborFeeTotal: Number(laborFeeTotal).toFixed(1),
 				grandTotal: grandTotal.toFixed(1),
 				faultDesc: descs || '-',
+				faultReason: faultReasons || '-',
 				handleDesc: handles || '-',
 				partsInfo: partsStr || '无',
 				finishTime: s.finishTime instanceof Date ? s.finishTime.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }) : (s.finishTime ? new Date(s.finishTime).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }) : '-'),
@@ -432,7 +398,8 @@ exports.main = async (event, context) => {
 				// Image URLs (converted from cloud:// IDs)
 				platePhoto: getUrl(p.platePhoto),
 				sitePhotos: sitePhotos.map(photo => getUrl(photo)),
-				machineUserPhoto: getUrl(item.customerConfirm?.machineUserPhoto)
+				machineUserPhoto: getUrl(item.customerConfirm?.machineUserPhoto),
+				accompanyingPerson: item.customerConfirm?.accompanyingPerson || '-'
 			}
 		})
 
