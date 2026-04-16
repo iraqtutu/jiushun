@@ -17,6 +17,17 @@ const formatDateSimple = (date) => {
     return `${y}-${m}-${d}`;
 };
 
+const formatTimestamp = (ts) => {
+    if (!ts) return '';
+    const d = ts instanceof Date ? ts : new Date(ts);
+    const y = d.getFullYear();
+    const m = (d.getMonth() + 1).toString().padStart(2, '0');
+    const date = d.getDate().toString().padStart(2, '0');
+    const h = d.getHours().toString().padStart(2, '0');
+    const min = d.getMinutes().toString().padStart(2, '0');
+    return `${y}-${m}-${date} ${h}:${min}`;
+};
+
 exports.main = async (event, context) => {
 	const { action, params } = event
 	const uniIdIns = uniID.createInstance({ context })
@@ -320,10 +331,15 @@ exports.main = async (event, context) => {
 			const faultItems = s.faultItems || [];
 
 			// 1. Aggregate Fault Categories, Descs, and Handles
+			const hasMultipleFaults = faultItems.length > 1;
 			const categories = faultItems.map((f, idx) => f.category).filter(v => v).join('\n');
-			const descs = faultItems.map((f, idx) => `${idx + 1}. 【${f.category}】${f.faultDesc}`).filter(v => v).join('\n');
-			const handles = faultItems.map((f, idx) => `${idx + 1}. 【${f.category}】${f.handleDesc}`).filter(v => v).join('\n');
-			const faultReasons = faultItems.map((f, idx) => `${idx + 1}. 【${f.category}】${f.faultReason || ''}`).filter(v => v.trim()).join('\n');
+			// 现象：多个故障时加序号和分类名，单个故障时不加
+			const descs = faultItems.map((f, idx) => hasMultipleFaults ? `${idx + 1}. 【${f.category}】${f.faultDesc}` : f.faultDesc).filter(v => v).join('\n');
+			// 处理方法：多个故障时只加序号，单个故障时不加
+			const handles = faultItems.map((f, idx) => hasMultipleFaults ? `${idx + 1}. ${f.handleDesc}` : f.handleDesc).filter(v => v).join('\n');
+			// 故障原因：只导出填写了原因的，多个故障时只加序号，单个时不加
+			const faultReasonsWithReason = faultItems.filter(f => f.faultReason && f.faultReason.trim());
+			const faultReasons = faultReasonsWithReason.map((f, idx) => hasMultipleFaults ? `${idx + 1}、${f.faultReason}` : f.faultReason).join('\n');
 
 			// 2. Aggregate Parts Info
 			let allParts = [];
@@ -379,13 +395,13 @@ exports.main = async (event, context) => {
 				customerPhone: c.phone || '-',
 				customerAddress: c.address || '-',
 				usageType: c.usageType || '-',
-				reportTime: c.reportTime,
+				reportTime: formatTimestamp(c.reportTime),
 
 				// Product
 				productModel: p.model || '-',
 				machineNo: p.machineNo || '-',
 				engineNo: p.engineNo || '-',
-				productionDate: p.productionDate,
+				productionDate: formatTimestamp(p.productionDate),
 				workHours: p.workHours || '',
 
 				// Service
@@ -416,11 +432,14 @@ exports.main = async (event, context) => {
 
 		// ========== xlsx 格式导出 ==========
 		if (format === 'xlsx') {
+			const PARALLEL_ITEMS = 10; // 减少并发，控制内存和网络
+			console.log(`[export] 开始导出，共 ${data.length} 条记录`);
+
 			// 下载图片并转 base64
 			const downloadImage = async (url) => {
 				if (!url) return null;
 				try {
-					const response = await axios.get(url, { responseType: 'arraybuffer', timeout: 5000 });
+					const response = await axios.get(url, { responseType: 'arraybuffer', timeout: 8000 });
 					return Buffer.from(response.data, 'binary').toString('base64');
 				} catch (e) {
 					console.warn('图片下载失败:', url, e.message);
@@ -428,15 +447,21 @@ exports.main = async (event, context) => {
 				}
 			};
 
-			// 下载所有图片
-			const itemsWithImages = await Promise.all(data.map(async (item) => {
-				const plateBase64 = await downloadImage(item.platePhoto);
-				const siteBase64 = item.sitePhotos && item.sitePhotos.length > 0
-					? await downloadImage(item.sitePhotos[0])
-					: null;
-				const confirmBase64 = await downloadImage(item.machineUserPhoto);
-				return { ...item, plateBase64, siteBase64, confirmBase64 };
-			}));
+			// 下载单条记录的三张图片（并行下载）
+			const downloadImagesForItem = async (item) => {
+				const urls = [
+					item.platePhoto,
+					item.sitePhotos && item.sitePhotos.length > 0 ? item.sitePhotos[0] : null,
+					item.machineUserPhoto
+				].filter(Boolean);
+				const results = await Promise.all(urls.map(url => downloadImage(url)));
+				return {
+					...item,
+					plateBase64: results[0] || null,
+					siteBase64: results[1] || null,
+					confirmBase64: results[2] || null
+				};
+			};
 
 			// 创建 xlsx
 			const workbook = new ExcelJS.Workbook();
@@ -461,69 +486,91 @@ exports.main = async (event, context) => {
 			];
 			sheet.addRow(headers);
 
-			// 数据行
-			for (const item of itemsWithImages) {
-				const row = [
-					item.orderNo, item.reporterName, formatDateSimple(new Date(item.create_date)),
-					item.distributorName,
-					item.customer ? item.customer.name : item.customerName,
-					item.customer ? item.customer.phone : item.customerPhone,
-					item.customer ? item.customer.address : item.customerAddress,
-					item.usageType, item.reportTime,
-					item.product ? item.product.model : item.productModel,
-					item.machineNo, item.engineNo, item.productionDate,
-					item.product ? item.product.workHours : (item.workHours || '-'),
-					item.serviceType, item.isChargeable,
-					item.faultDesc, item.faultReason, item.handleDesc, item.partsInfo,
-					item.travelDistance, item.repairDuration, item.finishTime,
-					item.partsTotal, item.travelFeeTotal, item.laborFeeTotal, item.grandTotal,
-					item.paymentMethod, null, null, null, item.accompanyingPerson
-				];
-				const dataRow = sheet.addRow(row);
+			// 分批下载图片并写入行，避免同时在内存中保存所有图片
+			for (let i = 0; i < data.length; i += PARALLEL_ITEMS) {
+				const chunk = data.slice(i, i + PARALLEL_ITEMS);
+				console.log(`[export] 处理第 ${i + 1} ~ ${i + chunk.length} 条记录`);
+				// eslint-disable-next-line no-await-in-loop
+				const chunkResults = await Promise.all(chunk.map(item => downloadImagesForItem(item)));
+				console.log(`[export] 第 ${i + 1} ~ ${i + chunk.length} 条图片下载完成，开始写入Excel`);
 
-				const rowNum = dataRow.number;
+				for (const item of chunkResults) {
+					const row = [
+						item.orderNo, item.reporterName, formatDateSimple(new Date(item.create_date)),
+						item.distributorName,
+						item.customer ? item.customer.name : item.customerName,
+						item.customer ? item.customer.phone : item.customerPhone,
+						item.customer ? item.customer.address : item.customerAddress,
+						item.usageType, item.reportTime,
+						item.product ? item.product.model : item.productModel,
+						item.machineNo, item.engineNo, item.productionDate,
+						item.product ? item.product.workHours : (item.workHours || '-'),
+						item.serviceType, item.isChargeable,
+						item.faultDesc, item.faultReason, item.handleDesc, item.partsInfo,
+						item.travelDistance, item.repairDuration, item.finishTime,
+						item.partsTotal, item.travelFeeTotal, item.laborFeeTotal, item.grandTotal,
+						item.paymentMethod, null, null, null, item.accompanyingPerson
+					];
+					const dataRow = sheet.addRow(row);
 
-				if (item.plateBase64) {
-					const plateImg = workbook.addImage({
-						base64: item.plateBase64,
-						extension: 'jpeg'
-					});
-					sheet.addImage(plateImg, {
-						tl: { col: 28, row: rowNum - 1 },
-						ext: { width: 120, height: 90 }
-					});
-				}
-				if (item.siteBase64) {
-					const siteImg = workbook.addImage({
-						base64: item.siteBase64,
-						extension: 'jpeg'
-					});
-					sheet.addImage(siteImg, {
-						tl: { col: 29, row: rowNum - 1 },
-						ext: { width: 120, height: 90 }
-					});
-				}
-				if (item.confirmBase64) {
-					const confirmImg = workbook.addImage({
-						base64: item.confirmBase64,
-						extension: 'jpeg'
-					});
-					sheet.addImage(confirmImg, {
-						tl: { col: 30, row: rowNum - 1 },
-						ext: { width: 120, height: 90 }
-					});
+					const rowNum = dataRow.number;
+
+					if (item.plateBase64) {
+						const plateImg = workbook.addImage({
+							base64: item.plateBase64,
+							extension: 'jpeg'
+						});
+						sheet.addImage(plateImg, {
+							tl: { col: 28, row: rowNum - 1 },
+							ext: { width: 120, height: 90 }
+						});
+					}
+					if (item.siteBase64) {
+						const siteImg = workbook.addImage({
+							base64: item.siteBase64,
+							extension: 'jpeg'
+						});
+						sheet.addImage(siteImg, {
+							tl: { col: 29, row: rowNum - 1 },
+							ext: { width: 120, height: 90 }
+						});
+					}
+					if (item.confirmBase64) {
+						const confirmImg = workbook.addImage({
+							base64: item.confirmBase64,
+							extension: 'jpeg'
+						});
+						sheet.addImage(confirmImg, {
+							tl: { col: 30, row: rowNum - 1 },
+							ext: { width: 120, height: 90 }
+						});
+					}
 				}
 			}
 
-			// 生成 buffer 并转 base64
+			// 生成 buffer 并上传到云存储
+			console.log('[export] 开始生成Excel buffer...');
 			const buffer = await workbook.xlsx.writeBuffer();
-			const base64 = buffer.toString('base64');
-			const fileName = `服务单汇总_${formatDateSimple(new Date())}.xlsx`;
+			console.log(`[export] Excel buffer生成完成，大小: ${buffer.length} bytes`);
+
+			// 写入临时文件后上传
+			const cloudPath = `export/服务单汇总_${formatDateSimple(new Date())}_${Date.now()}.xlsx`;
+			const uploadRes = await uniCloud.uploadFile({
+				fileContent: buffer,
+				cloudPath: cloudPath
+			});
+			console.log(`[export] 文件已上传至云存储: ${uploadRes.fileID}`);
+
+			// 转换为可访问的 HTTP URL
+			const urlRes = await uniCloud.getTempFileURL({
+				fileList: [uploadRes.fileID]
+			});
+			const url = urlRes.fileList[0]?.tempFileURL || uploadRes.fileID;
 
 			return {
 				code: 0,
-				fileName,
-				data: base64
+				fileName: cloudPath.split('/').pop(),
+				url
 			};
 		}
 		// ========== xlsx 分支结束 ==========

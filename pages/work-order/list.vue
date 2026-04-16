@@ -319,7 +319,8 @@
 								customerName: this.filter.customerName,
 								customerPhone: this.filter.customerPhone,
 								reporterName: this.filter.reporterName,
-								productModel: this.filter.productModel
+								productModel: this.filter.productModel,
+								format: 'xlsx'
 							},
 							uniIdToken: uni.getStorageSync('uni_id_token')
 						}
@@ -333,168 +334,116 @@
 
 					const data = res.result.data || [];
 
-					// Generate Excel from cloud data
-					await this.generateExcelFromData(data);
+					// xlsx format: cloud URL -> download -> file -> open
+					if (res.result.fileName && res.result.url) {
+						uni.hideLoading();
+						uni.showLoading({ title: '正在下载...' });
+						uni.downloadFile({
+							url: res.result.url,
+							success: (downloadRes) => {
+								if (downloadRes.statusCode === 200) {
+									uni.hideLoading();
+									this.cleanupOldExportFiles();
+									const filePath = `${wx.env.USER_DATA_PATH}/${res.result.fileName}`;
+									uni.saveFile({
+										tempFilePath: downloadRes.tempFilePath,
+										success: (saveRes) => {
+											uni.openDocument({
+												filePath: saveRes.savedFilePath,
+												fileType: 'xlsx',
+												showMenu: true,
+												success: () => console.log('打开文档成功'),
+												fail: (e) => {
+													console.error(e);
+													uni.showToast({ title: '打开文档失败', icon: 'none' });
+												}
+											});
+										},
+										fail: (e) => {
+											uni.hideLoading();
+											console.error(e);
+											uni.showToast({ title: '保存文件失败', icon: 'none' });
+										}
+									});
+								} else {
+									uni.hideLoading();
+									uni.showToast({ title: '下载失败', icon: 'none' });
+								}
+							},
+							fail: (e) => {
+								uni.hideLoading();
+								console.error(e);
+								uni.showToast({ title: '下载失败', icon: 'none' });
+							}
+						});
+						return;
+					}
 
-					uni.hideLoading();
+					// xlsx format: base64 -> file -> open
+					if (res.result.fileName && res.result.data) {
+						uni.hideLoading();
+						this.cleanupOldExportFiles();
+						const fileName = res.result.fileName;
+						const filePath = `${wx.env.USER_DATA_PATH}/${fileName}`;
+						const fs = uni.getFileSystemManager();
+						try {
+							fs.writeFile({
+								filePath,
+								data: uni.base64ToArrayBuffer(res.result.data),
+								encoding: 'binary',
+								success: () => {
+									uni.openDocument({
+										filePath,
+										fileType: 'xlsx',
+										showMenu: true,
+										success: () => console.log('打开文档成功'),
+										fail: (e) => {
+											console.error(e);
+											uni.showToast({ title: '打开文档失败', icon: 'none' });
+										}
+									});
+								},
+								fail: (err) => {
+									console.error(err);
+									uni.showToast({ title: '写入文件失败', icon: 'none' });
+								}
+							});
+						} catch (e) {
+							uni.showToast({ title: '导出失败', icon: 'none' });
+							console.error(e);
+						}
+						return;
+					}
 				} catch (e) {
 					uni.hideLoading();
 					uni.showToast({ title: '导出失败', icon: 'none' });
 					console.error('Export error:', e);
 				}
 			},
-			async generateExcelFromData(data, urlMap = {}) {
-				// Helper to escape XML special characters
-				const escapeXml = (str) => {
-					if (!str) return '';
-					return String(str)
-						.replace(/&/g, '&amp;')
-						.replace(/</g, '&lt;')
-						.replace(/>/g, '&gt;')
-						.replace(/"/g, '&quot;')
-						.replace(/'/g, '&apos;')
-						.replace(/\n/g, '&#10;');
-				};
-
-				// Helper to format date
-				const formatDate = (ts) => {
-					if (!ts) return '-';
-					const d = new Date(ts);
-					return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-				};
-
-				// Excel 2003 XML Template Header
-				let xmlContent = `<?xml version="1.0"?>
-<?mso-application progid="Excel.Sheet"?>
-<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:o="urn:schemas-microsoft-com:office:office"
- xmlns:x="urn:schemas-microsoft-com:office:excel"
- xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:html="http://www.w3.org/TR/REC-html40">
- <Styles>
-  <Style ss:ID="wrapText">
-   <Alignment ss:WrapText="1"/>
-  </Style>
- </Styles>
- <Worksheet ss:Name="服务单汇总">
-  <Table>
-   <Row>
-    <Cell><Data ss:Type="String">服务单号</Data></Cell>
-    <Cell><Data ss:Type="String">报单人</Data></Cell>
-    <Cell><Data ss:Type="String">提交时间</Data></Cell>
-    <Cell><Data ss:Type="String">经销商名称</Data></Cell>
-    <Cell><Data ss:Type="String">客户姓名</Data></Cell>
-    <Cell><Data ss:Type="String">客户电话</Data></Cell>
-    <Cell><Data ss:Type="String">客户地址</Data></Cell>
-    <Cell><Data ss:Type="String">农机用途</Data></Cell>
-    <Cell><Data ss:Type="String">报修时间</Data></Cell>
-    <Cell><Data ss:Type="String">产品型号</Data></Cell>
-    <Cell><Data ss:Type="String">机器编号</Data></Cell>
-    <Cell><Data ss:Type="String">发动机号</Data></Cell>
-    <Cell><Data ss:Type="String">生产日期</Data></Cell>
-    <Cell><Data ss:Type="String">工作时长(小时)</Data></Cell>
-    <Cell><Data ss:Type="String">服务类型</Data></Cell>
-    <Cell><Data ss:Type="String">是否收费</Data></Cell>
-    <Cell ss:StyleID="wrapText"><Data ss:Type="String">故障现象</Data></Cell>
-    <Cell ss:StyleID="wrapText"><Data ss:Type="String">故障原因</Data></Cell>
-    <Cell ss:StyleID="wrapText"><Data ss:Type="String">处理方法</Data></Cell>
-    <Cell><Data ss:Type="String">更换零件</Data></Cell>
-    <Cell><Data ss:Type="String">里程(km)</Data></Cell>
-    <Cell><Data ss:Type="String">维修用时(min)</Data></Cell>
-    <Cell><Data ss:Type="String">维修完成时间</Data></Cell>
-    <Cell><Data ss:Type="String">零件费</Data></Cell>
-    <Cell><Data ss:Type="String">路程费</Data></Cell>
-    <Cell><Data ss:Type="String">工时费</Data></Cell>
-    <Cell><Data ss:Type="String">总应收(元)</Data></Cell>
-    <Cell><Data ss:Type="String">支付方式</Data></Cell>
-    <Cell><Data ss:Type="String">铭牌照片</Data></Cell>
-    <Cell><Data ss:Type="String">现场照片</Data></Cell>
-    <Cell><Data ss:Type="String">人机合影</Data></Cell>
-    <Cell><Data ss:Type="String">同行人员</Data></Cell>
-   </Row>`;
-
-				// Rows
-				data.forEach(item => {
-					// 直接使用后端返回的HTTP图片地址
-					const plateUrl = item.platePhoto || '';
-					const confirmUrl = item.machineUserPhoto || '';
-					const siteUrls = (item.sitePhotos || []).filter(u => u).join(' ; ');
-
-					xmlContent += `
-   <Row>
-    <Cell><Data ss:Type="String">${escapeXml(item.orderNo)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.reporterName)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(formatDate(item.create_date))}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.distributorName)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.customer ? item.customer.name : item.customerName)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.customer ? item.customer.phone : item.customerPhone)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.customer ? item.customer.address : item.customerAddress)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.usageType)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.reportTime)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.product ? item.product.model : item.productModel)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.machineNo)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.engineNo)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.productionDate)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.product ? item.product.workHours : (item.workHours || '-'))}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.serviceType)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.isChargeable)}</Data></Cell>
-    <Cell ss:StyleID="wrapText"><Data ss:Type="String">${escapeXml(item.faultDesc)}</Data></Cell>
-    <Cell ss:StyleID="wrapText"><Data ss:Type="String">${escapeXml(item.faultReason)}</Data></Cell>
-    <Cell ss:StyleID="wrapText"><Data ss:Type="String">${escapeXml(item.handleDesc)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.partsInfo)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.travelDistance)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.repairDuration)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.finishTime)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.partsTotal)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.travelFeeTotal)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.laborFeeTotal)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.grandTotal)}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.paymentMethod)}</Data></Cell>
-    <Cell ${plateUrl ? 'ss:Formula="=IMAGE(&quot;' + plateUrl + '&quot;)"' : ''}><Data ${plateUrl ? 'ss:Type="Error"' : 'ss:Type="String"'}>${plateUrl ? '#VALUE!' : '-'}</Data></Cell>
-    <Cell ${siteUrls ? 'ss:Formula="=IMAGE(&quot;' + siteUrls.split(' ; ')[0] + '&quot;)"' : ''}><Data ${siteUrls ? 'ss:Type="Error"' : 'ss:Type="String"'}>${siteUrls ? '#VALUE!' : '-'}</Data></Cell>
-    <Cell ${confirmUrl ? 'ss:Formula="=IMAGE(&quot;' + confirmUrl + '&quot;)"' : ''}><Data ${confirmUrl ? 'ss:Type="Error"' : 'ss:Type="String"'}>${confirmUrl ? '#VALUE!' : '-'}</Data></Cell>
-    <Cell><Data ss:Type="String">${escapeXml(item.accompanyingPerson)}</Data></Cell>
-   </Row>`;
-				});
-
-				// Footer
-				xmlContent += `
-  </Table>
- </Worksheet>
-</Workbook>`;
-
-				// Save file
-				const fs = uni.getFileSystemManager();
-				const fileName = `服务单汇总_${this.formatDateSimple(new Date())}.xls`;
-				const filePath = `${wx.env.USER_DATA_PATH}/${fileName}`;
-
-				fs.writeFile({
-					filePath: filePath,
-					data: xmlContent,
-					encoding: 'utf8',
-					success: () => {
-						uni.openDocument({
-							filePath: filePath,
-							fileType: 'xls',
-							showMenu: true,
-							success: () => console.log('打开文档成功'),
-							fail: (e) => {
-								console.error(e);
-								uni.showToast({ title: '打开文档失败', icon: 'none' });
-							}
-						});
-					},
-					fail: (err) => {
-						console.error(err);
-						uni.showToast({ title: '导出失败', icon: 'none' });
-					}
-				});
-			},
 			formatDateSimple(date) {
 				const y = date.getFullYear();
 				const m = (date.getMonth() + 1).toString().padStart(2, '0');
 				const d = date.getDate().toString().padStart(2, '0');
 				return `${y}-${m}-${d}`;
+			},
+			// 清理旧导出文件
+			cleanupOldExportFiles() {
+				const fs = uni.getFileSystemManager();
+				const userDataPath = wx.env.USER_DATA_PATH;
+				try {
+					const files = fs.readdirSync(userDataPath);
+					files.forEach(file => {
+						if (file.startsWith('服务单汇总_') && (file.endsWith('.xlsx') || file.endsWith('.xls'))) {
+							try {
+								fs.unlinkSync(`${userDataPath}/${file}`);
+							} catch (e) {
+								// ignore
+							}
+						}
+					});
+				} catch (e) {
+					// ignore
+				}
 			},
 			formatDate(ts) {
 				if (!ts) return '';
