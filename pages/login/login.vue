@@ -73,10 +73,18 @@
 				
 				uni.login({
 					provider: 'weixin',
+					timeout: 10000,
 					success: (loginRes) => {
 						this.callCloudLogin(loginRes.code);
 					},
 					fail: (err) => {
+						// 微信开发者工具中 api.weixin.qq.com 可能超时，属正常现象
+						if (err.errMsg && err.errMsg.includes('timeout')) {
+							console.warn('微信预登录超时（开发者工具网络问题），忽略');
+							this.isLoading = false;
+							this.statusMsg = '微信预登录超时，请检查网络后重试';
+							return;
+						}
 						this.isLoading = false;
 						this.statusMsg = '微信登录失败，请重试';
 						console.error('Login Fail:', err);

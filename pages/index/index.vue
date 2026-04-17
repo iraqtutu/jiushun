@@ -160,6 +160,7 @@
 				// Silent refresh to check latest roles
 				uni.login({
 					provider: 'weixin',
+					timeout: 10000,
 					success: (loginRes) => {
 						uniCloud.callFunction({
 							name: 'user-center',
@@ -174,8 +175,14 @@
 									uni.setStorageSync('userInfo', freshInfo);
 									this.updateLocalInfo();
 								}
+							},
+							fail: (e) => {
+								console.warn('refreshUserInfo cloud call failed:', e);
 							}
 						});
+					},
+					fail: (e) => {
+						console.warn('refreshUserInfo login failed:', e);
 					}
 				});
 			},
@@ -192,6 +199,9 @@
 						if (res.result.code === 0) {
 							this.pendingApprovalCount = res.result.data ? res.result.data.length : 0;
 						}
+					},
+					fail: (e) => {
+						console.warn('getApplications failed:', e);
 					}
 				});
 
@@ -208,6 +218,9 @@
 							const unreadList = (res.result.data || []).filter(item => item.status !== 1);
 							this.unreadFeedbackCount = unreadList.length;
 						}
+					},
+					fail: (e) => {
+						console.warn('feedback list failed:', e);
 					}
 				});
 			},

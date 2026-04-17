@@ -343,26 +343,15 @@
 							success: (downloadRes) => {
 								if (downloadRes.statusCode === 200) {
 									uni.hideLoading();
-									this.cleanupOldExportFiles();
-									const filePath = `${wx.env.USER_DATA_PATH}/${res.result.fileName}`;
-									uni.saveFile({
-										tempFilePath: downloadRes.tempFilePath,
-										success: (saveRes) => {
-											uni.openDocument({
-												filePath: saveRes.savedFilePath,
-												fileType: 'xlsx',
-												showMenu: true,
-												success: () => console.log('打开文档成功'),
-												fail: (e) => {
-													console.error(e);
-													uni.showToast({ title: '打开文档失败', icon: 'none' });
-												}
-											});
-										},
+									// 直接打开临时文件，避免 saveFile 的 10MB 存储限制
+									uni.openDocument({
+										filePath: downloadRes.tempFilePath,
+										fileType: 'xlsx',
+										showMenu: true,
+										success: () => console.log('打开文档成功'),
 										fail: (e) => {
-											uni.hideLoading();
 											console.error(e);
-											uni.showToast({ title: '保存文件失败', icon: 'none' });
+											uni.showToast({ title: '打开文档失败', icon: 'none' });
 										}
 									});
 								} else {
