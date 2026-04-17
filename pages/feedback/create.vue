@@ -76,7 +76,8 @@
 					try {
 						const result = await uniCloud.uploadFile({
 							filePath: path,
-							cloudPath: `feedback/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.jpg`
+							cloudPath: `feedback/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.jpg`,
+							cloudPathAsRealPath: true
 						});
 						
 						this.imageList.push({

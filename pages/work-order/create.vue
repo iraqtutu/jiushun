@@ -1201,6 +1201,7 @@
 					uniCloud.uploadFile({
 						filePath: path,
 						cloudPath: cloudPath,
+						cloudPathAsRealPath: true,
 						success: (res) => {
 							console.log('[上传文件] 成功, fileID:', res.fileID);
 							resolve(res.fileID);

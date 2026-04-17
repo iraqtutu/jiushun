@@ -557,7 +557,8 @@ exports.main = async (event, context) => {
 			const cloudPath = `export/服务单汇总_${formatDateSimple(new Date())}_${Date.now()}.xlsx`;
 			const uploadRes = await uniCloud.uploadFile({
 				fileContent: buffer,
-				cloudPath: cloudPath
+				cloudPath: cloudPath,
+				cloudPathAsRealPath: true
 			});
 			console.log(`[export] 文件已上传至云存储: ${uploadRes.fileID}`);
 
