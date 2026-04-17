@@ -412,6 +412,7 @@ exports.main = async (event, context) => {
 				travelFeeTotal: Number(travelFeeTotal).toFixed(1),
 				laborFeeTotal: Number(laborFeeTotal).toFixed(1),
 				grandTotal: grandTotal.toFixed(1),
+				faultCategory: categories || '-',
 				faultDesc: descs || '-',
 				faultReason: faultReasons || '-',
 				handleDesc: handles || '-',
@@ -479,7 +480,7 @@ exports.main = async (event, context) => {
 				'服务单号','报单人','提交时间','经销商名称','客户姓名','客户电话',
 				'客户地址','农机用途','报修时间','产品型号','机器编号','发动机号',
 				'生产日期','工作时长(小时)','服务类型','是否收费',
-				'故障现象','故障原因','处理方法','更换零件',
+				'故障分类','故障现象','故障原因','处理方法','更换零件',
 				'里程(km)','维修用时(min)','维修完成时间',
 				'零件费','路程费','工时费','总应收(元)','支付方式',
 				'铭牌照片','现场照片','人机合影','同行人员'
@@ -506,7 +507,7 @@ exports.main = async (event, context) => {
 						item.machineNo, item.engineNo, item.productionDate,
 						item.product ? item.product.workHours : (item.workHours || '-'),
 						item.serviceType, item.isChargeable,
-						item.faultDesc, item.faultReason, item.handleDesc, item.partsInfo,
+						item.faultCategory, item.faultDesc, item.faultReason, item.handleDesc, item.partsInfo,
 						item.travelDistance, item.repairDuration, item.finishTime,
 						item.partsTotal, item.travelFeeTotal, item.laborFeeTotal, item.grandTotal,
 						item.paymentMethod, null, null, null, item.accompanyingPerson
