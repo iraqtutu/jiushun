@@ -604,7 +604,7 @@
 				for (const item of s.faultItems) {
 					if (!item.faultDesc || !item.handleDesc || !item.sitePhotos || item.sitePhotos.length === 0) return false;
 					for (const part of (item.parts || [])) {
-						if (!part.name || !part.code) return false;
+						if (!part.name) return false;
 						if (part.source === '其他' && !part.sourceRemark) return false;
 					}
 				}

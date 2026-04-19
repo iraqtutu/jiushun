@@ -79,7 +79,7 @@
 								"description": "更换零件列表",
 								"items": {
 									"bsonType": "object",
-									"required": ["name", "code", "count", "oldPartAction"],
+									"required": ["name", "count", "oldPartAction"],
 									"properties": {
 										"name": { "bsonType": "string" },
 										"code": { "bsonType": "string" },
