@@ -1,58 +1,88 @@
 <template>
-	<view class="container">
-		<!-- 顶部操作栏 -->
-		<view class="action-bar card" v-if="list.length > 0">
-			<view class="unread-summary">
-				<text class="count" v-if="!isEditMode">{{ unreadCount > 0 ? unreadCount + ' 条未读' : '全部已读' }}</text>
-				<text class="count" v-else>已选 {{ selectedIds.length }} 项</text>
-			</view>
-			<view class="btn-group">
-				<template v-if="!isEditMode">
-					<view class="action-btn" @click="isEditMode = true">管理</view>
-					<view class="action-btn" @click="handleReadAll" v-if="unreadCount > 0">一键已读</view>
-					<view class="action-btn delete" @click="handleClearAll">清空</view>
-				</template>
-				<template v-else>
-					<view class="action-btn" @click="toggleSelectAll">{{ isAllSelected ? '取消全选' : '全选' }}</view>
-					<view class="action-btn delete" :class="{ disabled: selectedIds.length === 0 }" @click="handleBatchDelete">删除</view>
-					<view class="action-btn" @click="exitEditMode">完成</view>
-				</template>
+	<view class="page-bg">
+		<!-- Sticky Header Action Bar -->
+		<view class="sticky-header" v-if="list.length > 0">
+			<view class="action-bar-content">
+				<view class="summary-info">
+					<text class="count-label" v-if="!isEditMode">
+						{{ unreadCount > 0 ? unreadCount + ' 条未读消息' : '暂无未读消息' }}
+					</text>
+					<text class="count-label highlight" v-else>已选中 {{ selectedIds.length }} 项</text>
+				</view>
+				<view class="action-group">
+					<template v-if="!isEditMode">
+						<view class="icon-btn" @click="handleReadAll" v-if="unreadCount > 0">
+							<text class="btn-text">一键已读</text>
+						</view>
+						<view class="icon-btn primary" @click="isEditMode = true">
+							<text class="btn-text">管理</text>
+						</view>
+					</template>
+					<template v-else>
+						<view class="text-link" @click="toggleSelectAll">{{ isAllSelected ? '取消全选' : '全选' }}</view>
+						<view class="text-link danger" :class="{ disabled: selectedIds.length === 0 }" @click="handleBatchDelete">删除</view>
+						<view class="confirm-btn" @click="exitEditMode">完成</view>
+					</template>
+				</view>
 			</view>
 		</view>
 
-		<view class="list" v-if="list.length > 0">
-			<view class="item-wrapper" v-for="(item, index) in list" :key="index">
-				<view class="item-flex">
-					<!-- 多选框 -->
-					<view class="checkbox-box" v-if="isEditMode" @click="toggleSelect(item._id)">
-						<view class="checkbox" :class="{ checked: selectedIds.includes(item._id) }">
-							<text v-if="selectedIds.includes(item._id)" class="check-mark">✓</text>
-						</view>
-					</view>
-					
-					<view class="item card" :class="{ 'editing': isEditMode }" @click="handleItemClick(item)" @longpress="handleLongPress(item)">
-						<view class="item-header">
-							<view class="title-box">
-								<view v-if="!item.isRead" class="unread-dot"></view>
-								<text class="title" :class="{ 'read': item.isRead }">{{ item.title }}</text>
+		<view class="list-container">
+			<view class="notification-list" v-if="list.length > 0">
+				<view class="list-item-wrapper" v-for="(item, index) in list" :key="item._id">
+					<view class="item-flex-row">
+						<!-- Custom Checkbox -->
+						<view class="selection-area" v-if="isEditMode" @click="toggleSelect(item._id)">
+							<view class="custom-checkbox" :class="{ checked: selectedIds.includes(item._id) }">
+								<text class="check-icon" v-if="selectedIds.includes(item._id)">L</text>
 							</view>
-							<text class="date">{{ formatDate(item.create_date) }}</text>
 						</view>
-						<view class="summary">{{ item.content }}</view>
-						<view class="footer-row">
-							<text class="type-tag" v-if="item.type">{{ item.type === 'system' ? '系统' : item.type }}</text>
-							<view class="arrow-box">
-								<text class="arrow">查看详情 ›</text>
+						
+						<!-- Notification Card -->
+						<view 
+							class="notify-card" 
+							:class="{ 'is-read': item.isRead, 'is-editing': isEditMode }" 
+							@click="handleItemClick(item)" 
+							@longpress="handleLongPress(item)"
+						>
+							<view class="card-status-line" :class="{ 'active': !item.isRead }"></view>
+							<view class="card-main">
+								<view class="card-header">
+									<view class="title-row">
+										<text class="notify-title">{{ item.title }}</text>
+										<view v-if="!item.isRead" class="new-badge">NEW</view>
+									</view>
+									<text class="notify-date">{{ formatSmartDate(item.create_date) }}</text>
+								</view>
+								<text class="notify-content">{{ item.content }}</text>
+								<view class="card-footer">
+									<view class="tag-box">
+										<text class="type-tag" :class="item.type || 'system'">{{ item.type === 'reminder' ? '业务提醒' : '系统公告' }}</text>
+									</view>
+									<view class="detail-link">
+										<text>详情</text>
+										<text class="arrow">➔</text>
+									</view>
+								</view>
 							</view>
 						</view>
 					</view>
 				</view>
+				
+				<!-- Bottom Clear Button (only in normal mode) -->
+				<view class="list-footer" v-if="!isEditMode">
+					<view class="clear-all-link" @click="handleClearAll">清空所有通知记录</view>
+				</view>
 			</view>
-		</view>
-		
-		<view class="empty" v-else>
-			<image src="/static/logo.png" mode="aspectFit" class="empty-img"></image>
-			<text class="empty-text">暂无新通知</text>
+			
+			<!-- Empty State -->
+			<view class="empty-state" v-else>
+				<view class="empty-icon-box">
+					<text class="empty-icon">🔔</text>
+				</view>
+				<text class="empty-title">没有新的通知</text>
+				<text class="empty-desc">所有的系统公告和业务提醒会显示在这里</text>
+			</view>
 		</view>
 	</view>
 </template>
@@ -79,7 +109,7 @@
 		},
 		methods: {
 			loadList() {
-				uni.showLoading({ title: '加载中' });
+				uni.showLoading({ title: '获取中' });
 				uniCloud.callFunction({
 					name: 'notification-manager',
 					data: {
@@ -89,16 +119,9 @@
 					success: (res) => {
 						if (res.result.code === 0) {
 							this.list = res.result.data;
-						} else {
-							uni.showToast({ title: res.result.msg || '加载失败', icon: 'none' });
 						}
 					},
-					fail: () => {
-						uni.showToast({ title: '网络错误', icon: 'none' });
-					},
-					complete: () => {
-						uni.hideLoading();
-					}
+					complete: () => uni.hideLoading()
 				});
 			},
 			handleItemClick(item) {
@@ -145,20 +168,17 @@
 			},
 			handleBatchDelete() {
 				if (this.selectedIds.length === 0) return;
-				
 				uni.showModal({
 					title: '确认删除',
-					content: `确定要删除选中的 ${this.selectedIds.length} 条通知吗？`,
+					content: `要从列表中移除这 ${this.selectedIds.length} 条通知吗？`,
+					confirmColor: '#ff4d4f',
 					success: (res) => {
-						if (res.confirm) {
-							this.executeBatchDelete();
-						}
+						if (res.confirm) this.executeBatchDelete();
 					}
 				});
 			},
 			async executeBatchDelete() {
-				uni.showLoading({ title: '正在处理' });
-				// 循环调用隐藏接口（云函数端也可以写个批量接口，为简化目前循环调用）
+				uni.showLoading({ title: '处理中' });
 				const promises = this.selectedIds.map(id => {
 					return uniCloud.callFunction({
 						name: 'notification-manager',
@@ -169,34 +189,30 @@
 						}
 					});
 				});
-
 				try {
 					await Promise.all(promises);
-					uni.showToast({ title: '删除成功' });
 					this.list = this.list.filter(i => !this.selectedIds.includes(i._id));
 					this.exitEditMode();
-				} catch (e) {
-					uni.showToast({ title: '部分删除失败', icon: 'none' });
 				} finally {
 					uni.hideLoading();
 				}
 			},
 			handleLongPress(item) {
 				if (this.isEditMode) return;
+				uni.vibrateShort();
 				uni.showActionSheet({
-					itemList: ['选择性删除 (进入管理模式)', '删除该通知'],
+					itemList: ['删除该通知', '批量管理模式'],
+					itemColor: '#333',
 					success: (res) => {
-						if (res.tapIndex === 0) {
+						if (res.tapIndex === 0) this.deleteItem(item._id);
+						if (res.tapIndex === 1) {
 							this.isEditMode = true;
 							this.selectedIds = [item._id];
-						} else if (res.tapIndex === 1) {
-							this.deleteItem(item._id);
 						}
 					}
 				});
 			},
 			deleteItem(id) {
-				uni.showLoading({ title: '正在删除' });
 				uniCloud.callFunction({
 					name: 'notification-manager',
 					data: {
@@ -204,191 +220,243 @@
 						params: { id },
 						uniIdToken: uni.getStorageSync('uni_id_token')
 					},
-					success: (res) => {
-						if (res.result.code === 0) {
-							this.list = this.list.filter(i => i._id !== id);
-							uni.showToast({ title: '已删除' });
-						}
-					},
-					complete: () => uni.hideLoading()
+					success: () => {
+						this.list = this.list.filter(i => i._id !== id);
+					}
 				});
 			},
 			handleReadAll() {
-				uni.showLoading({ title: '处理中' });
 				uniCloud.callFunction({
 					name: 'notification-manager',
 					data: {
 						action: 'readAll',
 						uniIdToken: uni.getStorageSync('uni_id_token')
 					},
-					success: (res) => {
-						if (res.result.code === 0) {
-							this.list.forEach(i => i.isRead = true);
-							uni.showToast({ title: '已全部标记为已读' });
-						}
-					},
-					complete: () => uni.hideLoading()
+					success: () => {
+						this.list.forEach(i => i.isRead = true);
+						uni.showToast({ title: '全部标记已读', icon: 'none' });
+					}
 				});
 			},
 			handleClearAll() {
 				uni.showModal({
-					title: '确认清空',
-					content: '清空后通知将不再显示，确定吗？',
+					title: '清空列表',
+					content: '清空后列表将不再显示任何历史通知，确定吗？',
+					confirmColor: '#ff4d4f',
 					success: (res) => {
 						if (res.confirm) {
-							uni.showLoading({ title: '正在清空' });
 							uniCloud.callFunction({
 								name: 'notification-manager',
 								data: {
 									action: 'clearAll',
 									uniIdToken: uni.getStorageSync('uni_id_token')
 								},
-								success: (res) => {
-									if (res.result.code === 0) {
-										this.list = [];
-										uni.showToast({ title: '已清空' });
-									}
-								},
-								complete: () => uni.hideLoading()
+								success: () => {
+									this.list = [];
+								}
 							});
 						}
 					}
 				});
 			},
-			formatDate(ts) {
+			formatSmartDate(ts) {
 				const d = new Date(ts);
-				const y = d.getFullYear();
+				const now = new Date();
+				const isToday = d.toDateString() === now.toDateString();
 				const m = (d.getMonth() + 1).toString().padStart(2, '0');
 				const date = d.getDate().toString().padStart(2, '0');
-				return `${y}-${m}-${date}`;
+				const hh = d.getHours().toString().padStart(2, '0');
+				const mm = d.getMinutes().toString().padStart(2, '0');
+				if (isToday) return `今天 ${hh}:${mm}`;
+				return `${m}-${date} ${hh}:${mm}`;
 			}
 		}
 	}
 </script>
 
-<style lang="scss">
-	page { background-color: #f7f8fa; }
-	.container { padding: 12px; }
-	
-	.card {
-		background: #fff;
-		border-radius: 10px;
-		padding: 16px;
-		margin-bottom: 12px;
-		box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+<style lang="scss" scoped>
+	.page-bg {
+		min-height: 100vh;
+		background-color: #f7f9fc;
+		padding-bottom: 40px;
 	}
 
-	/* 操作栏样式 */
-	.action-bar {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: 12px 16px;
+	/* Sticky Action Bar */
+	.sticky-header {
+		position: sticky;
+		top: 0;
+		z-index: 100;
+		background: rgba(247, 249, 252, 0.9);
+		backdrop-filter: blur(10px);
+		padding: 10px 16px;
 		
-		.unread-summary {
-			.count { font-size: 13px; color: #969799; }
-		}
-		
-		.btn-group {
-			display: flex;
-			gap: 14px;
-			
-			.action-btn {
-				font-size: 13px;
-				color: #1677ff;
-				&.delete { color: #ff4d4f; }
-				&.disabled { opacity: 0.3; }
-				&:active { opacity: 0.7; }
-			}
-		}
-	}
-
-	.item-flex {
-		display: flex;
-		align-items: center;
-		
-		.checkbox-box {
-			padding: 0 10px 12px 0;
-			
-			.checkbox {
-				width: 20px;
-				height: 20px;
-				border: 2px solid #ebedf0;
-				border-radius: 50%;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				transition: all 0.2s;
-				
-				&.checked {
-					background-color: #1677ff;
-					border-color: #1677ff;
-				}
-				
-				.check-mark {
-					color: #fff;
-					font-size: 14px;
-					font-weight: bold;
-				}
-			}
-		}
-	}
-	
-	.item {
-		flex: 1;
-		transition: transform 0.2s;
-		
-		&.editing {
-			transform: scale(0.98);
-		}
-
-		.item-header {
+		.action-bar-content {
 			display: flex;
 			justify-content: space-between;
 			align-items: center;
-			margin-bottom: 8px;
-			
-			.title-box {
-				display: flex;
-				align-items: center;
-				flex: 1;
-				margin-right: 10px;
-				
-				.unread-dot {
-					width: 8px;
-					height: 8px;
-					background-color: #ff4d4f;
-					border-radius: 50%;
-					margin-right: 8px;
-					flex-shrink: 0;
-				}
-				
-				.title {
-					font-size: 16px;
-					font-weight: bold;
-					color: #323233;
-					overflow: hidden;
-					text-overflow: ellipsis;
-					white-space: nowrap;
-					
-					&.read {
-						color: #969799;
-						font-weight: normal;
-					}
-				}
-			}
-			
-			.date {
-				font-size: 12px;
-				color: #969799;
-				flex-shrink: 0;
+			height: 44px;
+		}
+		
+		.summary-info {
+			.count-label {
+				font-size: 14px;
+				color: #86909c;
+				&.highlight { color: #165dff; font-weight: 600; }
 			}
 		}
 		
-		.summary {
+		.action-group {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			
+			.icon-btn {
+				background: #fff;
+				padding: 6px 14px;
+				border-radius: 20px;
+				box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+				&.primary { background: #165dff; .btn-text { color: #fff; } }
+				.btn-text { font-size: 13px; color: #1d2129; font-weight: 500; }
+			}
+			
+			.text-link {
+				font-size: 14px;
+				color: #165dff;
+				&.danger { color: #f53f3f; }
+				&.disabled { opacity: 0.3; }
+			}
+			
+			.confirm-btn {
+				background: #1d2129;
+				color: #fff;
+				padding: 4px 12px;
+				border-radius: 6px;
+				font-size: 13px;
+			}
+		}
+	}
+
+	.list-container {
+		padding: 0 16px;
+	}
+
+	.notification-list {
+		margin-top: 6px;
+	}
+
+	.item-flex-row {
+		display: flex;
+		align-items: center;
+		margin-bottom: 14px;
+	}
+
+	/* Checkbox styling */
+	.selection-area {
+		padding-right: 12px;
+		.custom-checkbox {
+			width: 22px;
+			height: 22px;
+			border: 2px solid #c9cdd4;
+			border-radius: 50%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background: #fff;
+			transition: all 0.2s;
+			
+			&.checked {
+				background: #165dff;
+				border-color: #165dff;
+			}
+			
+			.check-icon {
+				color: #fff;
+				font-size: 12px;
+				transform: rotate(45deg) scaleX(-1) translate(1px, -2px);
+				font-weight: 800;
+			}
+		}
+	}
+
+	/* Card Styling */
+	.notify-card {
+		flex: 1;
+		background: #fff;
+		border-radius: 12px;
+		position: relative;
+		overflow: hidden;
+		box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+		transition: all 0.2s;
+		
+		&.is-read {
+			opacity: 0.85;
+			box-shadow: none;
+			background: #fdfdfe;
+			.notify-title { color: #86909c; font-weight: normal; }
+		}
+		
+		&.is-editing {
+			transform: scale(0.98);
+		}
+
+		.card-status-line {
+			position: absolute;
+			left: 0; top: 0; bottom: 0;
+			width: 4px;
+			background: #e5e6eb;
+			&.active { background: #165dff; }
+		}
+
+		.card-main {
+			padding: 16px;
+			padding-left: 18px;
+		}
+
+		.card-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: flex-start;
+			margin-bottom: 8px;
+			
+			.title-row {
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				flex: 1;
+			}
+			
+			.notify-title {
+				font-size: 16px;
+				font-weight: 600;
+				color: #1d2129;
+				line-height: 1.4;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+			
+			.new-badge {
+				background: #f53f3f;
+				color: #fff;
+				font-size: 9px;
+				font-weight: bold;
+				padding: 1px 4px;
+				border-radius: 4px;
+				letter-spacing: 0.5px;
+			}
+			
+			.notify-date {
+				font-size: 12px;
+				color: #86909c;
+				flex-shrink: 0;
+				margin-left: 10px;
+			}
+		}
+
+		.notify-content {
 			font-size: 14px;
-			color: #646566;
-			line-height: 1.5;
+			color: #4e5969;
+			line-height: 1.6;
 			display: -webkit-box;
 			-webkit-box-orient: vertical;
 			-webkit-line-clamp: 2;
@@ -396,35 +464,77 @@
 			margin-bottom: 12px;
 		}
 
-		.footer-row {
+		.card-footer {
 			display: flex;
 			justify-content: space-between;
 			align-items: center;
+			border-top: 1px solid #f2f3f5;
+			padding-top: 10px;
 			
 			.type-tag {
-				font-size: 10px;
-				background: #f0f2f5;
-				color: #969799;
-				padding: 2px 6px;
+				font-size: 11px;
+				padding: 2px 8px;
 				border-radius: 4px;
+				
+				&.system { color: #165dff; background: #e8f3ff; }
+				&.reminder { color: #ff7d00; background: #fff7e8; }
 			}
 			
-			.arrow-box {
-				.arrow {
-					font-size: 12px;
-					color: #1677ff;
-				}
+			.detail-link {
+				display: flex;
+				align-items: center;
+				gap: 4px;
+				font-size: 12px;
+				color: #86909c;
+				
+				.arrow { font-size: 10px; }
 			}
 		}
 	}
-	
-	.empty {
-		padding-top: 100px;
+
+	.list-footer {
+		padding: 20px 0 40px;
+		text-align: center;
+		.clear-all-link {
+			font-size: 13px;
+			color: #86909c;
+			text-decoration: underline;
+		}
+	}
+
+	/* Empty State */
+	.empty-state {
+		padding-top: 120px;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
+		text-align: center;
 		
-		.empty-img { width: 120px; height: 120px; opacity: 0.3; margin-bottom: 16px; }
-		.empty-text { color: #969799; font-size: 14px; }
+		.empty-icon-box {
+			width: 80px;
+			height: 80px;
+			background: #fff;
+			border-radius: 40px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			margin-bottom: 24px;
+			box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+			.empty-icon { font-size: 32px; opacity: 0.8; }
+		}
+		
+		.empty-title {
+			font-size: 18px;
+			font-weight: 600;
+			color: #1d2129;
+			margin-bottom: 8px;
+		}
+		
+		.empty-desc {
+			font-size: 14px;
+			color: #86909c;
+			max-width: 200px;
+			line-height: 1.5;
+		}
 	}
 </style>

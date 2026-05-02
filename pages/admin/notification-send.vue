@@ -1,65 +1,141 @@
 <template>
-	<view class="container">
-		<view class="form card">
-			<view class="form-item">
-				<text class="label">通知标题</text>
-				<input class="input" v-model="formData.title" placeholder="输入标题" />
-			</view>
-			
-			<view class="form-item">
-				<text class="label">通知内容</text>
-				<textarea class="textarea" v-model="formData.content" placeholder="输入通知详细内容..." />
-			</view>
-			
-			<view class="form-item">
-				<text class="label">发送范围</text>
-				<radio-group class="radio-group" @change="onTargetTypeChange">
-					<label class="radio-label"><radio value="all" :checked="formData.targetType === 'all'" />所有人</label>
-					<label class="radio-label"><radio value="role" :checked="formData.targetType === 'role'" />按角色</label>
-					<label class="radio-label"><radio value="user" :checked="formData.targetType === 'user'" />按用户</label>
-				</radio-group>
-			</view>
-			
-			<!-- 按角色选择 -->
-			<view class="sub-form" v-if="formData.targetType === 'role'">
-				<text class="sub-label">选择目标角色</text>
-				<checkbox-group @change="onRolesChange" class="checkbox-group">
-					<label class="checkbox-label" v-for="role in allRoles" :key="role">
-						<checkbox :value="role" :checked="formData.targetRoles.includes(role)" />{{ role }}
-					</label>
-				</checkbox-group>
-			</view>
-			
-			<!-- 按用户选择 -->
-			<view class="sub-form" v-if="formData.targetType === 'user'">
-				<view class="sub-header">
-					<text class="sub-label">已选择 {{ formData.targetUsers.length }} 人</text>
-					<button class="btn-mini" size="mini" @click="showUserPicker = true">添加用户</button>
+	<view class="page-bg">
+		<view class="container">
+			<!-- Form Card -->
+			<view class="form-card">
+				<view class="section-title">基本信息</view>
+				<view class="form-item">
+					<text class="label">通知标题</text>
+					<input class="input" v-model="formData.title" placeholder="请简要概括通知内容" placeholder-class="placeholder" />
 				</view>
-				<view class="user-tags">
-					<view class="user-tag" v-for="(u, index) in selectedUserNames" :key="index">
-						{{ u }} <text class="close" @click="removeUser(index)">×</text>
+				
+				<view class="form-item">
+					<text class="label">详细内容</text>
+					<textarea class="textarea" v-model="formData.content" placeholder="请输入需要下发的具体通知正文..." placeholder-class="placeholder" />
+				</view>
+
+				<view class="form-item">
+					<text class="label">通知分类</text>
+					<view class="pill-selector">
+						<view 
+							class="pill-item" 
+							:class="{ active: formData.type === 'system' }" 
+							@click="formData.type = 'system'"
+						>系统公告</view>
+						<view 
+							class="pill-item" 
+							:class="{ active: formData.type === 'reminder' }" 
+							@click="formData.type = 'reminder'"
+						>业务提醒</view>
 					</view>
 				</view>
+				
+				<view class="divider"></view>
+				
+				<view class="section-title">推送范围</view>
+				<view class="form-item">
+					<view class="pill-selector">
+						<view 
+							class="pill-item" 
+							:class="{ active: formData.targetType === 'all' }" 
+							@click="formData.targetType = 'all'"
+						>所有人</view>
+						<view 
+							class="pill-item" 
+							:class="{ active: formData.targetType === 'role' }" 
+							@click="formData.targetType = 'role'"
+						>按角色</view>
+						<view 
+							class="pill-item" 
+							:class="{ active: formData.targetType === 'user' }" 
+							@click="formData.targetType = 'user'"
+						>按用户</view>
+					</view>
+				</view>
+				
+				<!-- Target: Roles -->
+				<view class="sub-section animate-fade-in" v-if="formData.targetType === 'role'">
+					<text class="sub-label">选择目标角色 (多选)</text>
+					<view class="checkbox-grid">
+						<view 
+							class="check-pill" 
+							v-for="role in allRoles" 
+							:key="role"
+							:class="{ active: formData.targetRoles.includes(role) }"
+							@click="toggleRole(role)"
+						>
+							<text class="check-icon" v-if="formData.targetRoles.includes(role)">✓</text>
+							<text>{{ role }}</text>
+						</view>
+					</view>
+				</view>
+				
+				<!-- Target: Users -->
+				<view class="sub-section animate-fade-in" v-if="formData.targetType === 'user'">
+					<view class="sub-header">
+						<text class="sub-label">已选用户 ({{ formData.targetUsers.length }})</text>
+						<view class="add-user-btn" @click="openUserPicker">
+							<text class="plus">+</text>添加用户
+						</view>
+					</view>
+					<view class="user-chips" v-if="selectedUserNames.length > 0">
+						<view class="chip" v-for="(u, index) in selectedUserNames" :key="index">
+							<text class="chip-text">{{ u }}</text>
+							<text class="chip-close" @click="removeUser(index)">×</text>
+						</view>
+					</view>
+					<view class="empty-selection" v-else @click="openUserPicker">
+						<text>点击上方按钮搜索并添加指定接收人</text>
+					</view>
+				</view>
+			</view>
+			
+			<!-- Submit -->
+			<view class="footer-btn-box">
+				<button class="submit-btn" :class="{ disabled: !isFormValid }" @click="submit">
+					<text class="icon">🚀</text> 立即下发通知
+				</button>
+				<text class="notice-hint">通知下发后无法撤回，请检查内容是否准确</text>
 			</view>
 		</view>
 		
-		<button class="btn-primary" @click="submit">立即下发通知</button>
-		
-		<!-- 用户选择弹窗 (简易实现) -->
-		<view class="modal" v-if="showUserPicker">
-			<view class="modal-content card">
-				<view class="modal-header">
-					<text class="modal-title">搜索并选择用户</text>
-					<text class="close-icon" @click="showUserPicker = false">×</text>
-				</view>
-				<input class="search-input" v-model="searchKey" placeholder="输入姓名/手机号搜索" @input="onSearch" />
-				<scroll-view scroll-y class="user-list">
-					<view class="user-item" v-for="user in searchList" :key="user._id" @click="selectUser(user)">
-						<text>{{ user.nickname || user.username }} ({{ user.mobile || '无手机号' }})</text>
-					</view>
-				</scroll-view>
+		<!-- User Search Bottom Sheet -->
+		<view class="mask" :class="{ show: showUserPicker }" @click="showUserPicker = false"></view>
+		<view class="bottom-sheet" :class="{ show: showUserPicker }">
+			<view class="sheet-header">
+				<text class="sheet-title">搜索接收人</text>
+				<view class="sheet-close" @click="showUserPicker = false">×</view>
 			</view>
+			
+			<view class="search-box">
+				<icon type="search" size="14" color="#86909c" />
+				<input 
+					class="search-input" 
+					v-model="searchKey" 
+					placeholder="输入姓名或手机号" 
+					@input="onSearch" 
+					focus 
+				/>
+			</view>
+			
+			<scroll-view scroll-y class="search-results">
+				<view class="user-item" v-for="user in searchList" :key="user._id" @click="selectUser(user)">
+					<view class="user-avatar">{{ (user.nickname || user.username || '?').charAt(0) }}</view>
+					<view class="user-info-text">
+						<text class="user-nickname">{{ user.nickname || user.username }}</text>
+						<text class="user-mobile">{{ user.mobile || '未绑定手机' }}</text>
+					</view>
+					<view class="select-marker" :class="{ active: formData.targetUsers.includes(user._id) }">
+						{{ formData.targetUsers.includes(user._id) ? '已选' : '选择' }}
+					</view>
+				</view>
+				<view class="search-empty" v-if="searchKey && searchList.length === 0">
+					<text>未找到匹配用户</text>
+				</view>
+				<view class="search-tip" v-if="!searchKey">
+					<text>请输入至少一个字开始搜索</text>
+				</view>
+			</scroll-view>
 		</view>
 	</view>
 </template>
@@ -71,6 +147,7 @@
 				formData: {
 					title: '',
 					content: '',
+					type: 'system',
 					targetType: 'all',
 					targetRoles: [],
 					targetUsers: []
@@ -82,15 +159,30 @@
 				searchList: []
 			}
 		},
+		computed: {
+			isFormValid() {
+				const basic = this.formData.title && this.formData.content;
+				if (this.formData.targetType === 'role') return basic && this.formData.targetRoles.length > 0;
+				if (this.formData.targetType === 'user') return basic && this.formData.targetUsers.length > 0;
+				return basic;
+			}
+		},
 		methods: {
-			onTargetTypeChange(e) {
-				this.formData.targetType = e.detail.value;
+			toggleRole(role) {
+				const idx = this.formData.targetRoles.indexOf(role);
+				if (idx > -1) {
+					this.formData.targetRoles.splice(idx, 1);
+				} else {
+					this.formData.targetRoles.push(role);
+				}
 			},
-			onRolesChange(e) {
-				this.formData.targetRoles = e.detail.value;
+			openUserPicker() {
+				this.showUserPicker = true;
+				this.searchKey = '';
+				this.searchList = [];
 			},
 			onSearch() {
-				if (this.searchKey.length < 1) {
+				if (!this.searchKey) {
 					this.searchList = [];
 					return;
 				}
@@ -99,7 +191,7 @@
 					nickname: new RegExp(this.searchKey, 'i')
 				})
 				.field('_id, nickname, username, mobile')
-				.limit(10).get().then(res => {
+				.limit(15).get().then(res => {
 					this.searchList = res.result.data;
 				});
 			},
@@ -109,20 +201,18 @@
 					this.selectedUserNames.push(user.nickname || user.username);
 				}
 				this.showUserPicker = false;
-				this.searchKey = '';
-				this.searchList = [];
 			},
 			removeUser(index) {
 				this.formData.targetUsers.splice(index, 1);
 				this.selectedUserNames.splice(index, 1);
 			},
 			submit() {
-				if (!this.formData.title || !this.formData.content) {
-					uni.showToast({ title: '请填写完整', icon: 'none' });
+				if (!this.isFormValid) {
+					uni.showToast({ title: '请完善发送信息', icon: 'none' });
 					return;
 				}
 				
-				uni.showLoading({ title: '正在发送' });
+				uni.showLoading({ title: '正在发布' });
 				uniCloud.callFunction({
 					name: 'notification-manager',
 					data: {
@@ -132,13 +222,12 @@
 					},
 					success: (res) => {
 						if (res.result.code === 0) {
-							uni.showToast({ title: '已下发' });
+							uni.showToast({ title: '发布成功', icon: 'success' });
 							setTimeout(() => uni.navigateBack(), 1500);
 						} else {
 							uni.showToast({ title: res.result.msg, icon: 'none' });
 						}
 					},
-					fail: () => uni.showToast({ title: '网络错误', icon: 'none' }),
 					complete: () => uni.hideLoading()
 				});
 			}
@@ -146,46 +235,313 @@
 	}
 </script>
 
-<style lang="scss">
-	page { background-color: #f7f8fa; }
-	.container { padding: 12px; }
-	
-	.card {
-		background: #fff;
-		border-radius: 10px;
+<style lang="scss" scoped>
+	.page-bg {
+		min-height: 100vh;
+		background-color: #f7f9fc;
 		padding: 16px;
-		margin-bottom: 20px;
+		padding-bottom: 60px;
 	}
-	
+
+	.form-card {
+		background: #fff;
+		border-radius: 16px;
+		padding: 20px;
+		box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+	}
+
+	.section-title {
+		font-size: 16px;
+		font-weight: bold;
+		color: #1d2129;
+		margin-bottom: 16px;
+		display: flex;
+		align-items: center;
+		&::before {
+			content: '';
+			width: 4px;
+			height: 16px;
+			background: #165dff;
+			border-radius: 2px;
+			margin-right: 8px;
+		}
+	}
+
 	.form-item {
 		margin-bottom: 20px;
-		.label { font-size: 14px; color: #646566; margin-bottom: 8px; display: block; font-weight: bold; }
-		.input { border: 1px solid #ebedf0; padding: 10px; border-radius: 4px; font-size: 14px; }
-		.textarea { border: 1px solid #ebedf0; padding: 10px; border-radius: 4px; font-size: 14px; width: 100%; height: 100px; box-sizing: border-box; }
-		.radio-group { display: flex; gap: 15px; .radio-label { font-size: 14px; } }
-	}
-	
-	.sub-form {
-		background: #f9f9f9;
-		padding: 12px;
-		border-radius: 8px;
-		.sub-label { font-size: 12px; color: #969799; margin-bottom: 10px; display: block; }
-		.checkbox-group { display: flex; flex-direction: column; gap: 8px; .checkbox-label { font-size: 13px; } }
 		
-		.sub-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-		.user-tags { display: flex; flex-wrap: wrap; gap: 8px;
-			.user-tag { background: #e8f3ff; color: #1677ff; padding: 4px 8px; border-radius: 4px; font-size: 12px;
-				.close { margin-left: 6px; font-weight: bold; }
+		.label {
+			font-size: 14px;
+			color: #4e5969;
+			margin-bottom: 8px;
+			display: block;
+		}
+		
+		.input {
+			background: #f2f3f5;
+			padding: 12px 16px;
+			border-radius: 8px;
+			font-size: 15px;
+			color: #1d2129;
+		}
+		
+		.textarea {
+			background: #f2f3f5;
+			padding: 12px 16px;
+			border-radius: 8px;
+			font-size: 15px;
+			color: #1d2129;
+			width: 100%;
+			height: 120px;
+			box-sizing: border-box;
+		}
+		
+		.placeholder { color: #86909c; font-size: 14px; }
+	}
+
+	.divider {
+		height: 1px;
+		background: #f2f3f5;
+		margin: 24px 0;
+	}
+
+	/* Pill Selector Styling */
+	.pill-selector {
+		display: flex;
+		background: #f2f3f5;
+		padding: 4px;
+		border-radius: 10px;
+		
+		.pill-item {
+			flex: 1;
+			text-align: center;
+			padding: 8px 0;
+			font-size: 14px;
+			color: #4e5969;
+			border-radius: 7px;
+			transition: all 0.2s;
+			
+			&.active {
+				background: #fff;
+				color: #165dff;
+				font-weight: 600;
+				box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 			}
 		}
 	}
-	
-	.btn-primary { background: #1677ff; color: #fff; border-radius: 25px; margin-top: 20px; }
-	
-	.modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px;
-		.modal-content { width: 100%; max-height: 70vh; display: flex; flex-direction: column; margin-bottom: 0; }
-		.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; .modal-title { font-weight: bold; } .close-icon { font-size: 24px; color: #969799; } }
-		.search-input { border: 1px solid #ebedf0; padding: 8px; border-radius: 4px; margin-bottom: 10px; }
-		.user-list { flex: 1; .user-item { padding: 12px 0; border-bottom: 1px solid #f2f3f5; font-size: 14px; } }
+
+	.sub-section {
+		padding-top: 10px;
+		
+		.sub-label {
+			font-size: 13px;
+			color: #86909c;
+			margin-bottom: 12px;
+			display: block;
+		}
+	}
+
+	/* Checkbox Grid */
+	.checkbox-grid {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px;
+		
+		.check-pill {
+			background: #f2f3f5;
+			padding: 6px 16px;
+			border-radius: 20px;
+			font-size: 13px;
+			color: #4e5969;
+			display: flex;
+			align-items: center;
+			gap: 4px;
+			transition: all 0.2s;
+			
+			&.active {
+				background: rgba(22, 93, 255, 0.1);
+				color: #165dff;
+				font-weight: 500;
+			}
+			
+			.check-icon { font-weight: bold; }
+		}
+	}
+
+	/* User Chips */
+	.sub-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 12px;
+		
+		.add-user-btn {
+			font-size: 13px;
+			color: #165dff;
+			font-weight: 500;
+			.plus { margin-right: 4px; font-weight: bold; }
+		}
+	}
+
+	.user-chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+		
+		.chip {
+			background: #e8f3ff;
+			padding: 4px 10px;
+			border-radius: 6px;
+			display: flex;
+			align-items: center;
+			gap: 6px;
+			
+			.chip-text { font-size: 13px; color: #165dff; }
+			.chip-close { font-size: 16px; color: #165dff; opacity: 0.6; }
+		}
+	}
+
+	.empty-selection {
+		background: #f7f8fa;
+		border: 1px dashed #c9cdd4;
+		border-radius: 8px;
+		padding: 20px;
+		text-align: center;
+		font-size: 13px;
+		color: #86909c;
+	}
+
+	/* Footer */
+	.footer-btn-box {
+		margin-top: 32px;
+		text-align: center;
+		
+		.submit-btn {
+			background: #165dff;
+			color: #fff;
+			border-radius: 25px;
+			height: 50px;
+			line-height: 50px;
+			font-weight: bold;
+			font-size: 16px;
+			box-shadow: 0 8px 16px rgba(22, 93, 255, 0.2);
+			
+			&.disabled { background: #c9cdd4; box-shadow: none; }
+			&::after { border: none; }
+			
+			.icon { margin-right: 8px; }
+		}
+		
+		.notice-hint {
+			font-size: 12px;
+			color: #86909c;
+			margin-top: 12px;
+			display: block;
+		}
+	}
+
+	/* Bottom Sheet Modal */
+	.mask {
+		position: fixed;
+		top: 0; left: 0; right: 0; bottom: 0;
+		background: rgba(0,0,0,0.5);
+		z-index: 1000;
+		opacity: 0;
+		pointer-events: none;
+		transition: opacity 0.3s;
+		&.show { opacity: 1; pointer-events: auto; }
+	}
+
+	.bottom-sheet {
+		position: fixed;
+		left: 0; right: 0; bottom: 0;
+		background: #fff;
+		border-radius: 20px 20px 0 0;
+		z-index: 1001;
+		transform: translateY(100%);
+		transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+		max-height: 80vh;
+		display: flex;
+		flex-direction: column;
+		
+		&.show { transform: translateY(0); }
+		
+		.sheet-header {
+			padding: 20px;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			border-bottom: 1px solid #f2f3f5;
+			.sheet-title { font-size: 17px; font-weight: bold; color: #1d2129; }
+			.sheet-close { font-size: 24px; color: #86909c; padding: 4px; }
+		}
+		
+		.search-box {
+			padding: 12px 20px;
+			background: #f2f3f5;
+			margin: 16px 20px;
+			border-radius: 10px;
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			.search-input { flex: 1; font-size: 15px; }
+		}
+		
+		.search-results {
+			flex: 1;
+			padding: 0 20px 30px;
+			
+			.user-item {
+				display: flex;
+				align-items: center;
+				padding: 14px 0;
+				border-bottom: 1px solid #f2f3f5;
+				
+				.user-avatar {
+					width: 40px; height: 40px;
+					background: #165dff;
+					color: #fff;
+					border-radius: 20px;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					font-weight: bold;
+					margin-right: 12px;
+				}
+				
+				.user-info-text {
+					flex: 1;
+					display: flex;
+					flex-direction: column;
+					.user-nickname { font-size: 15px; font-weight: 500; color: #1d2129; }
+					.user-mobile { font-size: 13px; color: #86909c; }
+				}
+				
+				.select-marker {
+					font-size: 13px;
+					color: #165dff;
+					padding: 4px 12px;
+					border: 1px solid #165dff;
+					border-radius: 4px;
+					&.active { background: #165dff; color: #fff; }
+				}
+			}
+		}
+		
+		.search-empty, .search-tip {
+			text-align: center;
+			padding: 40px 0;
+			color: #86909c;
+			font-size: 14px;
+		}
+	}
+
+	.animate-fade-in {
+		animation: fadeIn 0.3s ease;
+	}
+
+	@keyframes fadeIn {
+		from { opacity: 0; transform: translateY(5px); }
+		to { opacity: 1; transform: translateY(0); }
 	}
 </style>
