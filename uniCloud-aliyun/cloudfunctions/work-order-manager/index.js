@@ -448,19 +448,23 @@ exports.main = async (event, context) => {
 				}
 			};
 
-			// 下载单条记录的三张图片（并行下载）
+			// 下载单条记录的所有图片（并行下载）
 			const downloadImagesForItem = async (item) => {
-				const urls = [
-					item.platePhoto,
-					item.sitePhotos && item.sitePhotos.length > 0 ? item.sitePhotos[0] : null,
-					item.machineUserPhoto
-				].filter(Boolean);
-				const results = await Promise.all(urls.map(url => downloadImage(url)));
+				// 获取所有现场照片（支持最多16张）
+				const siteUrls = (item.sitePhotos || []).slice(0, 16);
+				
+				// 并行下载所有相关图片
+				const [plateBase64, confirmBase64, ...siteBase64List] = await Promise.all([
+					downloadImage(item.platePhoto),
+					downloadImage(item.machineUserPhoto),
+					...siteUrls.map(url => downloadImage(url))
+				]);
+				
 				return {
 					...item,
-					plateBase64: results[0] || null,
-					siteBase64: results[1] || null,
-					confirmBase64: results[2] || null
+					plateBase64,
+					confirmBase64,
+					siteBase64List: siteBase64List.filter(Boolean)
 				};
 			};
 
@@ -470,20 +474,22 @@ exports.main = async (event, context) => {
 			workbook.created = new Date();
 			const sheet = workbook.addWorksheet('服务单汇总');
 
-			// 设置列宽（第29-31列 = 铭牌照片/现场照片/人机合影）
-			sheet.getColumn(29).width = 15;
-			sheet.getColumn(30).width = 15;
-			sheet.getColumn(31).width = 15;
+			// 设置列宽
+			sheet.getColumn(31).width = 15; // 铭牌照片 (索引30)
+			sheet.getColumn(32).width = 15; // 人机合影 (索引31)
+			for(let c=33; c<=48; c++) sheet.getColumn(c).width = 15; // 现场照片1-16 (索引32-47)
 
-			// 表头行
+			// 表头行 (将同行人员移到图片前，现场照片移到最后)
 			const headers = [
 				'服务单号','报单人','提交时间','经销商名称','客户姓名','客户电话',
 				'客户地址','农机用途','报修时间','产品型号','机器编号','发动机号',
 				'生产日期','工作时长(小时)','服务类型','是否收费',
 				'故障分类','故障现象','故障原因','处理方法','更换零件',
 				'里程(km)','维修用时(min)','维修完成时间',
-				'零件费','路程费','工时费','总应收(元)','支付方式',
-				'铭牌照片','现场照片','人机合影','同行人员'
+				'零件费','路程费','工时费','总应收(元)','支付方式','同行人员',
+				'铭牌照片','人机合影',
+				'现场照片1','现场照片2','现场照片3','现场照片4','现场照片5','现场照片6','现场照片7','现场照片8',
+				'现场照片9','现场照片10','现场照片11','现场照片12','现场照片13','现场照片14','现场照片15','现场照片16'
 			];
 			sheet.addRow(headers);
 
@@ -496,6 +502,7 @@ exports.main = async (event, context) => {
 				console.log(`[export] 第 ${i + 1} ~ ${i + chunk.length} 条图片下载完成，开始写入Excel`);
 
 				for (const item of chunkResults) {
+					// 构造基础数据行，图片位置设为 null 占位
 					const row = [
 						item.orderNo, item.reporterName, formatDateSimple(new Date(item.create_date)),
 						item.distributorName,
@@ -510,40 +517,42 @@ exports.main = async (event, context) => {
 						item.faultCategory, item.faultDesc, item.faultReason, item.handleDesc, item.partsInfo,
 						item.travelDistance, item.repairDuration, item.finishTime,
 						item.partsTotal, item.travelFeeTotal, item.laborFeeTotal, item.grandTotal,
-						item.paymentMethod, null, null, null, item.accompanyingPerson
+						item.paymentMethod, item.accompanyingPerson,
+						null, // 铭牌 (30)
+						null, // 人机合影 (31)
+						// 现场1-16 (32-47)
+						null, null, null, null, null, null, null, null,
+						null, null, null, null, null, null, null, null
 					];
 					const dataRow = sheet.addRow(row);
-
 					const rowNum = dataRow.number;
 
+					// 1. 插入铭牌照片 (列索引 30)
 					if (item.plateBase64) {
-						const plateImg = workbook.addImage({
-							base64: item.plateBase64,
-							extension: 'jpeg'
-						});
+						const plateImg = workbook.addImage({ base64: item.plateBase64, extension: 'jpeg' });
 						sheet.addImage(plateImg, {
-							tl: { col: 28, row: rowNum - 1 },
-							ext: { width: 120, height: 90 }
-						});
-					}
-					if (item.siteBase64) {
-						const siteImg = workbook.addImage({
-							base64: item.siteBase64,
-							extension: 'jpeg'
-						});
-						sheet.addImage(siteImg, {
-							tl: { col: 29, row: rowNum - 1 },
-							ext: { width: 120, height: 90 }
-						});
-					}
-					if (item.confirmBase64) {
-						const confirmImg = workbook.addImage({
-							base64: item.confirmBase64,
-							extension: 'jpeg'
-						});
-						sheet.addImage(confirmImg, {
 							tl: { col: 30, row: rowNum - 1 },
 							ext: { width: 120, height: 90 }
+						});
+					}
+					
+					// 2. 插入人机合影 (列索引 31)
+					if (item.confirmBase64) {
+						const confirmImg = workbook.addImage({ base64: item.confirmBase64, extension: 'jpeg' });
+						sheet.addImage(confirmImg, {
+							tl: { col: 31, row: rowNum - 1 },
+							ext: { width: 120, height: 90 }
+						});
+					}
+
+					// 3. 动态插入现场照片列表 (从列索引 32 开始，支持最多16张)
+					if (item.siteBase64List && item.siteBase64List.length > 0) {
+						item.siteBase64List.forEach((base64, index) => {
+							const siteImg = workbook.addImage({ base64: base64, extension: 'jpeg' });
+							sheet.addImage(siteImg, {
+								tl: { col: 32 + index, row: rowNum - 1 },
+								ext: { width: 120, height: 90 }
+							});
 						});
 					}
 				}
