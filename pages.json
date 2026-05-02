@@ -79,6 +79,24 @@
 			}
 		},
 		{
+			"path": "pages/admin/notification-send",
+			"style": {
+				"navigationBarTitleText": "发布通知"
+			}
+		},
+		{
+			"path": "pages/notification/list",
+			"style": {
+				"navigationBarTitleText": "系统通知"
+			}
+		},
+		{
+			"path": "pages/notification/detail",
+			"style": {
+				"navigationBarTitleText": "通知详情"
+			}
+		},
+		{
 			"path": "pages/agreement/user-agreement",
 			"style": {
 				"navigationBarTitleText": "用户服务协议"

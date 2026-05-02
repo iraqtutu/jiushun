@@ -1,0 +1,29 @@
+{
+	"bsonType": "object",
+	"required": ["notification_id", "uid"],
+	"permission": {
+		"read": "doc.uid == auth.uid",
+		"create": "doc.uid == auth.uid",
+		"update": "false",
+		"delete": "doc.uid == auth.uid"
+	},
+	"properties": {
+		"_id": {
+			"bsonType": "string"
+		},
+		"notification_id": {
+			"bsonType": "string",
+			"description": "通知ID",
+			"foreignKey": "jiushun-notifications._id"
+		},
+		"uid": {
+			"bsonType": "string",
+			"description": "用户的ID",
+			"foreignKey": "uni-id-users._id"
+		},
+		"delete_date": {
+			"bsonType": "timestamp",
+			"description": "删除时间"
+		}
+	}
+}

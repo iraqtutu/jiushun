@@ -1,0 +1,57 @@
+{
+	"bsonType": "object",
+	"required": ["title", "content", "sender_uid"],
+	"permission": {
+		"read": "true",
+		"create": "'admin' in auth.role",
+		"update": "'admin' in auth.role",
+		"delete": "'admin' in auth.role"
+	},
+	"properties": {
+		"_id": {
+			"bsonType": "string"
+		},
+		"title": {
+			"bsonType": "string",
+			"description": "通知标题"
+		},
+		"content": {
+			"bsonType": "string",
+			"description": "通知内容"
+		},
+		"type": {
+			"bsonType": "string",
+			"description": "通知类型: system, update, etc.",
+			"defaultValue": "system"
+		},
+		"targetType": {
+			"bsonType": "string",
+			"enum": ["all", "role", "user"],
+			"description": "发送范围",
+			"defaultValue": "all"
+		},
+		"targetRoles": {
+			"bsonType": "array",
+			"description": "目标角色数组 (当 targetType 为 role 时)",
+			"items": {
+				"bsonType": "string"
+			}
+		},
+		"targetUsers": {
+			"bsonType": "array",
+			"description": "目标用户ID数组 (当 targetType 为 user 时)",
+			"items": {
+				"bsonType": "string"
+			}
+		},
+		"sender_uid": {
+			"bsonType": "string",
+			"description": "发送者ID",
+			"foreignKey": "uni-id-users._id"
+		},
+		"create_date": {
+			"bsonType": "timestamp",
+			"description": "发布时间"
+		}
+	}
+}

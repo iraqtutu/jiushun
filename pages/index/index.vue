@@ -13,6 +13,14 @@
 						</view>
 					</view>
 				</view>
+				
+				<!-- Notification Bell in Header -->
+				<view class="header-notify" @click="navTo('/pages/notification/list')">
+					<text class="notify-icon-top">🔔</text>
+					<view class="badge-dot" v-if="unreadNotifyCount > 0">
+						<text class="badge-text">{{ unreadNotifyCount > 99 ? '99+' : unreadNotifyCount }}</text>
+					</view>
+				</view>
 			</view>
 		</view>
 		
@@ -87,6 +95,19 @@
 						<text class="arrow">›</text>
 					</view>
 				</view>
+
+				<view v-if="isAdmin" class="action-item" @click="navTo('/pages/admin/notification-send')" hover-class="hover-effect">
+					<view class="item-left">
+						<view class="action-icon notify-icon">📢</view>
+						<view class="item-text">
+							<text class="item-title">发布通知</text>
+							<text class="item-desc">下发系统消息给指定角色或用户</text>
+						</view>
+					</view>
+					<view class="item-right">
+						<text class="arrow">›</text>
+					</view>
+				</view>
 				
 				<view class="action-item" @click="navTo('/pages/feedback/list')" hover-class="hover-effect">
 					<view class="item-left">
@@ -116,7 +137,8 @@
 				userRoles: '',
 				isAdmin: false,
 				pendingApprovalCount: 0,
-				unreadFeedbackCount: 0
+				unreadFeedbackCount: 0,
+				unreadNotifyCount: 0
 			}
 		},
 		computed: {
@@ -127,9 +149,7 @@
 		onShow() {
 			this.updateLocalInfo();
 			this.refreshUserInfo();
-			if (this.isAdmin) {
-				this.loadBadgeCounts();
-			}
+			this.loadBadgeCounts();
 		},
 		methods: {
 			updateLocalInfo() {
@@ -187,7 +207,23 @@
 				});
 			},
 			loadBadgeCounts() {
-				// 获取待审批数量
+				// 获取未读系统通知数量 (所有角色都需要)
+				uniCloud.callFunction({
+					name: 'notification-manager',
+					data: {
+						action: 'getUnreadCount',
+						uniIdToken: uni.getStorageSync('uni_id_token')
+					},
+					success: (res) => {
+						if (res.result.code === 0) {
+							this.unreadNotifyCount = res.result.count;
+						}
+					}
+				});
+
+				if (!this.isAdmin) return;
+
+				// 获取待审批数量 (仅管理员)
 				uniCloud.callFunction({
 					name: 'user-center',
 					data: {
@@ -199,13 +235,10 @@
 						if (res.result.code === 0) {
 							this.pendingApprovalCount = res.result.data ? res.result.data.length : 0;
 						}
-					},
-					fail: (e) => {
-						console.warn('getApplications failed:', e);
 					}
 				});
 
-				// 获取未处理反馈数量（status !== 1 表示未回复）
+				// 获取未处理反馈数量（status !== 1 表示未回复，仅管理员）
 				uniCloud.callFunction({
 					name: 'feedback-manager',
 					data: {
@@ -218,9 +251,6 @@
 							const unreadList = (res.result.data || []).filter(item => item.status !== 1);
 							this.unreadFeedbackCount = unreadList.length;
 						}
-					},
-					fail: (e) => {
-						console.warn('feedback list failed:', e);
 					}
 				});
 			},
@@ -260,6 +290,44 @@
 			position: relative;
 			z-index: 2;
 			padding: 24px 20px;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+
+		.header-notify {
+			position: relative;
+			padding: 8px;
+			background: rgba(255, 255, 255, 0.15);
+			border-radius: 50%;
+			backdrop-filter: blur(4px);
+			
+			.notify-icon-top {
+				font-size: 22px;
+				filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+			}
+			
+			.badge-dot {
+				position: absolute;
+				top: 0;
+				right: 0;
+				background-color: #ff4d4f;
+				min-width: 16px;
+				height: 16px;
+				border-radius: 8px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				border: 2px solid #165dff;
+				padding: 0 4px;
+				
+				.badge-text {
+					color: #fff;
+					font-size: 10px;
+					font-weight: bold;
+					line-height: 1;
+				}
+			}
 		}
 		
 		.user-info {
@@ -420,6 +488,7 @@
 				&.dealer-icon { background: #e6fcf5; }
 				&.feedback-icon { background: #e8f3ff; }
 				&.user-icon { background: #f0f5ff; }
+				&.notify-icon { background: #fff1f0; }
 			}
 			
 			.item-text {
