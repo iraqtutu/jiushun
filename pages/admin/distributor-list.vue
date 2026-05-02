@@ -214,7 +214,15 @@
 						const { _id, ...updateData } = this.formData;
 						await collection.doc(_id).update(updateData);
 					} else {
-						await collection.add(this.formData);
+						// 手动设置创建时间和创建者 ID (Schema 强制默认值可能因环境兼容性报 Object 错误)
+						const userInfo = uniCloud.getCurrentUserInfo();
+						const addData = {
+							...this.formData,
+							create_date: Date.now(),
+							creator_uid: userInfo.uid
+						};
+						delete addData._id; // 确保不包含空 ID
+						await collection.add(addData);
 					}
 
 					uni.hideLoading();

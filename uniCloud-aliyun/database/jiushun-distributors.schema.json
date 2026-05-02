@@ -33,17 +33,11 @@
 		"creator_uid": {
 			"bsonType": "string",
 			"description": "创建者ID",
-			"foreignKey": "uni-id-users._id",
-			"forceDefaultValue": {
-				"add": "$method.auth.uid"
-			}
+			"foreignKey": "uni-id-users._id"
 		},
 		"create_date": {
 			"bsonType": "timestamp",
-			"description": "创建时间",
-			"forceDefaultValue": {
-				"add": "$method.now"
-			}
+			"description": "创建时间"
 		}
 	}
 }
