@@ -99,6 +99,10 @@
 				<text class="label">收费类型</text>
 				<text class="value charge-type" :class="order.service.isChargeable === '收费' ? 'red' : 'green'">{{ order.service.isChargeable }}</text>
 			</view>
+			<view class="detail-item">
+				<text class="label">维修结果</text>
+				<text class="value">{{ order.service.repairStatus || '-' }}</text>
+			</view>
 			<view class="detail-item mt-3">
 				<text class="label">完成时间</text>
 				<text class="value">{{ formatDate(order.service.finishTime, 'datetime') }}</text>

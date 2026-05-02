@@ -296,6 +296,14 @@
 						</view>
 					</view>
 					
+					<view class="ui-field mt-10">
+						<text class="field-label required">维修结果</text>
+						<radio-group @change="onRepairStatusChange" class="ui-radio-box">
+							<label class="radio-item"><radio value="已修好" :checked="formData.service.repairStatus === '已修好'" color="#1677ff" />已修好</label>
+							<label class="radio-item"><radio value="未修好" :checked="formData.service.repairStatus === '未修好'" color="#1677ff" />未修好</label>
+						</radio-group>
+					</view>
+
 					<!-- Moved Finish Time here -->
 					<view class="ui-field mt-10">
 						<text class="field-label required" style="width: 100px;">服务完成时间</text>
@@ -531,6 +539,7 @@
 						faultItems: [], // 改为对象数组，支持“一故障一卡片”
 						finishDate: '', 
 						finishTime: '', 
+						repairStatus: '已修好',
 						paymentMethod: '微信支付' 
 					},
 					additionalFees: {
@@ -859,6 +868,7 @@
 					this.formData.additionalFees.laborFee.unitPrice = 85;
 				}
 			},
+			onRepairStatusChange(e) { this.formData.service.repairStatus = e.detail.value; },
 			onPaymentMethodChange(e) { this.formData.service.paymentMethod = e.detail.value; },
 			onPartSourceChange(e, itemIdx, partIdx) { 
 				this.$set(this.formData.service.faultItems[itemIdx].parts[partIdx], 'source', this.partSources[e.detail.value]); 
