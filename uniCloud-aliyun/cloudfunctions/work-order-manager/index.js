@@ -554,8 +554,8 @@ exports.main = async (event, context) => {
 			const buffer = await workbook.xlsx.writeBuffer();
 			console.log(`[export] Excel buffer生成完成，大小: ${buffer.length} bytes`);
 
-			// 写入临时文件后上传
-			const cloudPath = `export/服务单汇总_${formatDateSimple(new Date())}_${Date.now()}.xlsx`;
+			// 写入临时文件后上传，使用固定的带有 uid 的文件名，以便覆盖旧文件，防止云存储空间不断增加
+			const cloudPath = `export/服务单汇总_${uid}.xlsx`;
 			const uploadRes = await uniCloud.uploadFile({
 				fileContent: buffer,
 				cloudPath: cloudPath,
