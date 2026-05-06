@@ -436,12 +436,26 @@ exports.main = async (event, context) => {
 			const PARALLEL_ITEMS = 10; // 减少并发，控制内存和网络
 			console.log(`[export] 开始导出，共 ${data.length} 条记录`);
 
-			// 下载图片并转 base64
+			// 下载图片并检测类型
 			const downloadImage = async (url) => {
 				if (!url) return null;
+				let downloadUrl = url;
+				// 支持 aliyuncs.com 和 uniCloud 默认的 bspapp.com，强制输出格式为 jpg 以确保 Excel 兼容性
+				if (typeof url === 'string' && (url.includes('aliyuncs.com') || url.includes('bspapp.com'))) {
+					const joinChar = url.includes('?') ? '&' : '?';
+					downloadUrl = `${url}${joinChar}x-oss-process=image/resize,m_lfit,w_800/quality,q_80/format,jpg`;
+				}
 				try {
-					const response = await axios.get(url, { responseType: 'arraybuffer', timeout: 8000 });
-					return Buffer.from(response.data, 'binary').toString('base64');
+					const response = await axios.get(downloadUrl, { responseType: 'arraybuffer', timeout: 5000 });
+					const buffer = Buffer.from(response.data, 'binary');
+					
+					// 检测图片真实的扩展名
+					let extension = 'jpeg';
+					if (buffer.length >= 2) {
+						if (buffer[0] === 0x89 && buffer[1] === 0x50) extension = 'png';
+						if (buffer[0] === 0x47 && buffer[1] === 0x49) extension = 'gif';
+					}
+					return { buffer, extension };
 				} catch (e) {
 					console.warn('图片下载失败:', url, e.message);
 					return null;
@@ -450,11 +464,11 @@ exports.main = async (event, context) => {
 
 			// 下载单条记录的所有图片（并行下载）
 			const downloadImagesForItem = async (item) => {
-				// 获取所有现场照片（支持最多16张）
-				const siteUrls = (item.sitePhotos || []).slice(0, 6);
+				// 获取所有现场照片（支持最多10张）
+				const siteUrls = (item.sitePhotos || []).slice(0, 10);
 				
 				// 并行下载所有相关图片
-				const [plateBase64, confirmBase64, ...siteBase64List] = await Promise.all([
+				const [plateImgData, confirmImgData, ...siteImgDataList] = await Promise.all([
 					downloadImage(item.platePhoto),
 					downloadImage(item.machineUserPhoto),
 					...siteUrls.map(url => downloadImage(url))
@@ -462,9 +476,9 @@ exports.main = async (event, context) => {
 				
 				return {
 					...item,
-					plateBase64,
-					confirmBase64,
-					siteBase64List: siteBase64List.filter(Boolean)
+					plateImgData,
+					confirmImgData,
+					siteImgDataList: siteImgDataList.filter(Boolean)
 				};
 			};
 
@@ -528,8 +542,8 @@ exports.main = async (event, context) => {
 					const rowNum = dataRow.number;
 
 					// 1. 插入铭牌照片 (列索引 30)
-					if (item.plateBase64) {
-						const plateImg = workbook.addImage({ base64: item.plateBase64, extension: 'jpeg' });
+					if (item.plateImgData) {
+						const plateImg = workbook.addImage({ buffer: item.plateImgData.buffer, extension: item.plateImgData.extension });
 						sheet.addImage(plateImg, {
 							tl: { col: 30, row: rowNum - 1 },
 							ext: { width: 120, height: 90 }
@@ -537,18 +551,18 @@ exports.main = async (event, context) => {
 					}
 					
 					// 2. 插入人机合影 (列索引 31)
-					if (item.confirmBase64) {
-						const confirmImg = workbook.addImage({ base64: item.confirmBase64, extension: 'jpeg' });
+					if (item.confirmImgData) {
+						const confirmImg = workbook.addImage({ buffer: item.confirmImgData.buffer, extension: item.confirmImgData.extension });
 						sheet.addImage(confirmImg, {
 							tl: { col: 31, row: rowNum - 1 },
 							ext: { width: 120, height: 90 }
 						});
 					}
 
-					// 3. 动态插入现场照片列表 (从列索引 32 开始，支持最多16张)
-					if (item.siteBase64List && item.siteBase64List.length > 0) {
-						item.siteBase64List.forEach((base64, index) => {
-							const siteImg = workbook.addImage({ base64: base64, extension: 'jpeg' });
+					// 3. 动态插入现场照片列表 (从列索引 32 开始)
+					if (item.siteImgDataList && item.siteImgDataList.length > 0) {
+						item.siteImgDataList.forEach((imgData, index) => {
+							const siteImg = workbook.addImage({ buffer: imgData.buffer, extension: imgData.extension });
 							sheet.addImage(siteImg, {
 								tl: { col: 32 + index, row: rowNum - 1 },
 								ext: { width: 120, height: 90 }
@@ -558,30 +572,34 @@ exports.main = async (event, context) => {
 				}
 				// 处理完一批后显式释放图片内存，防止内存溢出
 				chunkResults.forEach(item => {
-					item.plateBase64 = null;
-					item.confirmBase64 = null;
-					item.siteBase64List = null;
+					item.plateImgData = null;
+					item.confirmImgData = null;
+					item.siteImgDataList = null;
+					item.platePhoto = null;
+					item.machineUserPhoto = null;
+					item.sitePhotos = null;
 				});
+				if (global.gc) global.gc();
+				console.log(`[export] 第 ${i + 1} ~ ${i + chunk.length} 条内存已释放`);
 			}
 
 			// 生成 buffer 并上传到云存储
 			console.log('[export] 开始生成Excel buffer...');
-			console.log('[export] writeBuffer 开始，sheet行数:', sheet.rowCount);
 
 			let buffer;
 			try {
-				// 添加超时检测（120秒）
+				// 添加超时检测（120秒 -> 360秒）
 				const timeoutPromise = new Promise((_, reject) => {
-					setTimeout(() => reject(new Error('writeBuffer timeout')), 120000);
+					setTimeout(() => reject(new Error('writeBuffer timeout')), 360000);
 				});
 				buffer = await Promise.race([
 					workbook.xlsx.writeBuffer(),
 					timeoutPromise
 				]);
-				console.log('[export] writeBuffer 完成，buffer大小:', buffer.length);
+				console.log(`[export] Excel buffer生成完成，大小: ${buffer.length} bytes`);
 			} catch (writeErr) {
-				console.error('[export] writeBuffer 失败:', writeErr);
-				return { code: 500, msg: '导出失败：文件生成超时' };
+				console.error('[export] 导出失败:', writeErr);
+				return { code: 500, msg: '导出失败：' + (writeErr.message || '未知错误') };
 			}
 
 			// 写入临时文件后上传，使用固定的带有 uid 的文件名，以便覆盖旧文件，防止云存储空间不断增加
