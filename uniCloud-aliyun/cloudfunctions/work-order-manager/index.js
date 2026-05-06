@@ -451,7 +451,7 @@ exports.main = async (event, context) => {
 			// 下载单条记录的所有图片（并行下载）
 			const downloadImagesForItem = async (item) => {
 				// 获取所有现场照片（支持最多16张）
-				const siteUrls = (item.sitePhotos || []).slice(0, 16);
+				const siteUrls = (item.sitePhotos || []).slice(0, 6);
 				
 				// 并行下载所有相关图片
 				const [plateBase64, confirmBase64, ...siteBase64List] = await Promise.all([
@@ -556,12 +556,33 @@ exports.main = async (event, context) => {
 						});
 					}
 				}
+				// 处理完一批后显式释放图片内存，防止内存溢出
+				chunkResults.forEach(item => {
+					item.plateBase64 = null;
+					item.confirmBase64 = null;
+					item.siteBase64List = null;
+				});
 			}
 
 			// 生成 buffer 并上传到云存储
 			console.log('[export] 开始生成Excel buffer...');
-			const buffer = await workbook.xlsx.writeBuffer();
-			console.log(`[export] Excel buffer生成完成，大小: ${buffer.length} bytes`);
+			console.log('[export] writeBuffer 开始，sheet行数:', sheet.rowCount);
+
+			let buffer;
+			try {
+				// 添加超时检测（120秒）
+				const timeoutPromise = new Promise((_, reject) => {
+					setTimeout(() => reject(new Error('writeBuffer timeout')), 120000);
+				});
+				buffer = await Promise.race([
+					workbook.xlsx.writeBuffer(),
+					timeoutPromise
+				]);
+				console.log('[export] writeBuffer 完成，buffer大小:', buffer.length);
+			} catch (writeErr) {
+				console.error('[export] writeBuffer 失败:', writeErr);
+				return { code: 500, msg: '导出失败：文件生成超时' };
+			}
 
 			// 写入临时文件后上传，使用固定的带有 uid 的文件名，以便覆盖旧文件，防止云存储空间不断增加
 			const cloudPath = `export/服务单汇总_${uid}.xlsx`;

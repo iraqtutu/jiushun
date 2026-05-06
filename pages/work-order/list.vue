@@ -323,7 +323,8 @@
 								format: 'xlsx'
 							},
 							uniIdToken: uni.getStorageSync('uni_id_token')
-						}
+						},
+						timeout: 600000
 					});
 
 					if (res.result.code !== 0) {
