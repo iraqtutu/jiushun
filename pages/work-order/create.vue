@@ -427,8 +427,8 @@
 		</view>
 
 		<!-- Customer History Picker Modal -->
-		<view class="modal-mask" v-if="showCustomerPicker" @click.stop="closeCustomerPicker">
-			<view class="modal-body customer-picker" @click.stop="">
+		<view class="modal-mask" v-if="showCustomerPicker" @click.stop="closeCustomerPicker" @touchmove.stop.prevent>
+			<view class="modal-body customer-picker" @click.stop="" @touchmove.stop.prevent>
 				<view class="modal-header">
 					<view class="h-left">
 						<text class="t">选择历史记录</text>
