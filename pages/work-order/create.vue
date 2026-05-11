@@ -798,6 +798,7 @@
 						product.productionDate = d.toISOString().slice(0, 10)
 					}
 					if (record.platePhoto) product.platePhoto = record.platePhoto
+					if (record.model) product.model = record.model
 				} else {
 					// 单条自动填入时，也填入产品字段
 					if (record.machineNo) product.machineNo = record.machineNo
@@ -807,6 +808,7 @@
 						product.productionDate = d.toISOString().slice(0, 10)
 					}
 					if (record.platePhoto) product.platePhoto = record.platePhoto
+					if (record.model) product.model = record.model
 				}
 
 				// 关闭选择弹窗

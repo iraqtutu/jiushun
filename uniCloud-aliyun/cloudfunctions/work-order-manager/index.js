@@ -730,6 +730,7 @@ exports.main = async (event, context) => {
 			engineNo: item.product?.engineNo || '',
 			productionDate: item.product?.productionDate || null,
 			platePhoto: item.product?.platePhoto || '',
+			model: item.product?.model || '',
 			create_date: item.create_date || 0
 		}))
 
