@@ -426,6 +426,65 @@
 			</view>
 		</view>
 
+		<!-- Customer History Picker Modal -->
+		<view class="modal-mask" v-if="showCustomerPicker" @click.stop="closeCustomerPicker">
+			<view class="modal-body customer-picker" @click.stop="">
+				<view class="modal-header">
+					<view class="h-left">
+						<text class="t">选择历史记录</text>
+						<text class="count" v-if="customerHistoryRecords.length > 0">{{ customerHistoryRecords.length }}条记录</text>
+					</view>
+					<text class="c" @click="closeCustomerPicker">✕</text>
+				</view>
+
+				<scroll-view scroll-y class="modal-scroll">
+					<view v-for="(record, idx) in customerHistoryRecords" :key="idx"
+						class="customer-record-card"
+						@click="selectCustomerRecord(record)">
+						<view class="card-row">
+							<text class="cr-name">{{ record.name }}</text>
+							<text class="cr-phone">{{ record.phone || '无电话' }}</text>
+						</view>
+						<view class="card-row">
+							<text class="cr-address">{{ record.address || '无地址' }}</text>
+						</view>
+						<view class="card-divider"></view>
+						<view class="card-row">
+							<view class="cr-tag" :class="{ 'self': record.usageType === '自用' }">
+								{{ record.usageType || '自用' }}
+							</view>
+							<text class="cr-distributor">{{ record.distributorName || '无经销商' }}</text>
+						</view>
+						<view class="card-divider"></view>
+						<view class="card-row">
+							<view class="cr-field">
+								<text class="cr-label">机器编号</text>
+								<text class="cr-value">{{ record.machineNo || '无' }}</text>
+							</view>
+							<view class="cr-field">
+								<text class="cr-label">发动机号</text>
+								<text class="cr-value">{{ record.engineNo || '无' }}</text>
+							</view>
+						</view>
+						<view class="card-row">
+							<view class="cr-field">
+								<text class="cr-label">生产日期</text>
+								<text class="cr-value">{{ formatDate(record.productionDate) }}</text>
+							</view>
+						</view>
+						<view class="card-photo" v-if="record.platePhoto">
+							<text class="cr-label">铭牌照片</text>
+							<image :src="record.platePhoto" mode="aspectFill" class="cr-img" @click.stop="previewImg(record.platePhoto)"></image>
+						</view>
+					</view>
+				</scroll-view>
+
+				<view class="modal-footer">
+					<button class="cancel-btn" @click="closeCustomerPicker">放弃选择</button>
+				</view>
+			</view>
+		</view>
+
 		<!-- Fault Picker Modal -->
 		<view class="modal-mask" v-if="showFaultPicker" @click.stop="toggleFaultPicker">
 			<view class="modal-body" @click.stop="">
@@ -517,6 +576,8 @@
 				showDistributorPicker: false,
 				distributorSearchKey: '',
 				showFaultPicker: false,
+				customerHistoryRecords: [],
+				showCustomerPicker: false,
 				faultSearchKey: '',
 				selectedCategory: null,
 				faultTree: [
@@ -676,37 +737,88 @@
 				}
 			},
 			async autoFillCustomerInfo(customerName) {
-				// 自动填充历史客户信息（仅填充空字段）
+				if (!customerName || customerName.length < 2 || this.isEditMode) {
+					return
+				}
+
 				try {
 					const res = await uniCloud.callFunction({
 						name: 'work-order-manager',
 						data: {
-							action: 'getCustomerHistory',
+							action: 'searchCustomerHistory',
 							params: { customerName }
 						}
-					});
+					})
 
-					if (res.result.code === 0 && res.result.data) {
-						const info = res.result.data;
-						const customer = this.formData.customer;
+					if (res.result.code === 0 && res.result.data && res.result.data.length > 0) {
+						const records = res.result.data
 
-						// 只在目标字段为空时填充
-						if (!customer.phone && info.phone) {
-							customer.phone = info.phone;
+						// 按 machineNo 去重，每组取第一条（已是最新）
+						const uniqueMap = {}
+						const deduped = []
+						for (const record of records) {
+							const key = record.machineNo || '__empty__'
+							if (!uniqueMap[key]) {
+								uniqueMap[key] = true
+								deduped.push(record)
+							}
 						}
-						if (!customer.address && info.address) {
-							customer.address = info.address;
-						}
-						if (!customer.distributorName && info.distributorName) {
-							customer.distributorName = info.distributorName;
-						}
-						if (!customer.usageType && info.usageType) {
-							customer.usageType = info.usageType;
+
+						this.customerHistoryRecords = deduped
+
+						if (deduped.length === 1) {
+							// 单条记录：直接自动填入
+							this.fillCustomerForm(deduped[0], false)
+						} else {
+							// 多条记录：弹出卡片列表
+							this.showCustomerPicker = true
 						}
 					}
 				} catch (e) {
-					console.error('自动填充客户信息失败:', e);
+					console.error('自动填充客户信息失败:', e)
 				}
+			},
+
+			fillCustomerForm(record, useHistory) {
+				// 填充客户资料区域
+				const customer = this.formData.customer
+				if (!customer.phone && record.phone) customer.phone = record.phone
+				if (!customer.address && record.address) customer.address = record.address
+				if (!customer.usageType && record.usageType) customer.usageType = record.usageType
+				if (!customer.distributorName && record.distributorName) customer.distributorName = record.distributorName
+
+				// 填充产品信息区域
+				const product = this.formData.product
+				if (useHistory) {
+					// 从历史选择时，填入所有字段
+					if (record.machineNo) product.machineNo = record.machineNo
+					if (record.engineNo) product.engineNo = record.engineNo
+					if (record.productionDate) {
+						const d = new Date(record.productionDate)
+						product.productionDate = d.toISOString().slice(0, 10)
+					}
+					if (record.platePhoto) product.platePhoto = record.platePhoto
+				} else {
+					// 单条自动填入时，也填入产品字段
+					if (record.machineNo) product.machineNo = record.machineNo
+					if (record.engineNo) product.engineNo = record.engineNo
+					if (record.productionDate) {
+						const d = new Date(record.productionDate)
+						product.productionDate = d.toISOString().slice(0, 10)
+					}
+					if (record.platePhoto) product.platePhoto = record.platePhoto
+				}
+
+				// 关闭选择弹窗
+				this.showCustomerPicker = false
+			},
+
+			selectCustomerRecord(record) {
+				this.fillCustomerForm(record, true)
+			},
+
+			closeCustomerPicker() {
+				this.showCustomerPicker = false
 			},
 			async loadDetailForEdit(id) {
 				uni.showLoading({ title: '加载中' });
@@ -783,6 +895,11 @@
 				const m = String(date.getMonth() + 1).padStart(2, '0');
 				const d = String(date.getDate()).padStart(2, '0');
 				return `${y}-${m}-${d}`;
+			},
+			formatDate(timestamp) {
+				if (!timestamp) return '无'
+				const d = new Date(timestamp)
+				return d.toISOString().slice(0, 10)
 			},
 			async loadDistributors() {
 				try {
@@ -1191,25 +1308,44 @@
 				}
 			},
 			uploadFile(path, folder) {
-				return new Promise((resolve) => {
+				return new Promise(async (resolve) => {
 					if (!path) return resolve(null);
-					
+
 					// 1. 判定是否为不需要上传的路径
 					const isCloudPath = path.startsWith('cloud://');
 					// 网络图片：以 http 开头，且不是本地临时路径(blob 或 tmp)
 					const isNetworkPath = path.startsWith('http') && !path.includes('blob:') && !path.includes('tmp');
-					
+
 					if (isCloudPath || isNetworkPath) {
 						console.log('[上传文件] 跳过(已是网络或云端路径):', path);
 						return resolve(path);
 					}
-					
+
 					console.log('[上传文件] 开始:', path);
+
+					// 2. 压缩图片到300KB以下
+					let uploadPath = path;
+					try {
+						const compressRes = await new Promise((resolve, reject) => {
+							uni.compressImage({
+								src: path,
+								quality: 80,
+								compressed: true,
+								success: res => resolve(res),
+								fail: err => reject(err)
+							});
+						});
+						uploadPath = compressRes.tempFilePath;
+						console.log('[上传文件] 压缩成功');
+					} catch (e) {
+						console.warn('[上传文件] 压缩失败，使用原图:', e);
+					}
+
 					const ext = path.split('.').pop() || 'jpg';
 					const cloudPath = `${folder}/${Date.now()}_${Math.random().toString(36).slice(-4)}.${ext}`;
-					
+
 					uniCloud.uploadFile({
-						filePath: path,
+						filePath: uploadPath,
 						cloudPath: cloudPath,
 						cloudPathAsRealPath: true,
 						success: (res) => {
@@ -1598,6 +1734,105 @@
 		}
 		.confirm-btn { background: $accent; color: #fff; border-radius: 22px; height: 44px; line-height: 44px; font-size: 16px; font-weight: 700; }
 	}
-	
+
+	// Customer History Picker Modal
+	.customer-picker {
+		.modal-scroll {
+			padding: 0 20px;
+		}
+	}
+
+	.customer-record-card {
+		background: #f7f8fa;
+		border-radius: 12px;
+		padding: 16px;
+		margin-bottom: 12px;
+		border: 1px solid #e5e6eb;
+		.card-row {
+			display: flex;
+			align-items: center;
+			margin-bottom: 8px;
+			flex-wrap: wrap;
+		}
+		.card-divider {
+			height: 1px;
+			background: #e5e6eb;
+			margin: 12px 0;
+		}
+		.cr-name {
+			font-size: 16px;
+			font-weight: 700;
+			color: #1d2129;
+			margin-right: 12px;
+		}
+		.cr-phone {
+			font-size: 13px;
+			color: #4e5969;
+		}
+		.cr-address {
+			font-size: 13px;
+			color: #86909c;
+			width: 100%;
+		}
+		.cr-tag {
+			font-size: 11px;
+			padding: 2px 8px;
+			border-radius: 4px;
+			background: #fff;
+			color: #4e5969;
+			border: 1px solid #e5e6eb;
+			margin-right: 8px;
+			&.self {
+				background: #e6f7ff;
+				color: #1677ff;
+				border-color: #91d5ff;
+			}
+		}
+		.cr-distributor {
+			font-size: 12px;
+			color: #86909c;
+		}
+		.cr-field {
+			display: flex;
+			align-items: center;
+			margin-right: 20px;
+			margin-bottom: 6px;
+		}
+		.cr-label {
+			font-size: 11px;
+			color: #86909c;
+			margin-right: 6px;
+		}
+		.cr-value {
+			font-size: 12px;
+			color: #1d2129;
+			font-weight: 600;
+		}
+		.card-photo {
+			margin-top: 8px;
+			.cr-label {
+				display: block;
+				margin-bottom: 6px;
+			}
+		}
+		.cr-img {
+			width: 80px;
+			height: 60px;
+			border-radius: 6px;
+			border: 1px solid #e5e6eb;
+		}
+	}
+
+	.cancel-btn {
+		background: #f2f3f5;
+		color: #4e5969;
+		border-radius: 22px;
+		height: 44px;
+		line-height: 44px;
+		font-size: 15px;
+		font-weight: 600;
+		border: none;
+	}
+
 	.nav-back { display: flex; align-items: center; color: $accent; font-weight: 700; padding-bottom: 14px; .i { font-size: 22px; margin-right: 4px; } }
 </style>
