@@ -1748,8 +1748,9 @@
 		background: #f7f8fa;
 		border-radius: 8px;
 		padding: 10px 12px;
-		margin: 0 4px 8px 4px;
+		margin-bottom: 8px;
 		border: 1px solid #e5e6eb;
+		box-sizing: border-box;
 		.card-row {
 			display: flex;
 			align-items: center;
