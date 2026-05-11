@@ -473,7 +473,6 @@
 							</view>
 						</view>
 						<view class="card-photo" v-if="record.platePhoto">
-							<text class="cr-label">铭牌照片</text>
 							<image :src="record.platePhoto" mode="aspectFill" class="cr-img" @click.stop="previewImg(record.platePhoto)"></image>
 						</view>
 					</view>
@@ -1814,11 +1813,7 @@
 			font-weight: 600;
 		}
 		.card-photo {
-			margin-top: 8px;
-			.cr-label {
-				display: block;
-				margin-bottom: 6px;
-			}
+			margin-top: 4px;
 		}
 		.cr-img {
 			width: 80px;
