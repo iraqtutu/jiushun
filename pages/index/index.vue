@@ -151,6 +151,12 @@
 			this.refreshUserInfo();
 			this.loadBadgeCounts();
 		},
+		onShareAppMessage() {
+			return {
+				title: '玖顺农机服务管理',
+				path: '/pages/index/index'
+			}
+		},
 		methods: {
 			updateLocalInfo() {
 				const userInfo = uni.getStorageSync('userInfo');

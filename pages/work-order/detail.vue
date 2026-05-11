@@ -292,6 +292,18 @@
 				this.loadDetail(options.id);
 			}
 		},
+		onShareAppMessage() {
+			if (this.order && this.order._id) {
+				return {
+					title: '玖顺农机服务单',
+					path: '/pages/work-order/detail?id=' + this.order._id
+				}
+			}
+			return {
+				title: '玖顺农机服务管理',
+				path: '/pages/index/index'
+			}
+		},
 		methods: {
 			goToEdit() {
 				uni.navigateTo({
@@ -414,7 +426,10 @@
 								additionalFees: data.additionalFees || null
 							};
 						} else {
-							uni.showToast({ title: '加载失败', icon: 'none' });
+							uni.showToast({ title: '无权访问该服务单', icon: 'none' });
+							setTimeout(() => {
+								uni.reLaunch({ url: '/pages/index/index' });
+							}, 1500);
 						}
 					},
 					fail: () => {
