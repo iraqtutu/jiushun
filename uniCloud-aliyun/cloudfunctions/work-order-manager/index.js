@@ -695,6 +695,47 @@ exports.main = async (event, context) => {
 		}
 	}
 
+	// Action: Search Customer History (for multi-record auto-fill)
+	if (action === 'searchCustomerHistory') {
+		const { customerName } = params
+		if (!customerName || customerName.length < 2) {
+			return { code: 0, data: [] }
+		}
+
+		// Find all orders for this customer with product info
+		const res = await db.collection('jiushun-work-orders')
+			.where({
+				'customer.name': customerName
+			})
+			.orderBy('create_date', 'desc')
+			.field({
+				customer: true,
+				product: true,
+				create_date: true
+			})
+			.get()
+
+		if (res.data.length === 0) {
+			return { code: 0, data: [] }
+		}
+
+		// Map to simplified structure for auto-fill
+		const records = res.data.map(item => ({
+			name: item.customer?.name || '',
+			phone: item.customer?.phone || '',
+			address: item.customer?.address || '',
+			usageType: item.customer?.usageType || '自用',
+			distributorName: item.customer?.distributorName || '',
+			machineNo: item.product?.machineNo || '',
+			engineNo: item.product?.engineNo || '',
+			productionDate: item.product?.productionDate || null,
+			platePhoto: item.product?.platePhoto || '',
+			create_date: item.create_date || 0
+		}))
+
+		return { code: 0, data: records }
+	}
+
 	// Action: Get Distributors (with permission control)
 	if (action === 'getDistributors') {
 		const userRes = await db.collection('uni-id-users').doc(uid).get()
