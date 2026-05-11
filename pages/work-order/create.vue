@@ -1746,33 +1746,33 @@
 
 	.customer-record-card {
 		background: #f7f8fa;
-		border-radius: 12px;
-		padding: 16px;
-		margin-bottom: 12px;
+		border-radius: 8px;
+		padding: 10px 12px;
+		margin: 0 4px 8px 4px;
 		border: 1px solid #e5e6eb;
 		.card-row {
 			display: flex;
 			align-items: center;
-			margin-bottom: 8px;
+			margin-bottom: 4px;
 			flex-wrap: wrap;
 		}
 		.card-divider {
 			height: 1px;
 			background: #e5e6eb;
-			margin: 12px 0;
+			margin: 6px 0;
 		}
 		.cr-name {
-			font-size: 16px;
+			font-size: 14px;
 			font-weight: 700;
 			color: #1d2129;
-			margin-right: 12px;
+			margin-right: 10px;
 		}
 		.cr-phone {
-			font-size: 13px;
+			font-size: 12px;
 			color: #4e5969;
 		}
 		.cr-address {
-			font-size: 13px;
+			font-size: 12px;
 			color: #86909c;
 			width: 100%;
 		}
@@ -1797,16 +1797,16 @@
 		.cr-field {
 			display: flex;
 			align-items: center;
-			margin-right: 20px;
-			margin-bottom: 6px;
+			margin-right: 16px;
+			margin-bottom: 4px;
 		}
 		.cr-label {
-			font-size: 11px;
+			font-size: 10px;
 			color: #86909c;
-			margin-right: 6px;
+			margin-right: 4px;
 		}
 		.cr-value {
-			font-size: 12px;
+			font-size: 11px;
 			color: #1d2129;
 			font-weight: 600;
 		}
