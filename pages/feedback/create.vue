@@ -71,11 +71,29 @@
 			},
 			async uploadFiles(paths) {
 				uni.showLoading({ title: '上传中...' });
-				
+
 				for (const path of paths) {
 					try {
+						// 压缩图片到300KB以下
+						let uploadPath = path;
+						try {
+							const compressRes = await new Promise((resolve, reject) => {
+								uni.compressImage({
+									src: path,
+									quality: 80,
+									compressed: true,
+									success: res => resolve(res),
+									fail: err => reject(err)
+								});
+							});
+							uploadPath = compressRes.tempFilePath;
+							console.log('[上传文件] 压缩成功');
+						} catch (e) {
+							console.warn('[上传文件] 压缩失败，使用原图:', e);
+						}
+
 						const result = await uniCloud.uploadFile({
-							filePath: path,
+							filePath: uploadPath,
 							cloudPath: `feedback/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.jpg`,
 							cloudPathAsRealPath: true
 						});
