@@ -8,6 +8,13 @@
 		},
 		onHide: function() {
 			console.log('App Hide')
+		},
+		onShareAppMessage() {
+			return {
+				title: '玖顺农机服务管理',
+				path: '/pages/index/index',
+				imageUrl: '/static/logo.png'
+			}
 		}
 	}
 </script>
