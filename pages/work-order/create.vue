@@ -771,6 +771,8 @@
 						} else {
 							// 多条记录：弹出卡片列表
 							this.showCustomerPicker = true
+							// 关闭已打开的键盘
+							uni.hideKeyboard()
 						}
 					}
 				} catch (e) {
@@ -820,6 +822,7 @@
 
 			closeCustomerPicker() {
 				this.showCustomerPicker = false
+				uni.hideKeyboard()
 			},
 			async loadDetailForEdit(id) {
 				uni.showLoading({ title: '加载中' });
