@@ -1741,6 +1741,8 @@
 	.customer-picker {
 		.modal-scroll {
 			padding: 0 20px;
+			overflow: hidden;
+			box-sizing: border-box;
 		}
 	}
 
